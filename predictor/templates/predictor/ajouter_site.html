@@ -1,0 +1,72 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ajouter un autre site - PredictNeed IA</title>
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=32">
+</head>
+<body>
+
+    <section class="site-page">
+        <div class="site-card">
+
+            <a href="{% url 'dashboard' %}" class="back-link">
+                ← Retour au dashboard
+            </a>
+
+            <p class="site-eyebrow">PredictNeed IA</p>
+
+            <h1>Ajouter un autre site</h1>
+
+            <p class="site-description">
+                Ajoutez un autre site web à votre espace professionnel.
+                PredictNeed IA générera automatiquement un nouveau code d’installation pour ce site.
+            </p>
+
+            {% if erreur %}
+                <div class="error-message">
+                    {{ erreur }}
+                </div>
+            {% endif %}
+
+            <form method="post" class="site-form">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="nom_site">Nom du site</label>
+                    <input
+                        type="text"
+                        id="nom_site"
+                        name="nom_site"
+                        placeholder="Ex : Boutique principale"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="domaine">Domaine du site</label>
+                    <input
+                        type="text"
+                        id="domaine"
+                        name="domaine"
+                        placeholder="Ex : monsite.fr"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="primary-submit">
+                    Ajouter le site
+                </button>
+            </form>
+
+            <p class="site-note">
+                Après validation, vous retrouverez le script d’installation directement dans votre dashboard.
+            </p>
+
+        </div>
+    </section>
+
+</body>
+</html>

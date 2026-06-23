@@ -1,0 +1,289 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>PredictNeed IA - Prédiction des besoins visiteurs</title>
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=70">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'accueil' %}" class="navbar-logo">PredictNeed IA</a>
+
+    <div class="navbar-links">
+        <a href="{% url 'accueil' %}">Accueil</a>
+        <a href="{% url 'simulateur' %}">Simulateur</a>
+
+        {% if user.is_authenticated %}
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+            <a href="{% url 'deconnexion' %}">Déconnexion</a>
+        {% else %}
+            <a href="{% url 'connexion' %}">Connexion</a>
+            <a href="{% url 'inscription' %}" class="nav-cta">Créer un compte</a>
+        {% endif %}
+
+        {% if user.is_superuser %}
+            <a href="/admin/" target="_blank">Admin</a>
+        {% endif %}
+    </div>
+</nav>
+
+<main class="pro-home">
+
+    <section class="pro-hero">
+        <div class="pro-hero-content">
+            <span class="pro-badge">IA comportementale pour sites professionnels</span>
+
+            <h1>Transformez le comportement de vos visiteurs en opportunités commerciales</h1>
+
+            <p>
+                PredictNeed IA analyse les pages vues, les clics et le temps passé
+                afin d’identifier les intentions, les besoins et les signaux d’achat
+                avant que le visiteur ne quitte le site.
+            </p>
+
+            <div class="home-actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="hero-button">Accéder au dashboard</a>
+                {% else %}
+                    <a href="{% url 'inscription' %}" class="hero-button">Créer un compte professionnel</a>
+                {% endif %}
+
+                <a href="{% url 'simulateur' %}" class="secondary-button">Tester le simulateur</a>
+            </div>
+        </div>
+
+        <div class="pro-hero-panel">
+            <div class="panel-header">
+                <span></span>
+                <span></span>
+                <span></span>
+                <strong>Analyse en direct</strong>
+            </div>
+
+            <div class="signal-card active">
+                <small>Page visitée</small>
+                <strong>/prix</strong>
+                <p>Signal de comparaison détecté</p>
+            </div>
+
+            <div class="signal-card">
+                <small>Clic utilisateur</small>
+                <strong>Commencer l’analyse</strong>
+                <p>Intention active détectée</p>
+            </div>
+
+            <div class="prediction-preview">
+                <span>Profil probable</span>
+                <h3>Prêt à acheter</h3>
+                <p>Recommandation : proposer une offre claire ou une remise limitée.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section">
+        <span class="section-kicker">Le problème</span>
+        <h2>Vous avez des visiteurs, mais vous ne savez pas toujours ce qu’ils veulent</h2>
+
+        <div class="pro-grid">
+            <div class="pro-card">
+                <h3>Visiteurs invisibles</h3>
+                <p>
+                    Beaucoup de visiteurs passent sur un site sans formulaire, sans message
+                    et sans achat. Pourtant, leur comportement donne déjà des indices.
+                </p>
+            </div>
+
+            <div class="pro-card">
+                <h3>Intentions difficiles à lire</h3>
+                <p>
+                    Une page prix, plusieurs clics ou un temps long peuvent révéler
+                    une intention d’achat, une hésitation ou un besoin d’accompagnement.
+                </p>
+            </div>
+
+            <div class="pro-card">
+                <h3>Opportunités perdues</h3>
+                <p>
+                    Sans analyse comportementale, le professionnel agit trop tard
+                    ou ne sait pas quelle action proposer au bon moment.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section split-section">
+        <div>
+            <span class="section-kicker">La solution</span>
+            <h2>PredictNeed IA transforme les signaux faibles en recommandations claires</h2>
+            <p>
+                L’application observe les événements du site, analyse la session visiteur
+                et génère un profil exploitable : comparateur, visiteur curieux,
+                besoin d’accompagnement ou prêt à acheter.
+            </p>
+        </div>
+
+        <div class="solution-list">
+            <div>
+                <strong>01</strong>
+                <span>Collecte des événements</span>
+            </div>
+            <div>
+                <strong>02</strong>
+                <span>Analyse de la session</span>
+            </div>
+            <div>
+                <strong>03</strong>
+                <span>Détection du besoin probable</span>
+            </div>
+            <div>
+                <strong>04</strong>
+                <span>Recommandation commerciale</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section">
+        <span class="section-kicker">Cas d’usage</span>
+        <h2>Une solution utile pour plusieurs types de professionnels</h2>
+
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <h3>E-commerce</h3>
+                <p>Identifier les visiteurs qui comparent les prix ou hésitent avant l’achat.</p>
+            </div>
+
+            <div class="usecase-card">
+                <h3>Sites vitrines</h3>
+                <p>Comprendre quels services intéressent le plus les visiteurs.</p>
+            </div>
+
+            <div class="usecase-card">
+                <h3>Freelances & agences</h3>
+                <p>Détecter les prospects chauds et prioriser les relances commerciales.</p>
+            </div>
+
+            <div class="usecase-card">
+                <h3>Coachs & consultants</h3>
+                <p>Repérer les personnes qui ont besoin d’un rendez-vous ou d’un accompagnement.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section dashboard-preview-section">
+        <div class="dashboard-preview-text">
+            <span class="section-kicker">Tableau de bord</span>
+            <h2>Un dashboard pour suivre les comportements et les intentions</h2>
+            <p>
+                Le professionnel peut visualiser les prédictions, les sessions visiteurs,
+                les profils dominants et les dernières recommandations générées.
+            </p>
+
+            <a href="{% url 'dashboard' %}" class="secondary-button">Ouvrir le dashboard</a>
+        </div>
+
+        <div class="fake-dashboard">
+            <div class="fake-stat">
+                <span>Prédictions</span>
+                <strong>128</strong>
+            </div>
+            <div class="fake-stat">
+                <span>Intentions fortes</span>
+                <strong>34</strong>
+            </div>
+            <div class="fake-stat">
+                <span>Profil dominant</span>
+                <strong>Comparateur</strong>
+            </div>
+
+            <div class="fake-table">
+                <p><strong>Prêt à acheter</strong> — offre claire recommandée</p>
+                <p><strong>Besoin d’accompagnement</strong> — proposer un rendez-vous</p>
+                <p><strong>Explorateur produit</strong> — afficher une fiche détaillée</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section">
+        <span class="section-kicker">Démonstration</span>
+        <h2>Testez le moteur de prédiction avec le simulateur</h2>
+        <p class="center-text">
+            Le simulateur permet de tester différents comportements visiteurs
+            et de comprendre comment PredictNeed IA déduit un besoin probable.
+        </p>
+
+        <div class="demo-box">
+            <div>
+                <h3>Exemple de comportement</h3>
+                <p>Page visitée : Prix</p>
+                <p>Temps passé : Long</p>
+                <p>Nombre de clics : Élevé</p>
+            </div>
+
+            <div>
+                <h3>Résultat possible</h3>
+                <p>Profil : Prêt à acheter</p>
+                <p>Intention : Forte</p>
+                <p>Action : proposer une offre claire</p>
+            </div>
+        </div>
+
+        <a href="{% url 'simulateur' %}" class="hero-button center-button">Lancer une simulation</a>
+    </section>
+
+    <section class="final-cta">
+        <span class="section-kicker">Objectif produit</span>
+        <h2>Un futur outil SaaS pour aider les professionnels à mieux convertir</h2>
+        <p>
+            PredictNeed IA a vocation à devenir une solution installable sur les sites
+            professionnels grâce à une clé API et un script de tracking simple.
+        </p>
+
+        <div class="pro-actions">
+            <a href="{% url 'simulateur' %}" class="hero-button">Tester maintenant</a>
+            <a href="{% url 'dashboard' %}" class="secondary-button">Voir les données</a>
+        </div>
+    </section>
+
+</main>
+
+<footer class="pro-footer">
+    <p>© PredictNeed IA — Analyse comportementale et prédiction des besoins visiteurs</p>
+</footer>
+
+<script>
+    const elementsToReveal = document.querySelectorAll(
+        ".pro-section, .pro-card, .usecase-card, .pro-hero-panel, .fake-dashboard, .demo-box, .final-cta"
+    );
+
+    elementsToReveal.forEach((element) => {
+        element.classList.add("reveal-item");
+    });
+
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add("visible");
+            }
+        });
+    }, {
+        threshold: 0.15
+    });
+
+    elementsToReveal.forEach((element) => {
+        revealObserver.observe(element);
+    });
+</script>
+
+<script 
+    src="{% static 'predictor/tracker.js' %}?v=90"
+    data-api-key="a8bb877b-4c52-498d-9e5d-f75bdd210cd7"
+    data-api-url="/api/track/"
+    data-lead-url="/api/lead/"
+    data-debug="true">
+</script>
+
+</body>
+</html>

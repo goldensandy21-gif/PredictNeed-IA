@@ -1,0 +1,362 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - PredictNeed IA</title>
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=2">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="{% url 'accueil' %}" class="navbar-logo">PredictNeed IA</a>
+
+        <div class="navbar-links">
+            <a href="{% url 'accueil' %}">Accueil</a>
+            <a href="{% url 'simulateur' %}">Simulateur</a>
+
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'deconnexion' %}">Déconnexion</a>
+            {% else %}
+                <a href="{% url 'connexion' %}">Connexion</a>
+                <a href="{% url 'inscription' %}" class="nav-cta">Créer un compte</a>
+            {% endif %}
+
+            {% if user.is_superuser %}
+                <a href="/admin/" target="_blank">Admin</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <h1>Dashboard PredictNeed IA</h1>
+        <p class="dashboard-intro">Espace : {{ nom_client }}</p>
+
+        <div class="onboarding-card">
+            <div class="onboarding-header">
+                <div>
+                    <p class="onboarding-eyebrow">Premiers pas</p>
+                    <h2>Configurer PredictNeed IA</h2>
+                </div>
+            </div>
+
+            <div class="checklist">
+                <div class="check-item done">
+                    <span class="check-icon">✓</span>
+                    <div>
+                        <strong>Compte créé</strong>
+                        <p>Votre espace professionnel est prêt.</p>
+                    </div>
+                </div>
+
+                <div class="check-item {% if a_un_site %}done{% else %}todo{% endif %}">
+                    <span class="check-icon">{% if a_un_site %}✓{% else %}2{% endif %}</span>
+                    <div>
+                        <strong>Site enregistré</strong>
+                        <p>Votre site possède une clé API unique.</p>
+                    </div>
+                </div>
+
+                <div class="check-item {% if a_installation_active %}done{% else %}todo{% endif %}">
+                    <span class="check-icon">{% if a_installation_active %}✓{% else %}3{% endif %}</span>
+                    <div>
+                        <strong>Script installé</strong>
+                        <p>Le site devient actif dès qu’un premier visiteur est détecté.</p>
+                    </div>
+                </div>
+
+                <div class="check-item {% if a_lead_capture %}done{% else %}todo{% endif %}">
+                    <span class="check-icon">{% if a_lead_capture %}✓{% else %}4{% endif %}</span>
+                    <div>
+                        <strong>Premier lead capturé</strong>
+                        <p>Les coordonnées apparaîtront dans la section “Leads chauds”.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-actions">
+            <a href="{% url 'ajouter_site' %}" class="hero-button">
+                Ajouter un autre site
+            </a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2>{{ total_sites }}</h2>
+                <p>Sites connectés</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>{{ total_sessions }}</h2>
+                <p>Sessions visiteurs</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>{{ intentions_fortes }}</h2>
+                <p>Intentions fortes</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>{{ total_leads }}</h2>
+                <p>Leads capturés</p>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Statut de vos sites</h2>
+
+            <div class="site-status-grid">
+                {% for item in sites_onboarding %}
+                    <div class="site-status-card {% if item.est_actif %}active{% else %}pending{% endif %}">
+                        <div class="site-status-header">
+                            <div>
+                                <h3>{{ item.site.nom_site }}</h3>
+                                <p>{{ item.site.domaine }}</p>
+                            </div>
+
+                            <span class="status-badge {% if item.est_actif %}active{% else %}pending{% endif %}">
+                                {{ item.statut }}
+                            </span>
+                        </div>
+
+                        <div class="site-status-stats">
+                            <span>{{ item.nb_sessions }} sessions</span>
+                            <span>{{ item.nb_leads }} leads</span>
+                        </div>
+
+                        {% if item.est_actif %}
+                            <p class="status-help success">
+                                Le script semble fonctionner : des visiteurs ont déjà été détectés.
+                            </p>
+                        {% else %}
+                            <p class="status-help warning">
+                                Collez le code d’installation sur ce site pour activer la détection.
+                            </p>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p>Aucun site enregistré pour le moment.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Nettoyage des données techniques</h2>
+
+            <p class="section-description">
+                Supprime les événements techniques enregistrés par le tracker : pages vues, clics et temps passé.
+                Les leads, les sites et les clés API seront conservés.
+            </p>
+
+            <form 
+                method="post" 
+                action="{% url 'nettoyer_evenements' %}" 
+                onsubmit="return confirm('Confirmer le nettoyage des événements techniques ? Cette action est irréversible.');"
+            >
+                {% csrf_token %}
+
+                <button type="submit" class="danger-button">
+                    Nettoyer les événements techniques
+                </button>
+            </form>
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Profils détectés</h2>
+
+            {% for profil in profils %}
+                <div class="profil-row">
+                    <span>{{ profil.profil }}</span>
+                    <strong>{{ profil.total }}</strong>
+                </div>
+            {% empty %}
+                <p>Aucun profil détecté pour le moment.</p>
+            {% endfor %}
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Dernières prédictions</h2>
+
+            {% for prediction in dernieres_predictions %}
+                <div class="prediction-card">
+                    <h3>{{ prediction.profil }}</h3>
+                    <p><strong>Besoin :</strong> {{ prediction.besoin_probable }}</p>
+                    <p><strong>Intention :</strong> {{ prediction.intention }}</p>
+                    <p><strong>Score :</strong> {{ prediction.score }}</p>
+                    <p><strong>Recommandation :</strong> {{ prediction.recommandation }}</p>
+                </div>
+            {% empty %}
+                <p>Aucune prédiction enregistrée pour le moment.</p>
+            {% endfor %}
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Installer PredictNeed IA sur votre site</h2>
+
+            <p class="section-description">
+                Copiez ce code et collez-le avant la balise <code>&lt;/body&gt;</code> de votre site.
+            </p>
+
+            {% for item in scripts_installation %}
+                <div class="install-card">
+                    <h3>{{ item.site.nom_site }}</h3>
+                    <p><strong>Domaine :</strong> {{ item.site.domaine }}</p>
+
+                    <textarea readonly onclick="this.select()">{{ item.script }}</textarea>
+
+                    <p class="install-help">
+                        Cette clé API est propre à ce site. Elle permet à PredictNeed IA d’associer les visiteurs au bon espace professionnel.
+                    </p>
+                </div>
+            {% empty %}
+                <p>Aucun site connecté pour le moment.</p>
+            {% endfor %}
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Leads chauds à contacter</h2>
+
+            {% for lead in leads_chauds %}
+                <div class="lead-card" id="lead-{{ lead.id }}">
+                    <div class="lead-card-header">
+                        <h3>
+                            {% if lead.nom %}
+                                {{ lead.nom }}
+                            {% else %}
+                                Nouveau lead
+                            {% endif %}
+                        </h3>
+
+                        <span class="lead-score">Score {{ lead.score }}</span>
+                    </div>
+
+                    <p>
+                        <strong>Email :</strong>
+                        {% if lead.email %}
+                            {{ lead.email }}
+                        {% else %}
+                            Non renseigné
+                        {% endif %}
+                    </p>
+
+                    <p>
+                        <strong>Téléphone :</strong>
+                        {% if lead.telephone %}
+                            {{ lead.telephone }}
+                        {% else %}
+                            Non renseigné
+                        {% endif %}
+                    </p>
+
+                    <p><strong>Profil :</strong> {{ lead.profil }}</p>
+                    <p><strong>Intention :</strong> {{ lead.intention }}</p>
+                    <p>
+                        <strong>Suivi :</strong>
+                        <span class="lead-status {{ lead.statut_suivi }}">
+                            {{ lead.get_statut_suivi_display }}
+                        </span>
+                    </p>
+
+                    <div class="lead-status-actions" data-lead-id="{{ lead.id }}">
+                        <button 
+                            type="button"
+                            class="lead-status-button"
+                            data-url="{% url 'changer_statut_lead' lead.id 'contacte' %}">
+                            Marquer contacté
+                        </button>
+
+                        <button 
+                            type="button"
+                            class="lead-status-button"
+                            data-url="{% url 'changer_statut_lead' lead.id 'converti' %}">
+                            Converti
+                        </button>
+
+                        <button 
+                            type="button"
+                            class="lead-status-button"
+                            data-url="{% url 'changer_statut_lead' lead.id 'perdu' %}">
+                            Perdu
+                        </button>
+                    </div>
+
+                    {% if lead.message %}
+                        <p><strong>Message :</strong> {{ lead.message }}</p>
+                    {% endif %}
+
+                    <div class="lead-actions">
+                        {% if lead.email %}
+                            <a href="mailto:{{ lead.email }}">Envoyer un email</a>
+                        {% endif %}
+
+                        {% if lead.telephone %}
+                            <a href="tel:{{ lead.telephone }}">Appeler</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p>Aucun lead capturé pour le moment.</p>
+            {% endfor %}
+                </div>
+
+                <a href="/" class="hero-button">Retour au site</a>
+    </section>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const buttons = document.querySelectorAll(".lead-status-button");
+            const csrfToken = "{{ csrf_token }}";
+
+            buttons.forEach(function (button) {
+                button.dataset.originalText = button.textContent.trim();
+
+                button.addEventListener("click", function () {
+                    const url = button.dataset.url;
+                    const card = button.closest(".lead-card");
+                    const badge = card.querySelector(".lead-status");
+
+                    button.disabled = true;
+                    button.textContent = "Mise à jour...";
+
+                    fetch(url, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "X-CSRFToken": csrfToken,
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("Erreur HTTP " + response.status);
+                        }
+
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) {
+                            alert("Impossible de modifier le statut.");
+                            return;
+                        }
+
+                        badge.className = "lead-status " + data.statut;
+                        badge.textContent = data.label;
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                        alert("Erreur pendant la mise à jour.");
+                    })
+                    .finally(function () {
+                        button.disabled = false;
+                        button.textContent = button.dataset.originalText;
+                    });
+                });
+            });
+        });
+    </script>
+    
+</body>
+</html>
