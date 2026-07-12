@@ -5,30 +5,12 @@
 <head>
     <meta charset="UTF-8">
     <title>PredictNeed IA - Prédiction des besoins visiteurs</title>
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=70">
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
 </head>
-<body>
+<body class="home-page">
 
-<nav class="navbar">
-    <a href="{% url 'accueil' %}" class="navbar-logo">PredictNeed IA</a>
-
-    <div class="navbar-links">
-        <a href="{% url 'accueil' %}">Accueil</a>
-        <a href="{% url 'simulateur' %}">Simulateur</a>
-
-        {% if user.is_authenticated %}
-            <a href="{% url 'dashboard' %}">Dashboard</a>
-            <a href="{% url 'deconnexion' %}">Déconnexion</a>
-        {% else %}
-            <a href="{% url 'connexion' %}">Connexion</a>
-            <a href="{% url 'inscription' %}" class="nav-cta">Créer un compte</a>
-        {% endif %}
-
-        {% if user.is_superuser %}
-            <a href="/admin/" target="_blank">Admin</a>
-        {% endif %}
-    </div>
-</nav>
+{% include "predictor/includes/navbar.html" %}
 
 <main class="pro-home">
 
@@ -55,31 +37,29 @@
             </div>
         </div>
 
-        <div class="pro-hero-panel">
-            <div class="panel-header">
-                <span></span>
-                <span></span>
-                <span></span>
-                <strong>Analyse en direct</strong>
-            </div>
+        <div class="hero-insight-card">
+            <span>Signal chaud</span>
+            <strong>Page prix + clic offre</strong>
+            <p>Action proposée : afficher une prise de contact.</p>
+        </div>
+    </section>
 
-            <div class="signal-card active">
-                <small>Page visitée</small>
-                <strong>/prix</strong>
-                <p>Signal de comparaison détecté</p>
-            </div>
-
-            <div class="signal-card">
-                <small>Clic utilisateur</small>
-                <strong>Commencer l’analyse</strong>
-                <p>Intention active détectée</p>
-            </div>
-
-            <div class="prediction-preview">
-                <span>Profil probable</span>
-                <h3>Prêt à acheter</h3>
-                <p>Recommandation : proposer une offre claire ou une remise limitée.</p>
-            </div>
+    <section class="home-proof-strip" aria-label="Points forts PredictNeed IA">
+        <div>
+            <strong>Score d’intention</strong>
+            <span>Chaque session devient lisible.</span>
+        </div>
+        <div>
+            <strong>Leads prioritaires</strong>
+            <span>Les prospects chauds remontent en premier.</span>
+        </div>
+        <div>
+            <strong>Actions recommandées</strong>
+            <span>Le dashboard indique quoi proposer.</span>
+        </div>
+        <div>
+            <strong>Multi-canal</strong>
+            <span>Sources, campagnes et UTM rapprochés.</span>
         </div>
     </section>
 
@@ -146,6 +126,168 @@
     </section>
 
     <section class="pro-section">
+        <span class="section-kicker">Ce que fait PredictNeed IA</span>
+        <h2>Une plateforme complète pour comprendre, qualifier et convertir les visiteurs</h2>
+
+        <div class="feature-capability-grid">
+            <div>
+                <strong>Collecte intelligente</strong>
+                <p>Le script installé sur le site remonte les signaux utiles après choix de confidentialité : pages consultées, interactions, temps passé, source de visite et campagne.</p>
+            </div>
+            <div>
+                <strong>Analyse d'intention</strong>
+                <p>PredictNeed IA transforme ces signaux en profil probable, score, intention et besoin détecté pour rendre les sessions exploitables.</p>
+            </div>
+            <div>
+                <strong>Capture de leads</strong>
+                <p>Lorsqu'un visiteur montre un intérêt fort, une offre peut lui être proposée afin de laisser ses coordonnées volontairement.</p>
+            </div>
+            <div>
+                <strong>Priorisation commerciale</strong>
+                <p>Les leads chauds, opportunités CRM, sources et segments aident le professionnel à savoir qui relancer en premier.</p>
+            </div>
+            <div>
+                <strong>Lecture dashboard</strong>
+                <p>Le tableau de bord regroupe statistiques, modules, graphiques, historique, sites connectés et scripts d'installation.</p>
+            </div>
+            <div>
+                <strong>Conformité et contrôle</strong>
+                <p>L’outil d’analyse intègre les choix de confidentialité, les pages légales existent et les données peuvent être purgées selon les durées retenues.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section platform-suite-section">
+        <span class="section-kicker">Plateforme unifiée</span>
+        <h2>Trois espaces pour passer de la visite anonyme à l’action commerciale</h2>
+
+        <div class="platform-suite-grid">
+            <article>
+                <span>01</span>
+                <h3>Observer</h3>
+                <p>
+                    Le script suit les signaux utiles après consentement : pages clés,
+                    clics, temps passé, sources, campagnes et parcours de navigation.
+                </p>
+                <ul>
+                    <li>Sessions visiteurs</li>
+                    <li>Sources et supports</li>
+                    <li>Pages à forte intention</li>
+                </ul>
+            </article>
+
+            <article>
+                <span>02</span>
+                <h3>Prédire</h3>
+                <p>
+                    PredictNeed IA transforme les comportements en profils, intentions,
+                    scores et besoins probables pour rendre les visiteurs compréhensibles.
+                </p>
+                <ul>
+                    <li>Profil probable</li>
+                    <li>Score d’intention</li>
+                    <li>Segments prioritaires</li>
+                </ul>
+            </article>
+
+            <article>
+                <span>03</span>
+                <h3>Convertir</h3>
+                <p>
+                    Le dashboard aide à déclencher la bonne action : capture volontaire,
+                    relance email, opportunité CRM ou recommandation commerciale.
+                </p>
+                <ul>
+                    <li>Popup d’intérêt</li>
+                    <li>Relances automatisées</li>
+                    <li>Opportunités à suivre</li>
+                </ul>
+            </article>
+        </div>
+    </section>
+
+    <section class="pro-section commercial-reality-section">
+        <span class="section-kicker">Ce que le client retrouve vraiment</span>
+        <h2>La page présente uniquement les fonctions disponibles dans la plateforme</h2>
+        <p>
+            Pour une mise en ligne commerciale, PredictNeed IA doit rester clair :
+            chaque promesse visible sur le site correspond à une page, un module ou
+            une action que le client peut retrouver après inscription.
+        </p>
+
+        <div class="commercial-reality-grid">
+            <div>
+                <strong>Dashboard client</strong>
+                <span>Vue d’ensemble des sites, sessions, prédictions, leads et opportunités.</span>
+            </div>
+            <div>
+                <strong>Prédictions et scores</strong>
+                <span>Profils probables, intentions détectées et actions recommandées.</span>
+            </div>
+            <div>
+                <strong>Automatisation email</strong>
+                <span>Confirmation de demande puis relances programmées si le lead n’est pas traité.</span>
+            </div>
+            <div>
+                <strong>Modules avancés</strong>
+                <span>Segmentation, visualisations, historique, multi-canal, publicité et sécurité.</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section">
+        <span class="section-kicker">Fonctionnalités du dashboard</span>
+        <h2>Ce que le client retrouve après inscription</h2>
+
+        <div class="public-module-grid">
+            {% for module in modules_publics %}
+                <a href="{% url 'fonctionnalite_detail' module.slug %}" class="public-module-card">
+                    <span>{{ module.badge }}</span>
+                    <h3>{{ module.nom }}</h3>
+                    <p>{{ module.accroche }}</p>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="pro-section integrations-section">
+        <span class="section-kicker">Connexions</span>
+        <h2>Un outil pensé pour relier site, campagnes, sources et suivi commercial</h2>
+        <p>
+            Le client retrouve une lecture multi-canal dans son dashboard. Les sources
+            et campagnes UTM sont exploitées immédiatement. Les connecteurs externes
+            sont configurables côté serveur lorsque les clés officielles sont fournies.
+        </p>
+
+        <div class="integration-grid">
+            <div>
+                <strong>Site web</strong>
+                <span>Script d’analyse et capture volontaire.</span>
+            </div>
+            <div>
+                <strong>Sources UTM</strong>
+                <span>Campagnes détectées depuis les visites.</span>
+            </div>
+            <div>
+                <strong>Connecteurs</strong>
+                <span>OAuth prêt à configurer avec les clés officielles.</span>
+            </div>
+            <div>
+                <strong>Publicité</strong>
+                <span>Sessions, leads et campagnes rapprochées.</span>
+            </div>
+            <div>
+                <strong>CRM interne</strong>
+                <span>Opportunités créées depuis les leads.</span>
+            </div>
+            <div>
+                <strong>Email</strong>
+                <span>Confirmation et relances automatiques.</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section">
         <span class="section-kicker">Cas d’usage</span>
         <h2>Une solution utile pour plusieurs types de professionnels</h2>
 
@@ -172,36 +314,91 @@
         </div>
     </section>
 
+    <section class="pro-section outcome-section">
+        <div>
+            <span class="section-kicker">Résultats attendus</span>
+            <h2>Une page d’accueil plus claire, mais surtout un produit plus compréhensible</h2>
+            <p>
+                Le visiteur doit comprendre rapidement que PredictNeed IA sert à
+                détecter les signaux d’achat, prioriser les prospects, expliquer les
+                comportements et aider à convertir sans deviner.
+            </p>
+        </div>
+
+        <div class="outcome-grid">
+            <div>
+                <strong>Moins de flou</strong>
+                <span>Les sessions anonymes deviennent des signaux exploitables.</span>
+            </div>
+            <div>
+                <strong>Plus de priorité</strong>
+                <span>Les meilleurs leads sont visibles avant les autres.</span>
+            </div>
+            <div>
+                <strong>Plus d’action</strong>
+                <span>Chaque profil peut recevoir une recommandation adaptée.</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section home-pricing-section">
+        <div>
+            <span class="section-kicker">Prix</span>
+            <h2>Un abonnement simple pour accéder à PredictNeed IA Pro</h2>
+            <p>
+                L'accès au dashboard, aux modules et au script de suivi est proposé
+                sous forme d'abonnement mensuel. Le tarif regroupe l'analyse des
+                comportements, la qualification des intentions, la capture des leads
+                et les outils de pilotage nécessaires pour suivre vos opportunités.
+            </p>
+
+            <ul class="home-price-list">
+                <li>Un espace professionnel pour connecter vos sites.</li>
+                <li>Des modules pour lire les visiteurs, les sources et les intentions.</li>
+                <li>Des données centralisées pour décider plus vite qui relancer.</li>
+            </ul>
+        </div>
+
+        <div class="home-price-card">
+            <span>PredictNeed IA Pro</span>
+            <strong>{{ prix_abonnement }} / mois</strong>
+            <p>
+                Paiement sécurisé à l'inscription. Le compte est activé après validation
+                pour accéder au dashboard, aux modules et au script d'installation.
+            </p>
+            <a href="{% url 'prix' %}" class="secondary-button">Voir l'offre</a>
+        </div>
+    </section>
+
     <section class="pro-section dashboard-preview-section">
         <div class="dashboard-preview-text">
             <span class="section-kicker">Tableau de bord</span>
-            <h2>Un dashboard pour suivre les comportements et les intentions</h2>
+            <h2>Un dashboard pour suivre comportements, intentions, leads et opportunités</h2>
             <p>
                 Le professionnel peut visualiser les prédictions, les sessions visiteurs,
-                les profils dominants et les dernières recommandations générées.
+                les profils dominants, les sources, les leads capturés, les opportunités CRM,
+                les modules actifs et les scripts d'installation par site.
             </p>
 
             <a href="{% url 'dashboard' %}" class="secondary-button">Ouvrir le dashboard</a>
         </div>
 
-        <div class="fake-dashboard">
-            <div class="fake-stat">
-                <span>Prédictions</span>
-                <strong>128</strong>
+        <div class="real-dashboard-list">
+            <div>
+                <strong>Vue d’ensemble</strong>
+                <span>Sites connectés, scripts d’installation, sessions et activité.</span>
             </div>
-            <div class="fake-stat">
-                <span>Intentions fortes</span>
-                <strong>34</strong>
+            <div>
+                <strong>Leads et opportunités</strong>
+                <span>Coordonnées capturées, statut de suivi et création d’opportunités.</span>
             </div>
-            <div class="fake-stat">
-                <span>Profil dominant</span>
-                <strong>Comparateur</strong>
+            <div>
+                <strong>Automatisations</strong>
+                <span>Emails envoyés, erreurs, étapes actives et contenus modifiables.</span>
             </div>
-
-            <div class="fake-table">
-                <p><strong>Prêt à acheter</strong> — offre claire recommandée</p>
-                <p><strong>Besoin d’accompagnement</strong> — proposer un rendez-vous</p>
-                <p><strong>Explorateur produit</strong> — afficher une fiche détaillée</p>
+            <div>
+                <strong>Modules métier</strong>
+                <span>Prédiction avancée, segmentation, e-commerce, visualisations et publicité.</span>
             </div>
         </div>
     </section>
@@ -213,6 +410,35 @@
             Le simulateur permet de tester différents comportements visiteurs
             et de comprendre comment PredictNeed IA déduit un besoin probable.
         </p>
+
+        <div class="simulator-explain-grid">
+            <div class="simulator-explain-card">
+                <span>01</span>
+                <h3>Choisissez un parcours</h3>
+                <p>
+                    Sélectionnez une page visitée, un temps passé et un niveau de clics
+                    pour représenter un comportement courant sur un site professionnel.
+                </p>
+            </div>
+
+            <div class="simulator-explain-card">
+                <span>02</span>
+                <h3>Observez le signal</h3>
+                <p>
+                    Le simulateur traduit ces éléments en profil probable, intention,
+                    score et besoin détecté, comme le ferait le dashboard avec des données réelles.
+                </p>
+            </div>
+
+            <div class="simulator-explain-card">
+                <span>03</span>
+                <h3>Comprenez l’action</h3>
+                <p>
+                    La recommandation aide à décider quoi proposer : une offre claire,
+                    un rendez-vous, un contenu rassurant ou une relance prioritaire.
+                </p>
+            </div>
+        </div>
 
         <div class="demo-box">
             <div>
@@ -234,11 +460,12 @@
     </section>
 
     <section class="final-cta">
-        <span class="section-kicker">Objectif produit</span>
-        <h2>Un futur outil SaaS pour aider les professionnels à mieux convertir</h2>
+        <span class="section-kicker">Mise en ligne</span>
+        <h2>Une plateforme SaaS pour aider les professionnels à mieux convertir</h2>
         <p>
-            PredictNeed IA a vocation à devenir une solution installable sur les sites
-            professionnels grâce à une clé API et un script de tracking simple.
+            PredictNeed IA est une solution installable sur les sites
+            professionnels grâce à une clé API, un script de suivi, des pages légales,
+            un dashboard métier et une logique de capture de leads.
         </p>
 
         <div class="pro-actions">
@@ -249,13 +476,11 @@
 
 </main>
 
-<footer class="pro-footer">
-    <p>© PredictNeed IA — Analyse comportementale et prédiction des besoins visiteurs</p>
-</footer>
+{% include "predictor/includes/footer.html" %}
 
 <script>
     const elementsToReveal = document.querySelectorAll(
-        ".pro-section, .pro-card, .usecase-card, .pro-hero-panel, .fake-dashboard, .demo-box, .final-cta"
+        ".pro-section, .pro-card, .usecase-card, .public-module-card, .feature-capability-grid > div, .home-proof-strip, .platform-suite-grid article, .commercial-reality-grid > div, .integration-grid > div, .outcome-grid > div, .real-dashboard-list > div, .demo-box, .final-cta"
     );
 
     elementsToReveal.forEach((element) => {
@@ -275,14 +500,14 @@
     elementsToReveal.forEach((element) => {
         revealObserver.observe(element);
     });
+
 </script>
 
 <script 
-    src="{% static 'predictor/tracker.js' %}?v=90"
+    src="{% static 'predictor/tracker.js' %}?v=92"
     data-api-key="a8bb877b-4c52-498d-9e5d-f75bdd210cd7"
     data-api-url="/api/track/"
-    data-lead-url="/api/lead/"
-    data-debug="true">
+    data-lead-url="/api/lead/">
 </script>
 
 </body>

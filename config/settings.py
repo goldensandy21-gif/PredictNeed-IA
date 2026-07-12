@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import importlib.util
+from urllib.parse import urlparse, unquote
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,6 +34,12 @@ ALLOWED_HOSTS = os.environ.get(
     "DJANGO_ALLOWED_HOSTS",
     "127.0.0.1,localhost"
 ).split(",")
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
 
 # Application definition
@@ -56,6 +64,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+if importlib.util.find_spec("whitenoise"):
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
 ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
@@ -76,15 +87,58 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
+def database_from_url(database_url):
+    parsed = urlparse(database_url)
+    query_options = {}
+
+    if parsed.query:
+        for item in parsed.query.split("&"):
+            if "=" in item:
+                key, value = item.split("=", 1)
+                query_options[key] = value
+
+    config = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": unquote(parsed.path.lstrip("/")),
+        "USER": unquote(parsed.username or ""),
+        "PASSWORD": unquote(parsed.password or ""),
+        "HOST": parsed.hostname or "",
+        "PORT": str(parsed.port or 5432),
+        "CONN_MAX_AGE": int(os.environ.get("POSTGRES_CONN_MAX_AGE", "60")),
+    }
+
+    if query_options.get("sslmode"):
+        config["OPTIONS"] = {"sslmode": query_options["sslmode"]}
+
+    return config
+
+
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": database_from_url(os.environ["DATABASE_URL"])
     }
-}
+elif os.environ.get("POSTGRES_DB"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB"),
+            "USER": os.environ.get("POSTGRES_USER"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "CONN_MAX_AGE": int(os.environ.get("POSTGRES_CONN_MAX_AGE", "60")),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -124,20 +178,131 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+if importlib.util.find_spec("whitenoise"):
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
 LOGIN_URL = '/connexion/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
+PREDICTNEED_SITE_URL = os.environ.get("PREDICTNEED_SITE_URL", "").rstrip("/")
+PREDICTNEED_SUBSCRIPTION_NAME = os.environ.get(
+    "PREDICTNEED_SUBSCRIPTION_NAME",
+    "PredictNeed IA Pro"
+)
+PREDICTNEED_SUBSCRIPTION_PRICE_CENTS = int(
+    os.environ.get("PREDICTNEED_SUBSCRIPTION_PRICE_CENTS", "9900")
+)
+PREDICTNEED_SUBSCRIPTION_CURRENCY = os.environ.get(
+    "PREDICTNEED_SUBSCRIPTION_CURRENCY",
+    "eur"
+)
+PREDICTNEED_SUBSCRIPTION_INTERVAL = os.environ.get(
+    "PREDICTNEED_SUBSCRIPTION_INTERVAL",
+    "month"
+)
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_PRICE_ID = os.environ.get("STRIPE_PRICE_ID", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_AUTOMATIC_TAX = os.environ.get("STRIPE_AUTOMATIC_TAX", "False") == "True"
+
+EMAIL_BACKEND = os.environ.get(
+    "DJANGO_EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
+EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "False") == "True"
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL",
+    "PredictNeed IA <no-reply@predictneed.local>"
+)
+PREDICTNEED_CONTACT_EMAIL = os.environ.get("PREDICTNEED_CONTACT_EMAIL", "")
+
+PREDICTNEED_EXTERNAL_CONNECTORS = {
+    "google_ads": {
+        "nom": "Google Ads",
+        "description": "Connexion OAuth pour lire les comptes et campagnes Google Ads autorisés.",
+        "client_id": os.environ.get("GOOGLE_ADS_CLIENT_ID", ""),
+        "client_secret": os.environ.get("GOOGLE_ADS_CLIENT_SECRET", ""),
+        "developer_token": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN", ""),
+        "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", ""),
+        "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "scopes": ["https://www.googleapis.com/auth/adwords"],
+        "extra_auth_params": {
+            "access_type": "offline",
+            "prompt": "consent",
+        },
+    },
+    "meta_ads": {
+        "nom": "Meta Ads",
+        "description": "Connexion OAuth pour rapprocher Facebook Ads et Instagram Ads des leads.",
+        "client_id": os.environ.get("META_ADS_CLIENT_ID", ""),
+        "client_secret": os.environ.get("META_ADS_CLIENT_SECRET", ""),
+        "auth_url": os.environ.get(
+            "META_ADS_AUTH_URL",
+            "https://www.facebook.com/v20.0/dialog/oauth",
+        ),
+        "token_url": os.environ.get(
+            "META_ADS_TOKEN_URL",
+            "https://graph.facebook.com/v20.0/oauth/access_token",
+        ),
+        "scopes": ["ads_read", "business_management"],
+    },
+    "linkedin_ads": {
+        "nom": "LinkedIn Ads",
+        "description": "Connexion OAuth pour lire les campagnes LinkedIn autorisées.",
+        "client_id": os.environ.get("LINKEDIN_ADS_CLIENT_ID", ""),
+        "client_secret": os.environ.get("LINKEDIN_ADS_CLIENT_SECRET", ""),
+        "auth_url": "https://www.linkedin.com/oauth/v2/authorization",
+        "token_url": "https://www.linkedin.com/oauth/v2/accessToken",
+        "scopes": ["r_ads", "r_ads_reporting"],
+    },
+    "tiktok_ads": {
+        "nom": "TikTok Ads",
+        "description": "Connexion OAuth configurable pour les comptes TikTok Ads.",
+        "client_id": os.environ.get("TIKTOK_ADS_CLIENT_ID", ""),
+        "client_secret": os.environ.get("TIKTOK_ADS_CLIENT_SECRET", ""),
+        "auth_url": os.environ.get("TIKTOK_ADS_AUTH_URL", ""),
+        "token_url": os.environ.get("TIKTOK_ADS_TOKEN_URL", ""),
+        "scopes": [
+            scope
+            for scope in os.environ.get("TIKTOK_ADS_SCOPES", "advertiser.read").split(",")
+            if scope
+        ],
+    },
+}
+
 if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    CSRF_COOKIE_SAMESITE = "Lax"
 
     SECURE_HSTS_SECONDS = int(
-        os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "0")
+        os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "31536000")
     )
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-    SECURE_HSTS_PRELOAD = False
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get(
+        "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS",
+        "False"
+    ) == "True"
+    SECURE_HSTS_PRELOAD = os.environ.get(
+        "DJANGO_SECURE_HSTS_PRELOAD",
+        "False"
+    ) == "True"
 else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False

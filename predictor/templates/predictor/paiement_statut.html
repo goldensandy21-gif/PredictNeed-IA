@@ -1,0 +1,31 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ titre }} - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body class="pricing-body">
+
+{% include "predictor/includes/navbar.html" %}
+
+<main class="payment-status-page">
+    <section class="payment-status-card {{ etat }}">
+        <p class="section-kicker">Paiement</p>
+        <h1>{{ titre }}</h1>
+        <p>{{ message }}</p>
+
+        <div class="payment-status-actions">
+            <a href="{% url 'inscription' %}" class="hero-button">Relancer l'inscription</a>
+            <a href="{% url 'prix' %}" class="secondary-button">Voir le prix</a>
+        </div>
+    </section>
+</main>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

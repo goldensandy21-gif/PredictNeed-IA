@@ -1,0 +1,147 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connecteurs - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body>
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<section class="dashboard module-page">
+    <div class="dashboard-actions">
+        <a href="{% url 'dashboard' %}" class="btn-secondary">Retour au dashboard</a>
+    </div>
+
+    <h1>Connecteurs externes</h1>
+    <p class="dashboard-intro">État des connexions disponibles et scripts d’intégration par site actif.</p>
+
+    {% if messages %}
+        <div class="module-messages">
+            {% for message in messages %}
+                <p class="module-message {{ message.tags }}">{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="get" class="module-filters">
+        <div class="filter-group">
+            <label for="site">Site</label>
+            <select name="site" id="site">
+                <option value="all">Tous les sites actifs</option>
+                {% for site in sites %}
+                    <option value="{{ site.id }}" {% if selected_site_id == site.id|stringformat:"s" %}selected{% endif %}>{{ site.nom_site }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="module-filter-button">Filtrer</button>
+    </form>
+
+    <div class="module-grid">
+        {% for connecteur in connecteurs %}
+            <div class="module-panel">
+                <div class="module-panel-header">
+                    <h3>{{ connecteur.nom }}</h3>
+                    <span class="module-status">{{ connecteur.statut }}</span>
+                </div>
+                <p>{{ connecteur.description }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Comptes publicitaires à connecter</h2>
+        <p class="section-description">
+            Ces connexions utilisent OAuth : le client autorise PredictNeed IA depuis la
+            plateforme officielle, puis PredictNeed IA stocke le token reçu pour rapprocher
+            les campagnes externes avec les UTM, leads et intentions détectées.
+        </p>
+
+        <div class="connector-provider-grid">
+            {% for fournisseur in fournisseurs_connecteurs %}
+                <div class="connector-provider-card">
+                    <div>
+                        <h3>{{ fournisseur.nom }}</h3>
+                        <p>{{ fournisseur.description }}</p>
+                    </div>
+
+                    <div class="connector-provider-meta">
+                        {% if fournisseur.configure %}
+                            <span class="module-status active">Configuré</span>
+                            <a
+                                class="module-filter-button connector-button"
+                                href="{% url 'demarrer_oauth_connecteur' fournisseur.plateforme %}"
+                            >
+                                Connecter
+                            </a>
+                        {% else %}
+                            <span class="module-status muted">Clés à configurer</span>
+                        {% endif %}
+                    </div>
+
+                    {% if fournisseur.scopes %}
+                        <p class="connector-scopes">Autorisations : {{ fournisseur.scopes }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Comptes externes reliés</h2>
+
+        <div class="connector-account-grid">
+            {% for compte in comptes_externes %}
+                <div class="connector-account-card">
+                    <div>
+                        <h3>{{ compte.nom_compte }}</h3>
+                        <p>{{ compte.get_plateforme_display }}{% if compte.site %} · {{ compte.site.nom_site }}{% endif %}</p>
+                        <p>{{ compte.dernier_message|default:"Compte prêt pour synchronisation." }}</p>
+                    </div>
+
+                    <div class="connector-account-actions">
+                        <span class="module-status">{{ compte.get_statut_display }}</span>
+
+                        <form method="post" action="{% url 'synchroniser_compte_connecteur' compte.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="module-filter-button">Synchroniser</button>
+                        </form>
+
+                        <form method="post" action="{% url 'deconnecter_compte_connecteur' compte.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-secondary">Déconnecter</button>
+                        </form>
+                    </div>
+                </div>
+            {% empty %}
+                <p>Aucun compte externe relié pour le moment.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Scripts d’installation</h2>
+        <p class="section-description">
+            Les scripts générés sont configurés en consentement préalable : aucune page vue,
+            aucun clic et aucun temps passé ne sont envoyés avant l'accord du visiteur.
+        </p>
+        {% for item in scripts_installation %}
+            <div class="install-card">
+                <h3>{{ item.site.nom_site }}</h3>
+                <p><strong>Domaine :</strong> {{ item.site.domaine }}</p>
+                <textarea readonly onclick="this.select()">{{ item.script }}</textarea>
+            </div>
+        {% empty %}
+            <p>Aucun site actif disponible pour ce module.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

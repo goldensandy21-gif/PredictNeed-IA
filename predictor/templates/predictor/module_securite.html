@@ -1,0 +1,83 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Sécurité entreprise - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body>
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<section class="dashboard module-page">
+    <div class="dashboard-actions">
+        <a href="{% url 'dashboard' %}" class="btn-secondary">Retour au dashboard</a>
+    </div>
+
+    <h1>Sécurité entreprise</h1>
+    <p class="dashboard-intro">Suivi des accès, clés API, consentements et modules activés.</p>
+
+    <form method="get" class="module-filters">
+        <div class="filter-group">
+            <label for="site">Site</label>
+            <select name="site" id="site">
+                <option value="all">Tous les sites actifs</option>
+                {% for site in sites %}
+                    <option value="{{ site.id }}" {% if selected_site_id == site.id|stringformat:"s" %}selected{% endif %}>{{ site.nom_site }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="module-filter-button">Filtrer</button>
+    </form>
+
+    <div class="stats-grid">
+        <div class="stat-card"><h2>{{ sessions_totales }}</h2><p>Sessions suivies</p></div>
+        <div class="stat-card"><h2>{{ leads_avec_consentement }}</h2><p>Leads avec consentement</p></div>
+        <div class="stat-card"><h2>{{ leads_sans_consentement }}</h2><p>Leads sans consentement</p></div>
+        <div class="stat-card"><h2>{% if utilisateur_admin %}Oui{% else %}Non{% endif %}</h2><p>Accès superuser</p></div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Sites et clés API</h2>
+        <div class="module-table-wrapper">
+            <table class="module-table">
+                <thead>
+                    <tr>
+                        <th>Site</th>
+                        <th>Domaine</th>
+                        <th>Clé API</th>
+                        <th>Actif</th>
+                        <th>Modules actifs</th>
+                        <th>Sessions</th>
+                        <th>Leads</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in sites_securite %}
+                        <tr>
+                            <td>{{ item.site.nom_site }}</td>
+                            <td>{{ item.site.domaine }}</td>
+                            <td>{{ item.cle_api_courte }}</td>
+                            <td>{% if item.site.actif %}Oui{% else %}Non{% endif %}</td>
+                            <td>{{ item.modules_actifs }}</td>
+                            <td>{{ item.sessions }}</td>
+                            <td>{{ item.leads }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7">Aucun site actif pour ce module.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

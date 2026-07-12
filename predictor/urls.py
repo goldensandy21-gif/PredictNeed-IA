@@ -3,15 +3,77 @@ from . import views
 
 urlpatterns = [
     path('', views.accueil, name='accueil'),
+    path('robots.txt', views.robots_txt, name='robots_txt'),
+    path('sitemap.xml', views.sitemap_xml, name='sitemap_xml'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard/nettoyer-evenements/', views.nettoyer_evenements, name='nettoyer_evenements'),
+
+    # Pages professionnelles des modules
+    path("dashboard/prediction-avancee/", views.module_prediction_avancee, name="module_prediction_avancee"),
+    path("dashboard/segmentation/", views.module_segmentation, name="module_segmentation"),
+    path("dashboard/ecommerce/", views.module_ecommerce, name="module_ecommerce"),
+    path("dashboard/visualisations/", views.module_visualisations, name="module_visualisations"),
+    path("dashboard/historique/", views.module_historique, name="module_historique"),
+    path("dashboard/multicanal/", views.module_multicanal, name="module_multicanal"),
+    path("dashboard/connecteurs/", views.module_connecteurs, name="module_connecteurs"),
+    path("dashboard/publicite/", views.module_publicite, name="module_publicite"),
+    path("dashboard/securite/", views.module_securite, name="module_securite"),
     path(
-    'leads/<int:lead_id>/statut/<str:nouveau_statut>/',
-    views.changer_statut_lead,
-    name='changer_statut_lead'
-),
+        "connecteurs/<str:plateforme>/connecter/",
+        views.demarrer_oauth_connecteur,
+        name="demarrer_oauth_connecteur"
+    ),
+    path(
+        "connecteurs/<str:plateforme>/callback/",
+        views.connecteur_oauth_callback,
+        name="connecteur_oauth_callback"
+    ),
+    path(
+        "connecteurs/<int:compte_id>/synchroniser/",
+        views.synchroniser_compte_connecteur,
+        name="synchroniser_compte_connecteur"
+    ),
+    path(
+        "connecteurs/<int:compte_id>/deconnecter/",
+        views.deconnecter_compte_connecteur,
+        name="deconnecter_compte_connecteur"
+    ),
+
+    path(
+        'leads/<int:lead_id>/statut/<str:nouveau_statut>/',
+        views.changer_statut_lead,
+        name='changer_statut_lead'
+    ),
+
+    path(
+        'leads/<int:lead_id>/creer-opportunite/',
+        views.creer_opportunite_depuis_lead,
+        name='creer_opportunite_depuis_lead'
+    ),
+
+    path(
+        'opportunites/<int:opportunite_id>/modifier/',
+        views.modifier_opportunite,
+        name='modifier_opportunite'
+    ),
+    path(
+        'automatisations-email/<int:automatisation_id>/modifier/',
+        views.modifier_automatisation_email,
+        name='modifier_automatisation_email'
+    ),
+
     path('sites/ajouter/', views.ajouter_site, name='ajouter_site'),
     path('simulateur/', views.simulateur, name='simulateur'),
+    path('prix/', views.prix, name='prix'),
+    path('fonctionnalites/', views.fonctionnalites, name='fonctionnalites'),
+    path('fonctionnalites/<slug:slug>/', views.fonctionnalite_detail, name='fonctionnalite_detail'),
+    path('mentions-legales/', views.mentions_legales, name='mentions_legales'),
+    path('politique-de-confidentialite/', views.politique_confidentialite, name='politique_confidentialite'),
+    path('conditions-generales-utilisation/', views.conditions_generales_utilisation, name='conditions_generales_utilisation'),
+    path('politique-cookies/', views.politique_cookies, name='politique_cookies'),
+    path('paiement/succes/', views.paiement_succes, name='paiement_succes'),
+    path('paiement/annule/', views.paiement_annule, name='paiement_annule'),
+    path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
     path('connexion/', views.connexion, name='connexion'),
     path('inscription/', views.inscription, name='inscription'),
     path('deconnexion/', views.deconnexion, name='deconnexion'),

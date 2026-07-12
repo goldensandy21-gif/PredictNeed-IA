@@ -1,0 +1,111 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Prix - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body class="pricing-body">
+
+{% include "predictor/includes/navbar.html" %}
+
+<main class="pricing-page">
+    <section class="pricing-hero">
+        <div class="pricing-copy">
+            <p class="section-kicker">Abonnement SaaS</p>
+            <h1>PredictNeed IA Pro</h1>
+            <p>
+                Un abonnement mensuel pour suivre les comportements visiteurs, détecter
+                les intentions, capturer les leads et piloter vos opportunités depuis un
+                dashboard professionnel.
+            </p>
+            <p>
+                L'offre est pensée pour les indépendants, TPE, sites vitrines et activités
+                en ligne qui veulent comprendre ce qui se passe avant une demande de contact
+                ou une décision d'achat.
+            </p>
+        </div>
+
+        <div class="pricing-card">
+            <span class="pricing-plan">Plan professionnel</span>
+            <div class="pricing-amount">
+                <strong>{{ prix_abonnement }}</strong>
+                <span>/ mois</span>
+            </div>
+            <p class="pricing-tax-note">
+                Un seul abonnement pour accéder au dashboard PredictNeed IA Pro,
+                connecter vos sites et exploiter les modules disponibles.
+                Taxes applicables calculées selon vos informations de facturation.
+            </p>
+
+            <ul class="pricing-list">
+                <li>Dashboard complet PredictNeed IA</li>
+                <li>Prédiction avancée des intentions</li>
+                <li>Segmentation intelligente</li>
+                <li>Visualisations, historique et suivi CRM</li>
+                <li>Script d'installation et clé API par site</li>
+                <li>Automatisations email pour confirmer les demandes reçues</li>
+                <li>Pages légales, consentement et outil d’analyse RGPD-ready</li>
+            </ul>
+
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="hero-button pricing-button">Accéder au dashboard</a>
+            {% else %}
+                <a href="{% url 'inscription' %}" class="hero-button pricing-button">S'abonner maintenant</a>
+            {% endif %}
+
+            <p class="pricing-secure">Paiement sécurisé par Stripe. Le compte est activé après validation du paiement.</p>
+        </div>
+    </section>
+
+    <section class="pricing-details">
+        <div>
+            <h2>Ce qui est inclus</h2>
+            <p>
+                PredictNeed IA centralise les données comportementales utiles pour mieux
+                comprendre les visiteurs et prioriser les actions commerciales.
+            </p>
+            <p>
+                Le prix couvre l'accès à l'outil, aux modules métiers, aux tableaux de bord
+                et aux fonctions de suivi des leads. Les intégrations externes dépendront
+                ensuite des services activés et des clés fournies.
+            </p>
+        </div>
+
+        <div class="pricing-feature-grid">
+            <article>
+                <h3>Analyse comportementale</h3>
+                <p>Pages vues, clics, temps passé, sources et campagnes sont transformés en signaux exploitables.</p>
+            </article>
+            <article>
+                <h3>Prédictions et scores</h3>
+                <p>Chaque session peut recevoir un profil, une intention et une recommandation commerciale.</p>
+            </article>
+            <article>
+                <h3>Leads et opportunités</h3>
+                <p>Les visiteurs intéressés peuvent laisser leurs coordonnées et être suivis dans le CRM intégré.</p>
+            </article>
+            <article>
+                <h3>Installation guidée</h3>
+                <p>Le dashboard fournit le script de suivi et les informations nécessaires pour connecter le site.</p>
+            </article>
+        </div>
+
+        <div class="pricing-note-panel">
+            <h3>Avant la mise en ligne</h3>
+            <p>
+                Le paiement, les emails automatiques, les pages légales et les réglages de
+                confidentialité doivent être configurés avec vos informations définitives
+                avant l'ouverture commerciale du service.
+            </p>
+        </div>
+    </section>
+</main>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

@@ -1,0 +1,177 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mentions légales - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body class="legal-body">
+
+{% include "predictor/includes/navbar.html" %}
+
+<main class="legal-document">
+    <header class="legal-hero">
+        <p class="footer-kicker">Informations légales</p>
+        <h1>Mentions légales</h1>
+        <p>
+            Les présentes mentions identifient l'éditeur du service PredictNeed IA,
+            son hébergement, son activité et les informations obligatoires à rendre
+            facilement accessibles sur un site professionnel.
+        </p>
+        <div class="legal-alert">
+            Les informations propres à l'entreprise d'Ariane sont indiquées
+            <strong>À compléter</strong> et devront être remplacées avant publication officielle.
+        </div>
+    </header>
+
+    <section class="legal-section">
+        <h2>Éditeur du site</h2>
+        <dl class="legal-definition-list">
+            <div>
+                <dt>Nom commercial du service</dt>
+                <dd>PredictNeed IA</dd>
+            </div>
+            <div>
+                <dt>Éditeur</dt>
+                <dd>À compléter : nom et prénom de l'entrepreneur individuel, ou dénomination sociale de la société.</dd>
+            </div>
+            <div>
+                <dt>Forme juridique</dt>
+                <dd>À compléter : entrepreneur individuel, micro-entreprise, SASU, SAS, SARL, association ou autre statut applicable.</dd>
+            </div>
+            <div>
+                <dt>Capital social</dt>
+                <dd>À compléter si l'éditeur est une société.</dd>
+            </div>
+            <div>
+                <dt>Siège social ou adresse professionnelle</dt>
+                <dd>À compléter.</dd>
+            </div>
+            <div>
+                <dt>Numéro SIREN, SIRET, RCS ou RM</dt>
+                <dd>À compléter selon le statut de l'activité.</dd>
+            </div>
+            <div>
+                <dt>Numéro de TVA intracommunautaire</dt>
+                <dd>À compléter si applicable, ou indiquer la mention de franchise en base de TVA si applicable.</dd>
+            </div>
+            <div>
+                <dt>Adresse email de contact</dt>
+                <dd>À compléter.</dd>
+            </div>
+            <div>
+                <dt>Téléphone professionnel</dt>
+                <dd>À compléter.</dd>
+            </div>
+            <div>
+                <dt>Directeur ou directrice de la publication</dt>
+                <dd>À compléter : représentant légal ou personne responsable de la publication.</dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="legal-section">
+        <h2>Hébergement du site</h2>
+        <p>
+            L'identité de l'hébergeur doit être indiquée pour le site publié en production.
+            L'environnement local de développement, par exemple une adresse 127.0.0.1,
+            n'est pas l'hébergement public du service.
+        </p>
+        <dl class="legal-definition-list">
+            <div>
+                <dt>Hébergeur de production</dt>
+                <dd>À compléter : nom ou dénomination sociale de l'hébergeur.</dd>
+            </div>
+            <div>
+                <dt>Adresse de l'hébergeur</dt>
+                <dd>À compléter.</dd>
+            </div>
+            <div>
+                <dt>Téléphone ou contact de l'hébergeur</dt>
+                <dd>À compléter.</dd>
+            </div>
+            <div>
+                <dt>Site web de l'hébergeur</dt>
+                <dd>À compléter.</dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="legal-section">
+        <h2>Activité du service</h2>
+        <p>
+            PredictNeed IA est une application SaaS d'analyse comportementale destinée
+            aux professionnels. Le service permet d'enregistrer des sites clients,
+            d'installer un script de suivi, d'analyser des événements visiteurs, de
+            générer des prédictions d'intention, de capturer des leads et de suivre des
+            opportunités commerciales dans un tableau de bord.
+        </p>
+        <p>
+            Le service s'adresse principalement aux entreprises, indépendants,
+            e-commerçants, prestataires de services, consultants, centres de formation
+            et professionnels souhaitant mieux qualifier les intentions de leurs visiteurs.
+        </p>
+        <p>
+            Si une activité réglementée est exercée dans le cadre de l'exploitation du
+            service, l'autorité ayant délivré l'autorisation devra être ajoutée ici :
+            <strong>À compléter si applicable.</strong>
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Propriété intellectuelle</h2>
+        <p>
+            La structure du site, les textes, interfaces, tableaux de bord, éléments
+            graphiques, bases de données, modèles de scoring, scripts, noms commerciaux
+            et contenus associés à PredictNeed IA sont protégés par le droit de la
+            propriété intellectuelle.
+        </p>
+        <p>
+            Toute reproduction, représentation, extraction, adaptation, traduction,
+            diffusion ou réutilisation non autorisée, totale ou partielle, est interdite,
+            sauf autorisation écrite préalable de l'éditeur ou exception légale applicable.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Responsabilité</h2>
+        <p>
+            PredictNeed IA fournit des analyses et recommandations issues de données
+            comportementales. Ces résultats constituent une aide à la décision commerciale
+            et ne garantissent pas une vente, une conversion, un chiffre d'affaires ou un
+            résultat déterminé.
+        </p>
+        <p>
+            L'utilisateur professionnel reste responsable de l'utilisation des données,
+            de l'information fournie aux visiteurs de ses propres sites, du recueil du
+            consentement lorsque celui-ci est requis, ainsi que de la conformité de ses
+            propres actions commerciales.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Données personnelles et cookies</h2>
+        <p>
+            Le traitement des données personnelles est détaillé dans la
+            <a href="{% url 'politique_confidentialite' %}">politique de confidentialité RGPD</a>.
+            L'utilisation des cookies, sessions et stockages locaux est détaillée dans la
+            <a href="{% url 'politique_cookies' %}">politique de cookies</a>.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Contact et signalement</h2>
+        <p>
+            Pour toute question, réclamation, demande relative au site ou signalement
+            d'un contenu illicite : <strong>À compléter avec l'adresse email de contact.</strong>
+        </p>
+    </section>
+</main>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

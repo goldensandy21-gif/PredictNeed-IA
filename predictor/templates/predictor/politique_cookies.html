@@ -1,0 +1,189 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Politique de cookies - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body class="legal-body">
+
+{% include "predictor/includes/navbar.html" %}
+
+<main class="legal-document">
+    <header class="legal-hero">
+        <p class="footer-kicker">Cookies et traceurs</p>
+        <h1>Politique de cookies</h1>
+        <p>
+            Cette politique explique les cookies, sessions et stockages locaux utilisés
+            par PredictNeed IA, leur rôle, leur durée et les choix offerts aux utilisateurs.
+        </p>
+        <div class="legal-alert">
+            Le bandeau de consentement et la liste définitive des prestataires devront être
+            <strong>À compléter</strong> selon la configuration de production.
+        </div>
+    </header>
+
+    <section class="legal-section">
+        <h2>Qu'est-ce qu'un cookie ou un traceur ?</h2>
+        <p>
+            Un cookie ou traceur est une information enregistrée ou lue sur le terminal
+            d'un utilisateur lors de sa navigation. Il peut servir au fonctionnement du site,
+            à la sécurité, à la mesure d'audience, à la personnalisation ou à l'analyse du
+            comportement de navigation.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Traceurs utilisés par PredictNeed IA</h2>
+        <div class="legal-table-wrap">
+            <table class="legal-table">
+                <thead>
+                    <tr>
+                        <th>Nom ou mécanisme</th>
+                        <th>Finalité</th>
+                        <th>Type</th>
+                        <th>Consentement</th>
+                        <th>Durée</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>sessionid</td>
+                        <td>Maintien de la session Django, connexion au compte, navigation authentifiée.</td>
+                        <td>Cookie technique</td>
+                        <td>Non requis lorsque strictement nécessaire au service.</td>
+                        <td>Durée de session ou durée configurée par Django.</td>
+                    </tr>
+                    <tr>
+                        <td>csrftoken</td>
+                        <td>Protection des formulaires contre les attaques CSRF.</td>
+                        <td>Cookie de sécurité</td>
+                        <td>Non requis lorsque strictement nécessaire à la sécurité.</td>
+                        <td>Durée configurée par Django.</td>
+                    </tr>
+                    <tr>
+                        <td>predictneed_consent_v1</td>
+                        <td>Mémorise le choix du visiteur pour ne pas le solliciter à chaque page et pour permettre la preuve du choix exprimé.</td>
+                        <td>Stockage local strictement lié au consentement</td>
+                        <td>Exempté lorsqu'il sert uniquement à conserver le choix de consentement.</td>
+                        <td>6 mois, puis nouvelle demande.</td>
+                    </tr>
+                    <tr>
+                        <td>predictneed_session_id</td>
+                        <td>Identifiant local de session visiteur utilisé par le script PredictNeed IA pour relier les pages vues, clics, temps passé et prédictions.</td>
+                        <td>Stockage local du navigateur</td>
+                        <td>Requis avant création et lecture de l'identifiant.</td>
+                        <td>Liée au choix de consentement, 6 mois maximum dans l’outil actuel ou suppression en cas de refus/retrait.</td>
+                    </tr>
+                    <tr>
+                        <td>predictneed_popup_shown</td>
+                        <td>Évite d'afficher plusieurs fois la popup de proposition personnalisée pendant la même navigation.</td>
+                        <td>Stockage de session du navigateur</td>
+                        <td>Selon configuration et finalité de la popup.</td>
+                        <td>Durée de la session navigateur.</td>
+                    </tr>
+                    <tr>
+                        <td>predictneed_lead_sent</td>
+                        <td>Évite de redemander les coordonnées après un formulaire lead déjà envoyé.</td>
+                        <td>Stockage local du navigateur</td>
+                        <td>Selon configuration et finalité de prospection.</td>
+                        <td>Liée au choix de consentement, 6 mois maximum dans l’outil actuel ou suppression en cas de refus/retrait.</td>
+                    </tr>
+                    <tr>
+                        <td>Événements envoyés à /api/track/</td>
+                        <td>Pages vues, clics, temps passé, source de visite, appareil, navigateur, système d'exploitation et paramètres UTM.</td>
+                        <td>Traceur d'analyse comportementale</td>
+                        <td>Consentement requis. L'API refuse les événements qui ne transmettent pas le marqueur de consentement tracking.</td>
+                        <td>Voir politique de confidentialité.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="legal-section">
+        <h2>Cookies nécessaires</h2>
+        <p>
+            Les cookies nécessaires permettent l'authentification, la sécurité, la gestion
+            des formulaires et le fonctionnement de l'espace professionnel. Ils ne peuvent
+            pas être désactivés depuis le site sans dégrader le service demandé.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Mesure d'audience, prédiction et personnalisation</h2>
+        <p>
+            Le script PredictNeed IA peut collecter des informations de navigation afin de
+            produire des statistiques, profils d'intention, scores et recommandations.
+            Ces traitements peuvent nécessiter le consentement préalable des visiteurs
+            lorsqu'ils sont utilisés à des fins d'analyse comportementale, de prospection,
+            de personnalisation ou de ciblage.
+        </p>
+        <p>
+            Les clients professionnels qui installent le script sur leur propre site doivent
+            informer leurs visiteurs et déclencher le script conformément aux choix exprimés
+            par ces visiteurs.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Cookies tiers</h2>
+        <p>
+            L’outil PredictNeed IA installé sur les pages du site ne déclare pas, à ce
+            stade, de cookies tiers de publicité ou de mesure d'audience externe.
+        </p>
+        <p>
+            Le paiement de l'abonnement est redirigé vers Stripe Checkout. Stripe peut
+            utiliser ses propres cookies, stockages ou mesures de sécurité sur son
+            environnement de paiement afin de traiter la transaction, prévenir la fraude
+            et assurer le fonctionnement du paiement. Ces traitements relèvent des
+            informations fournies par Stripe sur sa page de paiement.
+        </p>
+        <p>
+            Cette liste devra être <strong>À compléter</strong> si des services comme un
+            outil email, une régie publicitaire, un outil de mesure d'audience ou un CRM
+            externe sont ajoutés sur le site publié.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Gestion du consentement</h2>
+        <p>
+            Lorsque le consentement est requis, l'utilisateur doit pouvoir accepter,
+            refuser et modifier son choix par finalité. Le refus doit être aussi simple
+            que l'acceptation et la poursuite de navigation ne doit pas être considérée
+            comme un consentement.
+        </p>
+        <p>
+            L’outil PredictNeed IA intègre un bandeau de consentement avec les actions
+            accepter, refuser et personnaliser. Un bouton "Gestion cookies" reste disponible
+            après le choix pour rouvrir les préférences.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Paramétrage du navigateur</h2>
+        <p>
+            Les utilisateurs peuvent aussi configurer leur navigateur pour bloquer ou
+            supprimer les cookies et stockages locaux. Cette action peut toutefois empêcher
+            certaines fonctionnalités techniques, comme la connexion ou la conservation
+            d'une session.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Contact</h2>
+        <p>
+            Pour toute question relative aux cookies et traceurs :
+            <strong>À compléter avec l'adresse de contact RGPD.</strong>
+        </p>
+    </section>
+</main>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

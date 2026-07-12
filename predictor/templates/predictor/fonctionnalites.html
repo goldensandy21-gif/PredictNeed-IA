@@ -1,0 +1,99 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Fonctionnalités - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body class="home-page">
+
+{% include "predictor/includes/navbar.html" %}
+
+<main class="pro-home feature-public-page">
+    <section class="pro-hero feature-hero">
+        <div class="pro-hero-content">
+            <span class="pro-badge">Ce que contient le dashboard</span>
+            <h1>Tout ce que PredictNeed IA met à disposition après inscription</h1>
+            <p>
+                Le dashboard réunit les prédictions, les segments, les visualisations,
+                les leads, les opportunités CRM, les scripts d'installation et les modules
+                avancés pour aider un professionnel à comprendre ses visiteurs et agir plus vite.
+            </p>
+
+            <div class="home-actions">
+                <a href="{% url 'inscription' %}" class="hero-button">Créer un compte</a>
+                <a href="{% url 'simulateur' %}" class="secondary-button">Tester le simulateur</a>
+            </div>
+        </div>
+
+        <div class="pro-hero-panel feature-summary-panel">
+            <div class="panel-header">
+                <span></span>
+                <span></span>
+                <span></span>
+                <strong>Dashboard</strong>
+            </div>
+            <div class="signal-card active">
+                <small>Données suivies</small>
+                <strong>Sessions, leads, intentions</strong>
+                <p>Les signaux importants sont regroupés dans un espace clair.</p>
+            </div>
+            <div class="signal-card">
+                <small>Action commerciale</small>
+                <strong>Prioriser les prospects</strong>
+                <p>Le dashboard indique les contacts et opportunités à traiter.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section">
+        <span class="section-kicker">Modules</span>
+        <h2>Les fonctionnalités accessibles dans PredictNeed IA</h2>
+
+        <div class="public-module-grid">
+            {% for module in modules_publics %}
+                <a href="{% url 'fonctionnalite_detail' module.slug %}" class="public-module-card">
+                    <span>{{ module.badge }}</span>
+                    <h3>{{ module.nom }}</h3>
+                    <p>{{ module.accroche }}</p>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="pro-section feature-flow-section">
+        <span class="section-kicker">Parcours</span>
+        <h2>De l'installation au suivi commercial</h2>
+
+        <div class="feature-steps">
+            <div>
+                <strong>01</strong>
+                <h3>Créer son espace</h3>
+                <p>Le professionnel ajoute son entreprise, son site et récupère sa clé API.</p>
+            </div>
+            <div>
+                <strong>02</strong>
+                <h3>Installer le script</h3>
+                <p>Le script PredictNeed IA remonte les signaux après le choix de confidentialité du visiteur.</p>
+            </div>
+            <div>
+                <strong>03</strong>
+                <h3>Analyser les intentions</h3>
+                <p>Les sessions sont transformées en profils, scores et recommandations.</p>
+            </div>
+            <div>
+                <strong>04</strong>
+                <h3>Transformer en opportunités</h3>
+                <p>Les leads et opportunités CRM aident à suivre les prospects les plus importants.</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

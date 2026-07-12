@@ -1,0 +1,41 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ titre_module }} - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body>
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<section class="dashboard">
+    <div class="dashboard-actions">
+        <a href="{% url 'dashboard' %}" class="btn-secondary">
+            Retour au dashboard
+        </a>
+    </div>
+
+    <h1>{{ titre_module }}</h1>
+
+    <p class="dashboard-intro">
+        {{ description_module }}
+    </p>
+
+    <div class="dashboard-section">
+        <h2>Module en préparation</h2>
+
+        <p>
+            Cette page est maintenant créée. La prochaine étape sera d’ajouter les vraies données,
+            les calculs, les tableaux et les actions.
+        </p>
+    </div>
+</section>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

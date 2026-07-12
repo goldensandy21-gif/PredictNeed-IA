@@ -1,0 +1,228 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Conditions générales d'utilisation - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body class="legal-body">
+
+{% include "predictor/includes/navbar.html" %}
+
+<main class="legal-document">
+    <header class="legal-hero">
+        <p class="footer-kicker">Cadre d'utilisation</p>
+        <h1>Conditions générales d'utilisation</h1>
+        <p>
+            Les présentes conditions encadrent l'accès et l'utilisation de PredictNeed IA,
+            application SaaS d'analyse comportementale, prédiction d'intention, capture de
+            leads et suivi CRM.
+        </p>
+        <div class="legal-alert">
+            Le service est proposé avec un abonnement mensuel PredictNeed IA Pro à
+            <strong>{{ prix_abonnement }} par mois</strong>. Les informations propres à
+            l'éditeur, à l'hébergeur et au contact légal restent à compléter avant publication.
+        </div>
+    </header>
+
+    <section class="legal-section">
+        <h2>Éditeur du service</h2>
+        <p>
+            Le service PredictNeed IA est édité par : <strong>À compléter avec l'identité
+            complète de l'éditeur.</strong> Les informations d'identification figurent dans
+            les <a href="{% url 'mentions_legales' %}">mentions légales</a>.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Objet</h2>
+        <p>
+            PredictNeed IA permet aux professionnels de déclarer un ou plusieurs sites,
+            d'obtenir une clé API, d'installer un script de suivi, de collecter des
+            événements de navigation, de générer des prédictions de besoin probable, de
+            capturer des leads et de suivre des opportunités commerciales.
+        </p>
+        <p>
+            Les CGU définissent les règles d'accès au service, les obligations des
+            utilisateurs et les limites applicables aux analyses générées.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Accès au service</h2>
+        <p>
+            L'accès au tableau de bord nécessite la création d'un compte professionnel.
+            L'utilisateur s'engage à fournir des informations exactes, à maintenir ses
+            identifiants confidentiels et à signaler toute utilisation non autorisée.
+        </p>
+        <p>
+            L'éditeur peut suspendre l'accès en cas d'usage frauduleux, atteinte à la
+            sécurité, violation des CGU, tentative d'accès non autorisé ou demande légale.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Utilisateurs autorisés</h2>
+        <p>
+            Le service est destiné à un usage professionnel. L'utilisateur déclare disposer
+            des droits nécessaires pour connecter le ou les sites indiqués dans son espace
+            et pour utiliser les données issues de ces sites.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Installation du script de suivi</h2>
+        <p>
+            Le script fourni par PredictNeed IA doit être installé uniquement sur des sites
+            appartenant à l'utilisateur professionnel ou pour lesquels il dispose d'une
+            autorisation explicite.
+        </p>
+        <p>
+            L'utilisateur professionnel est responsable de l'information des visiteurs de
+            son site, de l'affichage des mentions nécessaires, du recueil du consentement
+            lorsque celui-ci est requis et de la possibilité offerte aux visiteurs de gérer
+            leurs choix.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Données, conformité et consentement</h2>
+        <p>
+            L'utilisateur s'engage à ne pas collecter, importer ou saisir dans PredictNeed IA
+            de données illicites, excessives, discriminatoires, sensibles ou non nécessaires
+            au regard de la finalité poursuivie.
+        </p>
+        <p>
+            Lorsque l'utilisateur collecte des leads, il doit s'assurer que les personnes
+            disposent d'une information claire et que leur consentement ou une autre base
+            légale valable justifie la prise de contact.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Résultats, prédictions et limites</h2>
+        <p>
+            Les scores, profils, intentions et recommandations fournis par PredictNeed IA
+            reposent sur les données disponibles et sur des règles d'analyse. Ils peuvent
+            comporter des approximations et doivent être interprétés par un professionnel.
+        </p>
+        <p>
+            PredictNeed IA ne garantit pas la conversion d'un visiteur, la conclusion d'une
+            vente, un niveau de chiffre d'affaires ou l'exactitude absolue d'une intention.
+            Le service constitue une aide à la priorisation et à la décision commerciale.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Comportements interdits</h2>
+        <ul class="legal-list">
+            <li>Utiliser le service pour surveiller des personnes sans information ou base légale valable.</li>
+            <li>Installer le script sur un site sans autorisation.</li>
+            <li>Tenter d'accéder aux données d'un autre client ou de contourner les protections techniques.</li>
+            <li>Envoyer des données malveillantes, frauduleuses ou contraires à la loi.</li>
+            <li>Réutiliser le service pour créer un outil concurrent par extraction, copie ou rétro-ingénierie non autorisée.</li>
+        </ul>
+    </section>
+
+    <section class="legal-section">
+        <h2>Disponibilité et maintenance</h2>
+        <p>
+            L'éditeur s'efforce d'assurer la disponibilité du service, mais ne garantit pas
+            une disponibilité permanente. Des interruptions peuvent intervenir pour
+            maintenance, sécurité, correction, évolution technique, incident d'hébergement
+            ou cas de force majeure.
+        </p>
+        <p>
+            Les engagements de niveau de service, s'ils existent, devront être
+            <strong>À compléter</strong> dans une offre commerciale ou un contrat dédié.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Propriété intellectuelle</h2>
+        <p>
+            PredictNeed IA, son interface, ses textes, scripts, bases de données, analyses,
+            modèles de scoring, graphismes et éléments techniques restent la propriété de
+            l'éditeur ou de leurs titulaires respectifs.
+        </p>
+        <p>
+            L'utilisateur conserve les droits sur les données qu'il renseigne dans son
+            espace, sous réserve des droits nécessaires accordés à PredictNeed IA pour
+            fournir le service.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Tarifs, abonnement et paiement</h2>
+        <p>
+            L'accès au service PredictNeed IA Pro est facturé
+            <strong>{{ prix_abonnement }} par mois</strong>, par abonnement mensuel.
+            Le paiement est demandé lors de l'inscription et le compte professionnel
+            n'est activé qu'après validation du paiement.
+        </p>
+        <p>
+            Le paiement est traité par Stripe via une page de paiement sécurisée.
+            Les taxes applicables peuvent être calculées selon les informations de
+            facturation transmises au moment du paiement. Les factures et justificatifs
+            de paiement sont gérés selon les informations disponibles dans le compte de
+            paiement et les paramètres de facturation de production.
+        </p>
+        <p>
+            En cas d'échec, de refus ou d'annulation du paiement, l'accès au dashboard
+            n'est pas activé. En cas d'impayé ou d'abonnement annulé, l'accès au service
+            peut être suspendu ou désactivé.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Résiliation et suppression du compte</h2>
+        <p>
+            L'abonnement est mensuel. Les modalités pratiques de résiliation, d'export
+            des données, de fermeture du compte et de suppression ou archivage des données
+            devront être précisées dans l'espace client ou par contact avec l'éditeur :
+            <strong>À compléter avec l'adresse de contact.</strong>
+        </p>
+        <p>
+            La résiliation n'empêche pas la conservation temporaire de certaines données
+            lorsque celle-ci est nécessaire pour les obligations légales, la preuve
+            contractuelle, la sécurité ou la gestion comptable.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Données personnelles</h2>
+        <p>
+            Les traitements de données personnelles sont décrits dans la
+            <a href="{% url 'politique_confidentialite' %}">politique de confidentialité RGPD</a>.
+            Les cookies et traceurs sont décrits dans la
+            <a href="{% url 'politique_cookies' %}">politique de cookies</a>.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Droit applicable et règlement des litiges</h2>
+        <p>
+            Le droit applicable, le tribunal compétent, les modalités de réclamation et les
+            éventuels mécanismes amiables de résolution des litiges sont
+            <strong>À compléter</strong> selon la structure juridique de l'éditeur, sa clientèle
+            et le lieu de commercialisation.
+        </p>
+    </section>
+
+    <section class="legal-section">
+        <h2>Modification des CGU</h2>
+        <p>
+            Les CGU peuvent être mises à jour pour tenir compte de l'évolution du service,
+            de la réglementation ou des offres. La date de dernière mise à jour devra être
+            indiquée avant publication : <strong>À compléter.</strong>
+        </p>
+    </section>
+</main>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

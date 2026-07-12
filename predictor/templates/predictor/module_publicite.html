@@ -1,0 +1,134 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Publicité - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body>
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<section class="dashboard module-page">
+    <div class="dashboard-actions">
+        <a href="{% url 'dashboard' %}" class="btn-secondary">Retour au dashboard</a>
+    </div>
+
+    <h1>Intégrations publicitaires</h1>
+    <p class="dashboard-intro">Analyse des sessions identifiées comme publicitaires à partir des paramètres UTM.</p>
+
+    <form method="get" class="module-filters">
+        <div class="filter-group">
+            <label for="site">Site</label>
+            <select name="site" id="site">
+                <option value="all">Tous les sites actifs</option>
+                {% for site in sites %}
+                    <option value="{{ site.id }}" {% if selected_site_id == site.id|stringformat:"s" %}selected{% endif %}>{{ site.nom_site }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group"><label for="date_debut">Début</label><input type="date" name="date_debut" id="date_debut" value="{{ date_debut }}"></div>
+        <div class="filter-group"><label for="date_fin">Fin</label><input type="date" name="date_fin" id="date_fin" value="{{ date_fin }}"></div>
+        <button type="submit" class="module-filter-button">Filtrer</button>
+    </form>
+
+    <div class="stats-grid">
+        <div class="stat-card"><h2>{{ sessions_publicitaires }}</h2><p>Sessions publicitaires</p></div>
+        <div class="stat-card"><h2>{{ leads_publicitaires }}</h2><p>Leads publicitaires</p></div>
+        <div class="stat-card"><h2>{{ intentions_fortes_publicitaires }}</h2><p>Intentions fortes</p></div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Comptes publicitaires reliés</h2>
+        <p class="section-description">
+            Les comptes reliés servent à rapprocher les campagnes externes avec les
+            sessions, leads et intentions détectées par le script PredictNeed IA.
+        </p>
+
+        <div class="connector-account-grid compact">
+            {% for compte in comptes_externes %}
+                <div class="connector-account-card">
+                    <h3>{{ compte.get_plateforme_display }}</h3>
+                    <p>{{ compte.nom_compte }}</p>
+                    <p>{{ compte.dernier_message|default:"Compte prêt pour synchronisation." }}</p>
+                </div>
+            {% empty %}
+                <p>Aucun compte publicitaire relié pour le moment.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Campagnes détectées</h2>
+        <div class="module-table-wrapper">
+            <table class="module-table">
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th>Medium</th>
+                        <th>Campagne</th>
+                        <th>Sessions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for campagne in campagnes %}
+                        <tr>
+                            <td>{{ campagne.utm_source|default:"Non renseignée" }}</td>
+                            <td>{{ campagne.utm_medium|default:"Non renseigné" }}</td>
+                            <td>{{ campagne.utm_campaign|default:"Sans campagne" }}</td>
+                            <td>{{ campagne.total }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4">Aucune campagne publicitaire détectée.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Campagnes externes rapprochées</h2>
+        <div class="module-table-wrapper">
+            <table class="module-table">
+                <thead>
+                    <tr>
+                        <th>Plateforme</th>
+                        <th>Campagne</th>
+                        <th>UTM source</th>
+                        <th>UTM medium</th>
+                        <th>Sessions rapprochées</th>
+                        <th>Dernière synchro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for campagne in campagnes_externes %}
+                        <tr>
+                            <td>{{ campagne.get_plateforme_display }}</td>
+                            <td>{{ campagne.nom }}</td>
+                            <td>{{ campagne.utm_source|default:"-" }}</td>
+                            <td>{{ campagne.utm_medium|default:"-" }}</td>
+                            <td>{{ campagne.clics }}</td>
+                            <td>{{ campagne.derniere_synchro|date:"d/m/Y H:i"|default:"-" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">
+                                Aucune campagne externe rapprochée. Connectez un compte puis lancez une synchronisation.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

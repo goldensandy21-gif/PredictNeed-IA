@@ -5,30 +5,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Dashboard - PredictNeed IA</title>
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=2">
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
 </head>
-<body>
+<body class="dashboard-page">
 
-    <nav class="navbar">
-        <a href="{% url 'accueil' %}" class="navbar-logo">PredictNeed IA</a>
-
-        <div class="navbar-links">
-            <a href="{% url 'accueil' %}">Accueil</a>
-            <a href="{% url 'simulateur' %}">Simulateur</a>
-
-            {% if user.is_authenticated %}
-                <a href="{% url 'dashboard' %}">Dashboard</a>
-                <a href="{% url 'deconnexion' %}">Déconnexion</a>
-            {% else %}
-                <a href="{% url 'connexion' %}">Connexion</a>
-                <a href="{% url 'inscription' %}" class="nav-cta">Créer un compte</a>
-            {% endif %}
-
-            {% if user.is_superuser %}
-                <a href="/admin/" target="_blank">Admin</a>
-            {% endif %}
-        </div>
-    </nav>
+{% include "predictor/includes/dashboard_header.html" %}
 
     <section class="dashboard">
         <h1>Dashboard PredictNeed IA</h1>
@@ -105,6 +87,207 @@
             </div>
         </div>
 
+        {% if a_module_ecommerce or a_module_prediction_avancee or a_module_segmentation or a_module_visualisations or a_module_historique or a_module_multicanal or a_module_connecteurs or a_module_publicite or a_module_securite_entreprise %}
+        <div class="dashboard-section">
+            <h2>Modules intelligents activés</h2>
+
+            <div class="stats-grid">
+                {% if a_module_ecommerce %}
+                   <a href="{% url 'module_ecommerce' %}" class="stat-card module-card">
+                        <h2>🛒</h2>
+                        <p>Module e-commerce</p>
+                    </a>
+                {% endif %}
+
+                {% if a_module_prediction_avancee %}
+                    <a href="{% url 'module_prediction_avancee' %}" class="stat-card module-card">
+                        <h2>🤖</h2>
+                        <p>Prédiction avancée</p>
+                    </a>
+                {% endif %}
+
+                {% if a_module_segmentation %}
+                    <a href="{% url 'module_segmentation' %}" class="stat-card module-card">
+                        <h2>🎯</h2>
+                        <p>Segmentation avancée</p>
+                    </a>
+                {% endif %}
+
+                {% if a_module_visualisations %}
+                    <a href="{% url 'module_visualisations' %}" class="stat-card module-card">
+                        <h2>📊</h2>
+                        <p>Visualisations avancées</p>
+                    </a>
+                {% endif %}
+
+                {% if a_module_historique %}
+                    <a href="{% url 'module_historique' %}" class="stat-card module-card">
+                        <h2>🕒</h2>
+                        <p>Historique des données</p>
+                    </a>
+                {% endif %}
+
+                {% if a_module_multicanal %}
+                   <a href="{% url 'module_multicanal' %}" class="stat-card module-card">
+                        <h2>🌐</h2>
+                        <p>Analyse multi-canal</p>
+                    </a>
+                {% endif %}
+
+                {% if a_module_connecteurs %}
+                    <a href="{% url 'module_connecteurs' %}" class="stat-card module-card">
+                        <h2>🔌</h2>
+                        <p>Connecteurs externes</p>
+                    </a>
+                {% endif %}
+
+                {% if a_module_publicite %}
+                    <a href="{% url 'module_publicite' %}" class="stat-card module-card">
+                        <h2>📣</h2>
+                        <p>Intégrations publicitaires</p>
+                    </a>
+                {% endif %}
+
+                {% if a_module_securite_entreprise %}
+                    <a href="{% url 'module_securite' %}" class="stat-card module-card">
+                        <h2>🔐</h2>
+                        <p>Sécurité entreprise</p>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+        <div class="dashboard-section">
+            <h2>Analyse des visiteurs</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h2>{{ sessions_mobile }}</h2>
+                    <p>Visites mobile</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>{{ sessions_desktop }}</h2>
+                    <p>Visites desktop</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>{{ sessions_tablette }}</h2>
+                    <p>Visites tablette</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>{{ taux_rebond }}%</h2>
+                    <p>Taux de rebond</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>{{ pages_vues_total }}</h2>
+                    <p>Pages vues</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>{{ clics_total }}</h2>
+                    <p>Clics détectés</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>{{ temps_moyen_secondes }}s</h2>
+                    <p>Temps moyen</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Sources de trafic</h2>
+
+            <div class="traffic-grid">
+                <div class="traffic-card">
+                    <h3>Sources principales</h3>
+
+                    {% for source in sources_visite %}
+                        <div class="traffic-row">
+                            <span>{{ source.source_visite|default:"Accès direct" }}</span>
+                            <strong>{{ source.total }}</strong>
+                        </div>
+                    {% empty %}
+                        <p>Aucune source détectée pour le moment.</p>
+                    {% endfor %}
+                </div>
+
+                <div class="traffic-card">
+                    <h3>Campagnes UTM</h3>
+
+                    {% for source in utm_sources %}
+                        <div class="traffic-row">
+                            <span>{{ source.utm_source|default:"Aucune campagne" }}</span>
+                            <strong>{{ source.total }}</strong>
+                        </div>
+                    {% empty %}
+                        <p>Aucune campagne détectée pour le moment.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Pages les plus consultées</h2>
+
+            <div class="traffic-card">
+                {% for page in pages_populaires %}
+                    <div class="traffic-row">
+                        <span>{{ page.page|default:"Page inconnue" }}</span>
+                        <strong>{{ page.total }} vues</strong>
+                    </div>
+                {% empty %}
+                    <p>Aucune page consultée pour le moment.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+            {% if a_module_ecommerce %}
+        <div class="dashboard-section" id="ecommerce">
+            <h2>Analyse e-commerce</h2>
+
+            <p class="dashboard-intro">
+                Cette section apparaît uniquement pour les sites e-commerce.
+            </p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h2>0</h2>
+                    <p>Produits consultés</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>0</h2>
+                    <p>Produits ajoutés au panier</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>0</h2>
+                    <p>Paniers abandonnés</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>0</h2>
+                    <p>Achats réalisés</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>0 €</h2>
+                    <p>Montant total du panier</p>
+                </div>
+
+                <div class="stat-card">
+                    <h2>-</h2>
+                    <p>Catégorie préférée</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
         <div class="dashboard-section">
             <h2>Statut de vos sites</h2>
 
@@ -147,7 +330,7 @@
             <h2>Nettoyage des données techniques</h2>
 
             <p class="section-description">
-                Supprime les événements techniques enregistrés par le tracker : pages vues, clics et temps passé.
+                Supprime les événements techniques enregistrés par le script PredictNeed IA : pages vues, clics et temps passé.
                 Les leads, les sites et les clés API seront conservés.
             </p>
 
@@ -198,6 +381,8 @@
 
             <p class="section-description">
                 Copiez ce code et collez-le avant la balise <code>&lt;/body&gt;</code> de votre site.
+                Le script PredictNeed IA affiche une gestion du consentement et n'envoie pas d'événement
+                comportemental tant que le visiteur n'a pas accepté l'analyse PredictNeed IA.
             </p>
 
             {% for item in scripts_installation %}
@@ -209,6 +394,7 @@
 
                     <p class="install-help">
                         Cette clé API est propre à ce site. Elle permet à PredictNeed IA d’associer les visiteurs au bon espace professionnel.
+                        Le script contient les liens vers la politique de confidentialité et la politique cookies du service.
                     </p>
                 </div>
             {% empty %}
@@ -216,8 +402,285 @@
             {% endfor %}
         </div>
 
+        <div class="dashboard-section" id="automatisations">
+            <h2>Automatisations email</h2>
+
+            <p class="section-description">
+                Lorsqu’un visiteur laisse son email dans le formulaire de contact,
+                PredictNeed IA peut envoyer automatiquement un message de confirmation,
+                puis plusieurs relances si le lead n'est pas encore marqué comme traité.
+                Les variables disponibles sont : <code>{nom}</code>, <code>{email}</code>,
+                <code>{telephone}</code>, <code>{message}</code>, <code>{site}</code>,
+                <code>{domaine}</code>, <code>{entreprise}</code>, <code>{profil}</code>,
+                <code>{intention}</code> et <code>{score}</code>.
+            </p>
+
+            <div class="automation-stats">
+                <div class="stat-card">
+                    <h2>{{ total_emails_automatises }}</h2>
+                    <p>Emails traités</p>
+                </div>
+                <div class="stat-card">
+                    <h2>{{ emails_automatises_envoyes }}</h2>
+                    <p>Emails envoyés</p>
+                </div>
+                <div class="stat-card">
+                    <h2>{{ emails_automatises_erreurs }}</h2>
+                    <p>Erreurs d’envoi</p>
+                </div>
+                <div class="stat-card">
+                    <h2>{{ relances_programmees }}</h2>
+                    <p>Étapes actives</p>
+                </div>
+            </div>
+
+            <div class="automation-grid">
+                {% for automatisation in automatisations_email %}
+                    <form
+                        method="post"
+                        action="{% url 'modifier_automatisation_email' automatisation.id %}"
+                        class="automation-card"
+                    >
+                        {% csrf_token %}
+
+                        <div class="automation-card-header">
+                            <div>
+                                <p class="automation-eyebrow">
+                                    {{ automatisation.site.nom_site|default:"Tous les sites" }}
+                                </p>
+                                <h3>{{ automatisation.get_type_declencheur_display }}</h3>
+                            </div>
+
+                            <label class="automation-toggle">
+                                <input type="checkbox" name="actif" {% if automatisation.actif %}checked{% endif %}>
+                                <span>Actif</span>
+                            </label>
+                        </div>
+
+                        <div class="automation-form-grid">
+                            <div class="form-group">
+                                <label>Nom interne</label>
+                                <input type="text" name="nom" value="{{ automatisation.nom }}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Sujet</label>
+                                <input type="text" name="sujet" value="{{ automatisation.sujet }}" required>
+                            </div>
+                        </div>
+
+                        <div class="automation-sequence">
+                            <h4>Séquence de relance</h4>
+                            <p>
+                                Étape 1 : envoi immédiat. Les étapes suivantes sont envoyées
+                                après le délai indiqué si le lead reste au statut “Nouveau”.
+                            </p>
+
+                            {% for etape in automatisation.etapes.all %}
+                                <div class="automation-step-card">
+                                    <div class="automation-step-header">
+                                        <div>
+                                            <span>Étape {{ etape.ordre }}</span>
+                                            <h5>{{ etape.nom }}</h5>
+                                        </div>
+
+                                        <label class="automation-toggle">
+                                            <input type="checkbox" name="etape_{{ etape.id }}_actif" {% if etape.actif %}checked{% endif %}>
+                                            <span>Active</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="automation-form-grid">
+                                        <div class="form-group">
+                                            <label>Nom de l'étape</label>
+                                            <input type="text" name="etape_{{ etape.id }}_nom" value="{{ etape.nom }}" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Délai après capture du lead</label>
+                                            <input type="number" min="0" name="etape_{{ etape.id }}_delai_jours" value="{{ etape.delai_jours }}" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Sujet de l’email</label>
+                                        <input type="text" name="etape_{{ etape.id }}_sujet" value="{{ etape.sujet }}" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Contenu de l’email</label>
+                                        <textarea name="etape_{{ etape.id }}_contenu" required>{{ etape.contenu }}</textarea>
+                                    </div>
+
+                                    <label class="automation-toggle">
+                                        <input type="checkbox" name="etape_{{ etape.id }}_stopper_si_lead_traite" {% if etape.stopper_si_lead_traite %}checked{% endif %}>
+                                        <span>Ne pas envoyer si le lead est déjà contacté, converti ou perdu</span>
+                                    </label>
+                                </div>
+                            {% empty %}
+                                <p>Aucune étape configurée. Enregistrez l’automatisation pour générer la séquence par défaut.</p>
+                            {% endfor %}
+                        </div>
+
+                        <div class="automation-options">
+                            <label class="automation-toggle">
+                                <input type="checkbox" name="envoyer_copie_interne" {% if automatisation.envoyer_copie_interne %}checked{% endif %}>
+                                <span>Envoyer une copie interne</span>
+                            </label>
+
+                            <input
+                                type="email"
+                                name="email_copie"
+                                value="{{ automatisation.email_copie|default:'' }}"
+                                placeholder="email interne"
+                            >
+                        </div>
+
+                        <button type="submit" class="opportunity-save-button">
+                            Enregistrer l’automatisation
+                        </button>
+                    </form>
+                {% empty %}
+                    <p>Aucune automatisation email disponible pour le moment.</p>
+                {% endfor %}
+            </div>
+
+            <div class="automation-log">
+                <h3>Derniers emails automatiques</h3>
+
+                <div class="module-table-wrapper">
+                    <table class="module-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Destinataire</th>
+                                <th>Site</th>
+                                <th>Sujet</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for email_auto in derniers_emails_automatises %}
+                                <tr>
+                                    <td>{{ email_auto.date_creation|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ email_auto.destinataire|default:"Non renseigné" }}</td>
+                                    <td>{{ email_auto.site.nom_site }}</td>
+                                    <td>{{ email_auto.sujet }}</td>
+                                    <td>
+                                        <span class="email-status {{ email_auto.statut }}">
+                                            {{ email_auto.get_statut_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5">Aucun email automatique envoyé pour le moment.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-section" id="opportunites">
+            {% if a_module_ecommerce %}
+                <h2>Opportunités e-commerce</h2>
+            {% else %}
+                <h2>Opportunités commerciales</h2>
+            {% endif %}
+
+            <div class="opportunities-list">
+                {% for opportunite in dernieres_opportunites %}
+                    <div class="opportunity-card" id="opportunite-{{ opportunite.id }}">
+                        <div class="opportunity-header">
+                            <h3>{{ opportunite.titre }}</h3>
+                            <span class="opportunity-stage {{ opportunite.etape }}">
+                                {{ opportunite.get_etape_display }}
+                            </span>
+                        </div>
+
+                        <p>
+                            <strong>Montant estimé :</strong>
+                            <span class="opportunity-amount">{{ opportunite.montant_estime }}</span> €
+                        </p>
+
+                        <p>
+                            <strong>Probabilité :</strong>
+                            <span class="opportunity-probability">{{ opportunite.probabilite }}</span> %
+                        </p>
+
+                        {% if opportunite.lead %}
+                            <p>
+                                <strong>Lead lié :</strong>
+                                {{ opportunite.lead.email|default:opportunite.lead.telephone }}
+                            </p>
+                        {% endif %}
+
+                        <form
+                            method="post"
+                            action="{% url 'modifier_opportunite' opportunite.id %}"
+                            class="opportunity-edit-form"
+                        >
+                            {% csrf_token %}
+
+                            <div class="opportunity-form-grid">
+                                <div class="form-group">
+                                    <label>Montant estimé (€)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        name="montant_estime"
+                                        value="{{ opportunite.montant_estime }}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Probabilité (%)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        name="probabilite"
+                                        value="{{ opportunite.probabilite }}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Étape</label>
+                                    <select name="etape">
+                                        <option value="qualification" {% if opportunite.etape == "qualification" %}selected{% endif %}>Qualification</option>
+                                        <option value="proposition" {% if opportunite.etape == "proposition" %}selected{% endif %}>Proposition envoyée</option>
+                                        <option value="negociation" {% if opportunite.etape == "negociation" %}selected{% endif %}>Négociation</option>
+                                        <option value="gagne" {% if opportunite.etape == "gagne" %}selected{% endif %}>Gagné</option>
+                                        <option value="perdu" {% if opportunite.etape == "perdu" %}selected{% endif %}>Perdu</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Notes commerciales</label>
+                                <textarea name="notes">{{ opportunite.notes }}</textarea>
+                            </div>
+
+                            <button type="submit" class="opportunity-save-button">
+                                Enregistrer l’opportunité
+                            </button>
+                        </form>
+                    </div>
+                {% empty %}
+                    <p class="no-opportunity-message">Aucune opportunité créée pour le moment.</p>
+                {% endfor %}
+            </div>
+        </div>
+
         <div class="dashboard-section">
-            <h2>Leads chauds à contacter</h2>
+            {% if a_module_ecommerce %}
+                <h2>Clients à relancer</h2>
+            {% else %}
+                <h2>Leads chauds à contacter</h2>
+            {% endif %}
 
             {% for lead in leads_chauds %}
                 <div class="lead-card" id="lead-{{ lead.id }}">
@@ -261,27 +724,38 @@
                     </p>
 
                     <div class="lead-status-actions" data-lead-id="{{ lead.id }}">
-                        <button 
+                        <button
                             type="button"
                             class="lead-status-button"
                             data-url="{% url 'changer_statut_lead' lead.id 'contacte' %}">
                             Marquer contacté
                         </button>
 
-                        <button 
+                        <button
                             type="button"
                             class="lead-status-button"
                             data-url="{% url 'changer_statut_lead' lead.id 'converti' %}">
                             Converti
                         </button>
 
-                        <button 
+                        <button
                             type="button"
                             class="lead-status-button"
                             data-url="{% url 'changer_statut_lead' lead.id 'perdu' %}">
                             Perdu
                         </button>
                     </div>
+
+                    <form
+                        method="post"
+                        action="{% url 'creer_opportunite_depuis_lead' lead.id %}"
+                        class="opportunity-create-form"
+                    >
+                        {% csrf_token %}
+                        <button type="submit" class="opportunity-button">
+                            Créer une opportunité
+                        </button>
+                    </form>
 
                     {% if lead.message %}
                         <p><strong>Message :</strong> {{ lead.message }}</p>
@@ -357,6 +831,147 @@
             });
         });
     </script>
+
+   <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const params = new URLSearchParams(window.location.search);
+
+            const scrollTarget = params.get("scroll");
+
+            if (scrollTarget) {
+                const section = document.getElementById(scrollTarget);
+
+                if (section) {
+                    setTimeout(function () {
+                        section.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+                    }, 250);
+                }
+            }
+
+            const createOpportunityForms = document.querySelectorAll(".opportunity-create-form");
+
+            createOpportunityForms.forEach(function (form) {
+                form.addEventListener("submit", function (event) {
+                    event.preventDefault();
+
+                    const button = form.querySelector(".opportunity-button");
+                    const originalText = button.textContent.trim();
+                    const opportunitiesSection = document.getElementById("opportunites");
+
+                    button.disabled = true;
+                    button.textContent = "Création...";
+
+                    fetch(form.action, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: new FormData(form)
+                    })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("Erreur HTTP " + response.status);
+                        }
+
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) {
+                            alert("Impossible de créer l’opportunité.");
+                            return;
+                        }
+
+                        if (opportunitiesSection) {
+                            opportunitiesSection.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start"
+                            });
+                        }
+
+                        button.textContent = "Opportunité créée ✓";
+
+                        setTimeout(function () {
+                            button.textContent = originalText;
+                        }, 1500);
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                        alert("Erreur pendant la création de l’opportunité.");
+                        button.textContent = originalText;
+                    })
+                    .finally(function () {
+                        button.disabled = false;
+                    });
+                });
+            });
+
+            const opportunityForms = document.querySelectorAll(".opportunity-edit-form");
+
+            opportunityForms.forEach(function (form) {
+                form.addEventListener("submit", function (event) {
+                    event.preventDefault();
+
+                    const card = form.closest(".opportunity-card");
+                    const button = form.querySelector(".opportunity-save-button");
+                    const amount = card.querySelector(".opportunity-amount");
+                    const probability = card.querySelector(".opportunity-probability");
+                    const stage = card.querySelector(".opportunity-stage");
+
+                    const originalText = button.textContent.trim();
+
+                    button.disabled = true;
+                    button.textContent = "Enregistrement...";
+
+                    fetch(form.action, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: new FormData(form)
+                    })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("Erreur HTTP " + response.status);
+                        }
+
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) {
+                            alert("Impossible d’enregistrer l’opportunité.");
+                            return;
+                        }
+
+                        amount.textContent = data.montant_estime;
+                        probability.textContent = data.probabilite;
+                        stage.className = "opportunity-stage " + data.etape;
+                        stage.textContent = data.etape_label;
+
+                        button.textContent = "Enregistré ✓";
+
+                        setTimeout(function () {
+                            button.textContent = originalText;
+                        }, 1200);
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                        alert("Erreur pendant l’enregistrement.");
+                        button.textContent = originalText;
+                    })
+                    .finally(function () {
+                        button.disabled = false;
+                    });
+                });
+            });
+        });
+    </script>
     
+{% include "predictor/includes/footer.html" %}
+
 </body>
 </html>

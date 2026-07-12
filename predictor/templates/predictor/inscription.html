@@ -5,24 +5,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Inscription professionnelle - PredictNeed IA</title>
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=13">
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
 </head>
 <body>
 
-<nav class="navbar">
-    <a href="{% url 'accueil' %}" class="navbar-logo">PredictNeed IA</a>
-
-    <div class="navbar-links">
-        <a href="{% url 'accueil' %}">Accueil</a>
-        <a href="{% url 'simulateur' %}">Simulateur</a>
-        <a href="{% url 'connexion' %}">Connexion</a>
-    </div>
-</nav>
+{% include "predictor/includes/navbar.html" %}
 
 <section class="login-page">
     <div class="login-card signup-card">
         <h1>Créer un compte professionnel</h1>
-        <p>Configurez votre espace PredictNeed IA.</p>
+        <p>Configurez votre espace PredictNeed IA et activez votre abonnement mensuel.</p>
+
+        <div class="signup-price-summary">
+            <span>Abonnement PredictNeed IA Pro</span>
+            <strong>{{ prix_abonnement }} / mois</strong>
+            <p>Paiement sécurisé, facturation mensuelle et accès au dashboard après validation du paiement.</p>
+        </div>
 
         {% if erreur %}
             <div class="error-message">
@@ -46,7 +45,7 @@
             <input type="text" name="nom_entreprise" required>
 
             <label>Secteur d'activité</label>
-            <input type="text" name="secteur_activite" placeholder="Ex : beauté, coaching, e-commerce">
+            <input type="text" name="secteur_activite" placeholder="Ex : beauté, coaching, e-commerce" required>
 
             <label>Nom du site</label>
             <input type="text" name="nom_site" required>
@@ -54,7 +53,18 @@
             <label>Domaine du site</label>
             <input type="text" name="domaine" placeholder="exemple.fr" required>
 
-            <button type="submit">Créer mon espace</button>
+            <label class="terms-checkbox">
+                <input type="checkbox" name="accept_conditions" required>
+                <span>
+                    J'accepte les
+                    <a href="{% url 'conditions_generales_utilisation' %}" target="_blank" rel="noopener">conditions générales d'utilisation</a>,
+                    la
+                    <a href="{% url 'politique_confidentialite' %}" target="_blank" rel="noopener">politique de confidentialité</a>
+                    et le paiement d'un abonnement mensuel PredictNeed IA Pro.
+                </span>
+            </label>
+
+            <button type="submit">Continuer vers le paiement sécurisé</button>
         </form>
 
         <p class="small-link">
@@ -62,12 +72,10 @@
             <a href="{% url 'connexion' %}">Se connecter</a>
         </p>
 
-        <p class="small-link">
-            Pas encore de compte ?
-             <a href="{% url 'inscription' %}">Créer un compte professionnel</a>
-        </p>
     </div>
 </section>
+
+{% include "predictor/includes/footer.html" %}
 
 </body>
 </html>

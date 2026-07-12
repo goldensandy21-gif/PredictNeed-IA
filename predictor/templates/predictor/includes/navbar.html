@@ -1,0 +1,123 @@
+<nav class="navbar">
+    <a href="{% url 'accueil' %}" class="navbar-logo">PredictNeed IA</a>
+
+    <button
+        type="button"
+        class="navbar-menu-toggle"
+        aria-label="Ouvrir le menu"
+        aria-expanded="false"
+        aria-controls="navbar-links"
+    >
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <div class="navbar-links" id="navbar-links">
+        <a href="{% url 'accueil' %}">Accueil</a>
+
+        <div class="nav-dropdown">
+            <button
+                type="button"
+                class="nav-dropdown-toggle"
+                aria-expanded="false"
+                aria-haspopup="true"
+            >
+                Fonctionnalités
+            </button>
+            <div class="nav-dropdown-menu">
+                <a href="{% url 'fonctionnalites' %}">Vue d'ensemble du dashboard</a>
+                <a href="{% url 'fonctionnalite_detail' 'prediction-avancee' %}">Prédiction avancée</a>
+                <a href="{% url 'fonctionnalite_detail' 'segmentation' %}">Segmentation intelligente</a>
+                <a href="{% url 'fonctionnalite_detail' 'ecommerce' %}">E-commerce</a>
+                <a href="{% url 'fonctionnalite_detail' 'visualisations' %}">Visualisations avancées</a>
+                <a href="{% url 'fonctionnalite_detail' 'historique' %}">Historique</a>
+                <a href="{% url 'fonctionnalite_detail' 'multicanal' %}">Multi-canal</a>
+                <a href="{% url 'fonctionnalite_detail' 'connecteurs' %}">Connecteurs</a>
+                <a href="{% url 'fonctionnalite_detail' 'publicite' %}">Publicité</a>
+                <a href="{% url 'fonctionnalite_detail' 'securite' %}">Sécurité entreprise</a>
+            </div>
+        </div>
+
+        <a href="{% url 'simulateur' %}">Simulateur</a>
+        <a href="{% url 'prix' %}">Prix</a>
+
+        {% if user.is_authenticated %}
+            <a href="{% url 'deconnexion' %}">Déconnexion</a>
+        {% else %}
+            <a href="{% url 'connexion' %}">Connexion</a>
+            <a href="{% url 'inscription' %}" class="nav-cta">Créer un compte</a>
+        {% endif %}
+    </div>
+</nav>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const navbar = document.querySelector(".navbar");
+        const menuButton = document.querySelector(".navbar-menu-toggle");
+        const dropdown = document.querySelector(".nav-dropdown");
+
+        if (!navbar) {
+            return;
+        }
+
+        if (menuButton) {
+            menuButton.addEventListener("click", function (event) {
+                event.stopPropagation();
+                const isOpen = navbar.classList.toggle("menu-open");
+                menuButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                menuButton.setAttribute("aria-label", isOpen ? "Fermer le menu" : "Ouvrir le menu");
+            });
+        }
+
+        if (!dropdown) {
+            return;
+        }
+
+        const button = dropdown.querySelector(".nav-dropdown-toggle");
+
+        button.addEventListener("click", function (event) {
+            event.stopPropagation();
+            const isOpen = dropdown.classList.toggle("open");
+            button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
+
+        document.addEventListener("click", function (event) {
+            if (menuButton && !navbar.contains(event.target)) {
+                navbar.classList.remove("menu-open");
+                menuButton.setAttribute("aria-expanded", "false");
+                menuButton.setAttribute("aria-label", "Ouvrir le menu");
+            }
+
+            if (!dropdown.contains(event.target)) {
+                dropdown.classList.remove("open");
+                button.setAttribute("aria-expanded", "false");
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                if (menuButton) {
+                    navbar.classList.remove("menu-open");
+                    menuButton.setAttribute("aria-expanded", "false");
+                    menuButton.setAttribute("aria-label", "Ouvrir le menu");
+                    menuButton.blur();
+                }
+
+                dropdown.classList.remove("open");
+                button.setAttribute("aria-expanded", "false");
+                button.blur();
+            }
+        });
+
+        navbar.querySelectorAll(".navbar-links a").forEach((link) => {
+            link.addEventListener("click", function () {
+                if (menuButton) {
+                    navbar.classList.remove("menu-open");
+                    menuButton.setAttribute("aria-expanded", "false");
+                    menuButton.setAttribute("aria-label", "Ouvrir le menu");
+                }
+            });
+        });
+    });
+</script>

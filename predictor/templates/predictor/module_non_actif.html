@@ -1,0 +1,32 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Module non actif - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body>
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<section class="dashboard">
+    <h1>Module non actif</h1>
+
+    <p class="dashboard-intro">
+        Le module <strong>{{ nom_module }}</strong> n’est pas activé pour ce site.
+    </p>
+
+    <div class="dashboard-actions">
+        <a href="{% url 'dashboard' %}" class="btn-secondary">
+            Retour au dashboard
+        </a>
+    </div>
+</section>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

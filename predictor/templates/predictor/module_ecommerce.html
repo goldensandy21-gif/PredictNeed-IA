@@ -1,0 +1,108 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>E-commerce - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body>
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<section class="dashboard module-page">
+    <div class="dashboard-actions">
+        <a href="{% url 'dashboard' %}" class="btn-secondary">Retour au dashboard</a>
+    </div>
+
+    <h1>Module e-commerce</h1>
+    <p class="dashboard-intro">Suivi des produits, paniers, achats et relances commerciales e-commerce.</p>
+
+    <form method="get" class="module-filters">
+        <div class="filter-group">
+            <label for="site">Site</label>
+            <select name="site" id="site">
+                <option value="all">Tous les sites actifs</option>
+                {% for site in sites %}
+                    <option value="{{ site.id }}" {% if selected_site_id == site.id|stringformat:"s" %}selected{% endif %}>{{ site.nom_site }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="date_debut">Début</label>
+            <input type="date" name="date_debut" id="date_debut" value="{{ date_debut }}">
+        </div>
+
+        <div class="filter-group">
+            <label for="date_fin">Fin</label>
+            <input type="date" name="date_fin" id="date_fin" value="{{ date_fin }}">
+        </div>
+
+        <button type="submit" class="module-filter-button">Filtrer</button>
+    </form>
+
+    <div class="stats-grid">
+        <div class="stat-card"><h2>{{ produits_consultes }}</h2><p>Produits consultés</p></div>
+        <div class="stat-card"><h2>{{ produits_ajoutes_panier }}</h2><p>Ajouts panier</p></div>
+        <div class="stat-card"><h2>{{ paniers_abandonnes }}</h2><p>Paniers abandonnés</p></div>
+        <div class="stat-card"><h2>{{ achats_realises }}</h2><p>Achats réalisés</p></div>
+        <div class="stat-card"><h2>{{ montant_total_panier }} €</h2><p>Montant total panier</p></div>
+        <div class="stat-card"><h2>{{ montant_perdu_estime }} €</h2><p>Montant perdu estimé</p></div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Catégorie ou page produit préférée</h2>
+        <p class="module-highlight">{{ categorie_preferee }}</p>
+
+        {% for produit in produits_populaires %}
+            <div class="module-row-bar">
+                <span>{{ produit.page|default:"Page inconnue" }}</span>
+                <strong>{{ produit.total }}</strong>
+                <div class="module-bar"><span style="width: {{ produit.largeur }}%;"></span></div>
+            </div>
+        {% empty %}
+            <p>Aucune consultation produit détectée pour le moment.</p>
+        {% endfor %}
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Clients à relancer</h2>
+        <div class="module-list">
+            {% for lead in clients_a_relancer %}
+                <div class="lead-card">
+                    <div class="lead-card-header">
+                        <h3>{{ lead.nom|default:"Lead e-commerce" }}</h3>
+                        <span class="score-badge score-strong">Score {{ lead.score }}</span>
+                    </div>
+                    <p><strong>Email :</strong> {{ lead.email|default:"Non renseigné" }}</p>
+                    <p><strong>Téléphone :</strong> {{ lead.telephone|default:"Non renseigné" }}</p>
+                    <p><strong>Intention :</strong> {{ lead.intention|default:"Non précisée" }}</p>
+                </div>
+            {% empty %}
+                <p>Aucun client à relancer pour le moment.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Opportunités e-commerce</h2>
+        {% for opportunite in opportunites_ecommerce %}
+            <div class="opportunity-card">
+                <h3>{{ opportunite.titre }}</h3>
+                <p><strong>Montant estimé :</strong> {{ opportunite.montant_estime }} €</p>
+                <p><strong>Étape :</strong> {{ opportunite.get_etape_display }}</p>
+                <p><strong>Probabilité :</strong> {{ opportunite.probabilite }}%</p>
+            </div>
+        {% empty %}
+            <p>Aucune opportunité e-commerce créée pour le moment.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

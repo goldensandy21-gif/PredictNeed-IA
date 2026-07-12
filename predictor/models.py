@@ -4,6 +4,14 @@ import uuid
 
 
 class ClientProfessionnel(models.Model):
+    STATUT_ABONNEMENT_CHOICES = [
+        ("paiement_en_attente", "Paiement en attente"),
+        ("actif", "Actif"),
+        ("essai", "Essai"),
+        ("impaye", "Impayé"),
+        ("annule", "Annulé"),
+    ]
+
     utilisateur = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -12,7 +20,21 @@ class ClientProfessionnel(models.Model):
 
     nom_entreprise = models.CharField(max_length=150)
     secteur_activite = models.CharField(max_length=150, blank=True, null=True)
+    plan_abonnement = models.CharField(max_length=80, default="predictneed_pro")
+    statut_abonnement = models.CharField(
+        max_length=30,
+        choices=STATUT_ABONNEMENT_CHOICES,
+        default="actif",
+    )
+    stripe_customer_id = models.CharField(max_length=120, blank=True, null=True)
+    stripe_subscription_id = models.CharField(max_length=120, blank=True, null=True)
+    stripe_checkout_session_id = models.CharField(max_length=160, blank=True, null=True)
+    date_acceptation_cgu = models.DateTimeField(blank=True, null=True)
+    date_activation_abonnement = models.DateTimeField(blank=True, null=True)
     date_creation = models.DateTimeField(auto_now_add=True)
+
+    def abonnement_est_actif(self):
+        return self.statut_abonnement in {"actif", "essai"}
 
     def __str__(self):
         return self.nom_entreprise
@@ -31,6 +53,32 @@ class SiteClient(models.Model):
     actif = models.BooleanField(default=True)
     date_creation = models.DateTimeField(auto_now_add=True)
 
+    TYPE_SITE_CHOICES = [
+        ("vitrine", "Site vitrine"),
+        ("formation", "Centre de formation"),
+        ("service_b2b", "Service B2B"),
+        ("coach", "Coach / Consultant"),
+        ("ecommerce", "E-commerce"),
+        ("immobilier", "Immobilier"),
+        ("beaute", "Beauté / Esthétique"),
+    ]
+
+    type_site = models.CharField(
+        max_length=30,
+        choices=TYPE_SITE_CHOICES,
+        default="vitrine"
+    )
+
+    module_ecommerce_actif = models.BooleanField(default=False)
+    module_prediction_avancee_actif = models.BooleanField(default=False)
+    module_segmentation_actif = models.BooleanField(default=False)
+    module_visualisations_actif = models.BooleanField(default=False)
+    module_historique_actif = models.BooleanField(default=False)
+    module_multicanal_actif = models.BooleanField(default=False)
+    module_connecteurs_actif = models.BooleanField(default=False)
+    module_publicite_actif = models.BooleanField(default=False)
+    module_securite_entreprise_actif = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.nom_site} - {self.domaine}"
 
@@ -47,6 +95,29 @@ class SessionVisiteur(models.Model):
     session_id = models.CharField(max_length=100, unique=True)
     date_creation = models.DateTimeField(auto_now_add=True)
     derniere_activite = models.DateTimeField(auto_now=True)
+
+        # Module 1 : appareil, source et navigation
+    user_agent = models.TextField(blank=True, null=True)
+    referer = models.TextField(blank=True, null=True)
+
+    appareil = models.CharField(max_length=50, blank=True, null=True)
+    navigateur = models.CharField(max_length=100, blank=True, null=True)
+    systeme_exploitation = models.CharField(max_length=100, blank=True, null=True)
+
+    source_visite = models.CharField(max_length=100, blank=True, null=True)
+
+    utm_source = models.CharField(max_length=150, blank=True, null=True)
+    utm_medium = models.CharField(max_length=150, blank=True, null=True)
+    utm_campaign = models.CharField(max_length=150, blank=True, null=True)
+
+    est_mobile = models.BooleanField(default=False)
+    est_tablette = models.BooleanField(default=False)
+    est_desktop = models.BooleanField(default=True)
+
+    nombre_pages_vues = models.PositiveIntegerField(default=0)
+    nombre_clics = models.PositiveIntegerField(default=0)
+    temps_total_secondes = models.PositiveIntegerField(default=0)
+    est_rebond = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Session {self.session_id}"
@@ -96,7 +167,7 @@ class PredictionBesoin(models.Model):
 
     def __str__(self):
         return f"{self.profil} - {self.intention}"
-    
+
 class LeadCapture(models.Model):
     STATUT_SUIVI_CHOICES = [
         ("nouveau", "Nouveau"),
@@ -143,3 +214,285 @@ class LeadCapture(models.Model):
     def __str__(self):
         contact = self.email or self.telephone or "Lead sans contact"
         return f"{contact} - {self.intention}"
+
+class OpportuniteCRM(models.Model):
+    ETAPE_CHOICES = [
+        ("qualification", "Qualification"),
+        ("proposition", "Proposition envoyée"),
+        ("negociation", "Négociation"),
+        ("gagne", "Gagné"),
+        ("perdu", "Perdu"),
+    ]
+
+    site = models.ForeignKey(
+        SiteClient,
+        on_delete=models.CASCADE,
+        related_name="opportunites"
+    )
+
+    lead = models.ForeignKey(
+        LeadCapture,
+        on_delete=models.SET_NULL,
+        related_name="opportunites",
+        blank=True,
+        null=True
+    )
+
+    titre = models.CharField(max_length=200)
+    montant_estime = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    etape = models.CharField(
+        max_length=30,
+        choices=ETAPE_CHOICES,
+        default="qualification"
+    )
+    probabilite = models.IntegerField(default=20)
+    notes = models.TextField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_mise_a_jour = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.titre} - {self.get_etape_display()}"
+
+
+class AutomatisationEmail(models.Model):
+    TYPE_DECLENCHEUR_CHOICES = [
+        ("lead_confirmation", "Confirmation automatique de demande"),
+    ]
+
+    client = models.ForeignKey(
+        ClientProfessionnel,
+        on_delete=models.CASCADE,
+        related_name="automatisations_email"
+    )
+    site = models.ForeignKey(
+        SiteClient,
+        on_delete=models.CASCADE,
+        related_name="automatisations_email",
+        blank=True,
+        null=True
+    )
+    nom = models.CharField(max_length=180, default="Confirmation de demande")
+    type_declencheur = models.CharField(
+        max_length=60,
+        choices=TYPE_DECLENCHEUR_CHOICES,
+        default="lead_confirmation"
+    )
+    sujet = models.CharField(
+        max_length=220,
+        default="Votre demande a bien été enregistrée"
+    )
+    contenu = models.TextField(
+        default=(
+            "Bonjour {nom},\n\n"
+            "Votre demande a bien été enregistrée par {entreprise}. "
+            "Nous reviendrons vers vous rapidement.\n\n"
+            "Message reçu : {message}\n\n"
+            "À bientôt,\n"
+            "{entreprise}"
+        )
+    )
+    actif = models.BooleanField(default=True)
+    envoyer_copie_interne = models.BooleanField(default=False)
+    email_copie = models.EmailField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_mise_a_jour = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        cible = self.site.nom_site if self.site else "Tous les sites"
+        return f"{self.nom} - {cible}"
+
+
+class EtapeAutomatisationEmail(models.Model):
+    automatisation = models.ForeignKey(
+        AutomatisationEmail,
+        on_delete=models.CASCADE,
+        related_name="etapes"
+    )
+    ordre = models.PositiveIntegerField(default=1)
+    nom = models.CharField(max_length=180)
+    delai_jours = models.PositiveIntegerField(default=0)
+    sujet = models.CharField(max_length=220)
+    contenu = models.TextField()
+    actif = models.BooleanField(default=True)
+    stopper_si_lead_traite = models.BooleanField(default=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_mise_a_jour = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["automatisation", "ordre"]
+        unique_together = ("automatisation", "ordre")
+
+    def __str__(self):
+        return f"{self.automatisation.nom} - étape {self.ordre}"
+
+
+class EmailAutomatise(models.Model):
+    STATUT_CHOICES = [
+        ("envoye", "Envoyé"),
+        ("erreur", "Erreur"),
+        ("ignore", "Ignoré"),
+    ]
+
+    automatisation = models.ForeignKey(
+        AutomatisationEmail,
+        on_delete=models.SET_NULL,
+        related_name="emails_envoyes",
+        blank=True,
+        null=True
+    )
+    etape = models.ForeignKey(
+        EtapeAutomatisationEmail,
+        on_delete=models.SET_NULL,
+        related_name="emails_envoyes",
+        blank=True,
+        null=True
+    )
+    site = models.ForeignKey(
+        SiteClient,
+        on_delete=models.CASCADE,
+        related_name="emails_automatises"
+    )
+    lead = models.ForeignKey(
+        LeadCapture,
+        on_delete=models.CASCADE,
+        related_name="emails_automatises",
+        blank=True,
+        null=True
+    )
+    destinataire = models.EmailField(blank=True, null=True)
+    sujet = models.CharField(max_length=220)
+    message = models.TextField(blank=True, null=True)
+    numero_etape = models.PositiveIntegerField(blank=True, null=True)
+    date_programmee = models.DateTimeField(blank=True, null=True)
+    date_envoi = models.DateTimeField(blank=True, null=True)
+    statut = models.CharField(
+        max_length=20,
+        choices=STATUT_CHOICES,
+        default="envoye"
+    )
+    erreur = models.TextField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.destinataire or 'Sans email'} - {self.get_statut_display()}"
+
+
+class CompteConnecteExterne(models.Model):
+    PLATEFORME_CHOICES = [
+        ("google_ads", "Google Ads"),
+        ("meta_ads", "Meta Ads"),
+        ("linkedin_ads", "LinkedIn Ads"),
+        ("tiktok_ads", "TikTok Ads"),
+    ]
+
+    STATUT_CHOICES = [
+        ("configuration_requise", "Configuration requise"),
+        ("connecte", "Connecté"),
+        ("erreur", "Erreur"),
+        ("deconnecte", "Déconnecté"),
+    ]
+
+    client = models.ForeignKey(
+        ClientProfessionnel,
+        on_delete=models.CASCADE,
+        related_name="comptes_externes"
+    )
+    site = models.ForeignKey(
+        SiteClient,
+        on_delete=models.SET_NULL,
+        related_name="comptes_externes",
+        blank=True,
+        null=True
+    )
+    plateforme = models.CharField(max_length=40, choices=PLATEFORME_CHOICES)
+    nom_compte = models.CharField(max_length=180)
+    identifiant_externe = models.CharField(max_length=180, blank=True, null=True)
+    statut = models.CharField(
+        max_length=40,
+        choices=STATUT_CHOICES,
+        default="configuration_requise"
+    )
+    scopes = models.TextField(blank=True, null=True)
+    access_token_signe = models.TextField(blank=True, null=True)
+    refresh_token_signe = models.TextField(blank=True, null=True)
+    token_type = models.CharField(max_length=40, blank=True, null=True)
+    expires_at = models.DateTimeField(blank=True, null=True)
+    configuration = models.JSONField(default=dict, blank=True)
+    dernier_message = models.TextField(blank=True, null=True)
+    derniere_synchro = models.DateTimeField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_mise_a_jour = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["plateforme", "-date_mise_a_jour"]
+
+    def __str__(self):
+        return f"{self.get_plateforme_display()} - {self.nom_compte}"
+
+
+class CampagneExterne(models.Model):
+    compte = models.ForeignKey(
+        CompteConnecteExterne,
+        on_delete=models.CASCADE,
+        related_name="campagnes"
+    )
+    site = models.ForeignKey(
+        SiteClient,
+        on_delete=models.SET_NULL,
+        related_name="campagnes_externes",
+        blank=True,
+        null=True
+    )
+    plateforme = models.CharField(max_length=40, choices=CompteConnecteExterne.PLATEFORME_CHOICES)
+    identifiant_externe = models.CharField(max_length=180, blank=True, null=True)
+    nom = models.CharField(max_length=220)
+    statut = models.CharField(max_length=80, blank=True, null=True)
+    utm_source = models.CharField(max_length=150, blank=True, null=True)
+    utm_medium = models.CharField(max_length=150, blank=True, null=True)
+    utm_campaign = models.CharField(max_length=150, blank=True, null=True)
+    impressions = models.PositiveIntegerField(default=0)
+    clics = models.PositiveIntegerField(default=0)
+    conversions = models.PositiveIntegerField(default=0)
+    depense = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    devise = models.CharField(max_length=12, default="EUR")
+    donnees_brutes = models.JSONField(default=dict, blank=True)
+    derniere_synchro = models.DateTimeField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_mise_a_jour = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-derniere_synchro", "nom"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["compte", "identifiant_externe"],
+                name="campagne_externe_unique_par_compte",
+                condition=models.Q(identifiant_externe__isnull=False),
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.nom} - {self.get_plateforme_display()}"
+
+
+class JournalSynchronisationConnecteur(models.Model):
+    STATUT_CHOICES = [
+        ("succes", "Succès"),
+        ("erreur", "Erreur"),
+        ("ignore", "Ignoré"),
+    ]
+
+    compte = models.ForeignKey(
+        CompteConnecteExterne,
+        on_delete=models.CASCADE,
+        related_name="journaux_synchro"
+    )
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES)
+    message = models.TextField(blank=True, null=True)
+    details = models.JSONField(default=dict, blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date_creation"]
+
+    def __str__(self):
+        return f"{self.compte} - {self.get_statut_display()}"

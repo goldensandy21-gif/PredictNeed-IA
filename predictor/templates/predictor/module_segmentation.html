@@ -1,0 +1,98 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Segmentation avancée - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body>
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<section class="dashboard module-page">
+    <div class="dashboard-actions">
+        <a href="{% url 'dashboard' %}" class="btn-secondary">Retour au dashboard</a>
+    </div>
+
+    <h1>Segmentation avancée</h1>
+    <p class="dashboard-intro">Classement des visiteurs selon leur comportement, leur source et leur intention.</p>
+
+    <form method="get" class="module-filters">
+        <div class="filter-group">
+            <label for="site">Site</label>
+            <select name="site" id="site">
+                <option value="all">Tous les sites actifs</option>
+                {% for site in sites %}
+                    <option value="{{ site.id }}" {% if selected_site_id == site.id|stringformat:"s" %}selected{% endif %}>{{ site.nom_site }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="date_debut">Début</label>
+            <input type="date" name="date_debut" id="date_debut" value="{{ date_debut }}">
+        </div>
+
+        <div class="filter-group">
+            <label for="date_fin">Fin</label>
+            <input type="date" name="date_fin" id="date_fin" value="{{ date_fin }}">
+        </div>
+
+        <button type="submit" class="module-filter-button">Filtrer</button>
+    </form>
+
+    <div class="module-grid">
+        {% for segment in segments %}
+            <div class="module-panel">
+                <div class="module-panel-header">
+                    <h2>{{ segment.total }}</h2>
+                    <span>{{ segment.titre }}</span>
+                </div>
+                <div class="module-bar"><span style="width: {{ segment.largeur }}%;"></span></div>
+                <p>{{ segment.description }}</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Sessions récentes</h2>
+        <div class="module-table-wrapper">
+            <table class="module-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Site</th>
+                        <th>Source</th>
+                        <th>Pages vues</th>
+                        <th>Clics</th>
+                        <th>Temps</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions_recentes %}
+                        <tr>
+                            <td>{{ session.derniere_activite|date:"d/m/Y H:i" }}</td>
+                            <td>{% if session.site %}{{ session.site.nom_site }}{% else %}Site non lié{% endif %}</td>
+                            <td>{{ session.source_visite|default:"Accès direct" }}</td>
+                            <td>{{ session.nombre_pages_vues }}</td>
+                            <td>{{ session.nombre_clics }}</td>
+                            <td>{{ session.temps_total_secondes }}s</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">Aucune session disponible pour ces filtres.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

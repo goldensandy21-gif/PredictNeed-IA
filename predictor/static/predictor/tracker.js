@@ -5,32 +5,438 @@
     const apiUrl = script.getAttribute("data-api-url") || "/api/track/";
     const leadUrl = script.getAttribute("data-lead-url") || "/api/lead/";
     const debugMode = script.getAttribute("data-debug") === "true";
+    const requireConsent = script.getAttribute("data-require-consent") !== "false";
+    const privacyUrl = script.getAttribute("data-privacy-url") || "";
+    const cookiesUrl = script.getAttribute("data-cookies-url") || "";
+
+    const consentStorageKey = "predictneed_consent_v1";
+    const sessionStorageKey = "predictneed_session_id";
+    const leadSentStorageKey = "predictneed_lead_sent";
+    const consentValidityMs = 180 * 24 * 60 * 60 * 1000;
+
+    let sessionId = null;
+    let hasStartedTracking = false;
+    let elapsedSecondsSent = 0;
+    const startTime = Date.now();
 
     if (!apiKey) {
         console.warn("PredictNeed IA : clé API manquante.");
         return;
     }
 
+    function now() {
+        return Date.now();
+    }
+
+    function readStoredConsent() {
+        if (!requireConsent) {
+            return {
+                analytics: true,
+                offers: true,
+                updated_at: now(),
+            };
+        }
+
+        try {
+            const rawConsent = localStorage.getItem(consentStorageKey);
+
+            if (!rawConsent) {
+                return null;
+            }
+
+            const consent = JSON.parse(rawConsent);
+
+            if (!consent || !consent.updated_at) {
+                return null;
+            }
+
+            if (now() - Number(consent.updated_at) > consentValidityMs) {
+                localStorage.removeItem(consentStorageKey);
+                localStorage.removeItem(sessionStorageKey);
+                localStorage.removeItem(leadSentStorageKey);
+                sessionStorage.removeItem("predictneed_popup_shown");
+                return null;
+            }
+
+            return {
+                analytics: consent.analytics === true,
+                offers: consent.offers === true,
+                updated_at: Number(consent.updated_at),
+            };
+        } catch (error) {
+            localStorage.removeItem(consentStorageKey);
+            return null;
+        }
+    }
+
+    function saveConsent(consent) {
+        const normalizedConsent = {
+            analytics: consent.analytics === true,
+            offers: consent.offers === true,
+            updated_at: now(),
+        };
+
+        localStorage.setItem(consentStorageKey, JSON.stringify(normalizedConsent));
+        return normalizedConsent;
+    }
+
+    function hasAnalyticsConsent() {
+        const consent = readStoredConsent();
+        return consent && consent.analytics === true;
+    }
+
+    function hasOfferConsent() {
+        const consent = readStoredConsent();
+        return consent && consent.analytics === true && consent.offers === true;
+    }
+
     function getSessionId() {
-        let sessionId = localStorage.getItem("predictneed_session_id");
+        if (sessionId) {
+            return sessionId;
+        }
+
+        if (requireConsent && !debugMode && !hasAnalyticsConsent()) {
+            return null;
+        }
+
+        sessionId = localStorage.getItem(sessionStorageKey);
 
         if (!sessionId) {
-            if (crypto.randomUUID) {
+            if (window.crypto && crypto.randomUUID) {
                 sessionId = crypto.randomUUID();
             } else {
                 sessionId = "session_" + Date.now() + "_" + Math.random().toString(36).substring(2);
             }
 
             if (!debugMode) {
-                localStorage.setItem("predictneed_lead_sent", "true");
+                localStorage.setItem(sessionStorageKey, sessionId);
             }
         }
 
         return sessionId;
     }
 
-    const sessionId = getSessionId();
-    const startTime = Date.now();
+    function removeTrackingStorage() {
+        sessionId = null;
+        hasStartedTracking = false;
+        elapsedSecondsSent = 0;
+        localStorage.removeItem(sessionStorageKey);
+        localStorage.removeItem(leadSentStorageKey);
+        sessionStorage.removeItem("predictneed_popup_shown");
+
+        const popup = document.getElementById("predictneed-popup");
+        if (popup) {
+            popup.remove();
+        }
+    }
+
+    function injectConsentStyles() {
+        if (document.getElementById("predictneed-consent-style")) {
+            return;
+        }
+
+        const style = document.createElement("style");
+        style.id = "predictneed-consent-style";
+        style.innerHTML = `
+            #predictneed-consent-banner,
+            #predictneed-consent-panel {
+                position: fixed;
+                left: 20px;
+                right: 20px;
+                bottom: 20px;
+                z-index: 999998;
+                max-width: 760px;
+                box-sizing: border-box;
+                padding: 18px;
+                border: 1px solid rgba(15, 23, 42, 0.18);
+                border-radius: 12px;
+                background: #ffffff;
+                color: #0f172a;
+                box-shadow: 0 20px 70px rgba(15, 23, 42, 0.24);
+                font-family: Arial, sans-serif;
+            }
+
+            #predictneed-consent-panel {
+                max-width: 640px;
+            }
+
+            .predictneed-consent-title {
+                margin: 0 0 8px;
+                font-size: 18px;
+                line-height: 1.25;
+                font-weight: 800;
+                color: #0f172a;
+            }
+
+            .predictneed-consent-text {
+                margin: 0 0 14px;
+                color: #334155;
+                font-size: 14px;
+                line-height: 1.55;
+            }
+
+            .predictneed-consent-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .predictneed-consent-actions button,
+            .predictneed-cookie-settings {
+                min-height: 42px;
+                border-radius: 999px;
+                padding: 0 16px;
+                border: 1px solid #0f172a;
+                background: #ffffff;
+                color: #0f172a;
+                font-weight: 800;
+                cursor: pointer;
+            }
+
+            .predictneed-consent-actions .primary {
+                background: #0f172a;
+                color: #ffffff;
+            }
+
+            .predictneed-consent-links {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                margin-top: 12px;
+                font-size: 13px;
+            }
+
+            .predictneed-consent-links a {
+                color: #075985;
+                text-decoration: underline;
+            }
+
+            .predictneed-consent-choice {
+                display: grid;
+                grid-template-columns: 20px 1fr;
+                gap: 10px;
+                margin: 12px 0;
+                color: #334155;
+                font-size: 14px;
+                line-height: 1.45;
+            }
+
+            .predictneed-consent-choice input {
+                width: 16px;
+                height: 16px;
+                margin: 2px 0 0;
+            }
+
+            .predictneed-cookie-settings {
+                position: fixed;
+                left: 16px;
+                bottom: 16px;
+                z-index: 999997;
+                min-height: 38px;
+                border-color: rgba(15, 23, 42, 0.3);
+                background: #ffffff;
+                box-shadow: 0 10px 30px rgba(15, 23, 42, 0.16);
+                font-size: 13px;
+            }
+
+            @media (max-width: 560px) {
+                #predictneed-consent-banner,
+                #predictneed-consent-panel {
+                    left: 10px;
+                    right: 10px;
+                    bottom: 10px;
+                    padding: 14px;
+                }
+
+                .predictneed-consent-actions {
+                    display: grid;
+                    grid-template-columns: 1fr;
+                }
+
+                .predictneed-consent-actions button {
+                    width: 100%;
+                }
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    function removeConsentUi() {
+        const banner = document.getElementById("predictneed-consent-banner");
+        const panel = document.getElementById("predictneed-consent-panel");
+
+        if (banner) {
+            banner.remove();
+        }
+
+        if (panel) {
+            panel.remove();
+        }
+    }
+
+    function renderSettingsButton() {
+        if (!requireConsent || document.getElementById("predictneed-cookie-settings")) {
+            return;
+        }
+
+        injectConsentStyles();
+
+        const button = document.createElement("button");
+        button.id = "predictneed-cookie-settings";
+        button.className = "predictneed-cookie-settings";
+        button.type = "button";
+        button.textContent = "Paramètres de confidentialité";
+
+        button.addEventListener("click", function () {
+            renderConsentPanel();
+        });
+
+        document.body.appendChild(button);
+    }
+
+    function renderConsentBanner() {
+        if (!requireConsent || readStoredConsent() || document.getElementById("predictneed-consent-banner")) {
+            renderSettingsButton();
+            return;
+        }
+
+        injectConsentStyles();
+
+        const banner = document.createElement("div");
+        banner.id = "predictneed-consent-banner";
+        banner.setAttribute("role", "dialog");
+        banner.setAttribute("aria-live", "polite");
+        banner.setAttribute("aria-label", "Gestion du consentement PredictNeed IA");
+
+        banner.innerHTML = `
+            <p class="predictneed-consent-title">Nous respectons votre confidentialité</p>
+            <p class="predictneed-consent-text">
+                Nous utilisons des cookies et outils pour mieux comprendre l'utilisation
+                du site, améliorer votre expérience et proposer des contenus plus pertinents.
+                Vous pouvez accepter, refuser ou personnaliser vos choix à tout moment.
+            </p>
+            <div class="predictneed-consent-actions">
+                <button type="button" data-choice="reject">Tout refuser</button>
+                <button type="button" data-choice="customize">Personnaliser</button>
+                <button type="button" class="primary" data-choice="accept">Tout accepter</button>
+            </div>
+            <div class="predictneed-consent-links">
+                ${privacyUrl ? `<a href="${privacyUrl}" target="_blank" rel="noopener">Politique de confidentialité</a>` : ""}
+                ${cookiesUrl ? `<a href="${cookiesUrl}" target="_blank" rel="noopener">Politique de cookies</a>` : ""}
+            </div>
+        `;
+
+        banner.addEventListener("click", function (event) {
+            const button = event.target.closest("button");
+            if (!button) {
+                return;
+            }
+
+            const choice = button.getAttribute("data-choice");
+
+            if (choice === "accept") {
+                applyConsent({ analytics: true, offers: true });
+            } else if (choice === "reject") {
+                applyConsent({ analytics: false, offers: false });
+            } else if (choice === "customize") {
+                renderConsentPanel();
+            }
+        });
+
+        document.body.appendChild(banner);
+    }
+
+    function renderConsentPanel() {
+        removeConsentUi();
+        injectConsentStyles();
+
+        const storedConsent = readStoredConsent() || {
+            analytics: false,
+            offers: false,
+        };
+
+        const panel = document.createElement("div");
+        panel.id = "predictneed-consent-panel";
+        panel.setAttribute("role", "dialog");
+        panel.setAttribute("aria-label", "Préférences cookies PredictNeed IA");
+
+        panel.innerHTML = `
+            <p class="predictneed-consent-title">Paramètres de confidentialité</p>
+            <p class="predictneed-consent-text">
+                Choisissez les outils que vous acceptez. Les cookies nécessaires au bon
+                fonctionnement du site restent toujours actifs.
+            </p>
+            <label class="predictneed-consent-choice">
+                <input type="checkbox" name="analytics" ${storedConsent.analytics ? "checked" : ""}>
+                <span>
+                    <strong>Mesure et amélioration de l'expérience</strong><br>
+                    Comprendre l'utilisation du site, améliorer les parcours et mesurer
+                    l'efficacité des contenus.
+                </span>
+            </label>
+            <label class="predictneed-consent-choice">
+                <input type="checkbox" name="offers" ${storedConsent.offers ? "checked" : ""}>
+                <span>
+                    <strong>Contenus pertinents</strong><br>
+                    Adapter certains messages ou contenus selon l'intérêt exprimé pendant la navigation.
+                </span>
+            </label>
+            <div class="predictneed-consent-actions">
+                <button type="button" data-choice="reject">Tout refuser</button>
+                <button type="button" data-choice="save">Enregistrer mes choix</button>
+                <button type="button" class="primary" data-choice="accept">Tout accepter</button>
+            </div>
+        `;
+
+        panel.addEventListener("click", function (event) {
+            const button = event.target.closest("button");
+            if (!button) {
+                return;
+            }
+
+            const choice = button.getAttribute("data-choice");
+
+            if (choice === "accept") {
+                applyConsent({ analytics: true, offers: true });
+            } else if (choice === "reject") {
+                applyConsent({ analytics: false, offers: false });
+            } else if (choice === "save") {
+                const analytics = panel.querySelector('input[name="analytics"]').checked;
+                const offers = panel.querySelector('input[name="offers"]').checked;
+                applyConsent({
+                    analytics: analytics,
+                    offers: analytics && offers,
+                });
+            }
+        });
+
+        document.body.appendChild(panel);
+    }
+
+    function applyConsent(consent) {
+        const normalizedConsent = saveConsent(consent);
+
+        if (!normalizedConsent.analytics) {
+            removeTrackingStorage();
+        }
+
+        removeConsentUi();
+        renderSettingsButton();
+
+        if (normalizedConsent.analytics) {
+            startTracking();
+        }
+    }
+
+    window.PredictNeedIA = window.PredictNeedIA || {};
+    window.PredictNeedIA.openConsentPreferences = renderConsentPanel;
+    window.PredictNeedIA.acceptAll = function () {
+        applyConsent({ analytics: true, offers: true });
+    };
+    window.PredictNeedIA.rejectAll = function () {
+        applyConsent({ analytics: false, offers: false });
+    };
 
     function shouldShowOffer(resultat) {
         if (!resultat) return false;
@@ -39,7 +445,11 @@
             return true;
         }
 
-        const leadAlreadySent = localStorage.getItem("predictneed_lead_sent");
+        if (!debugMode && !hasOfferConsent()) {
+            return false;
+        }
+
+        const leadAlreadySent = localStorage.getItem(leadSentStorageKey);
         const popupAlreadyShown = sessionStorage.getItem("predictneed_popup_shown");
 
         if (leadAlreadySent || popupAlreadyShown) {
@@ -50,6 +460,10 @@
     }
 
     function showOfferPopup(resultat) {
+        if (!hasOfferConsent() && !debugMode) {
+            return;
+        }
+
         const existingPopup = document.getElementById("predictneed-popup");
 
         if (existingPopup) {
@@ -66,7 +480,7 @@
 
         popup.innerHTML = `
             <button class="predictneed-launcher" type="button">
-                <span class="predictneed-launcher-icon">💬</span>
+                <span class="predictneed-launcher-icon">i</span>
                 <span>Offre personnalisée</span>
             </button>
 
@@ -91,15 +505,12 @@
 
                     <label class="predictneed-consent">
                         <input type="checkbox" name="consentement" required>
-                        <span>J’accepte d’être contacté au sujet de ma demande.</span>
+                        <span>J'accepte d'être contacté au sujet de ma demande.</span>
                     </label>
 
-                    <button type="submit">Recevoir l’offre</button>
+                    <button type="submit">Recevoir l'offre</button>
                 </form>
 
-                <p class="predictneed-small">
-                    Profil détecté : ${resultat.profil || "Visiteur intéressé"}
-                </p>
             </div>
         `;
 
@@ -126,7 +537,7 @@
                 border: none;
                 border-radius: 999px;
                 padding: 14px 18px;
-                background: linear-gradient(90deg, #38bdf8, #22d3ee);
+                background: #38bdf8;
                 color: #0f172a;
                 font-weight: bold;
                 box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
@@ -141,6 +552,7 @@
                 justify-content: center;
                 border-radius: 50%;
                 background: rgba(15, 23, 42, 0.15);
+                font-weight: 900;
             }
 
             #predictneed-popup.minimized .predictneed-launcher {
@@ -153,7 +565,7 @@
 
             .predictneed-popup-box {
                 position: relative;
-                background: linear-gradient(135deg, #0f172a, #1e3a8a);
+                background: #0f172a;
                 color: white;
                 padding: 24px;
                 border-radius: 18px;
@@ -241,11 +653,6 @@
                 cursor: pointer;
             }
 
-            .predictneed-small {
-                margin-top: 12px !important;
-                font-size: 12px !important;
-                color: #bae6fd !important;
-            }
         `;
 
         document.head.appendChild(style);
@@ -266,10 +673,11 @@
             event.stopPropagation();
             popup.classList.remove("minimized");
         });
-        
+
         form.addEventListener("submit", function (event) {
             event.preventDefault();
 
+            const currentSessionId = getSessionId();
             const formData = new FormData(form);
 
             const nom = formData.get("nom");
@@ -277,6 +685,11 @@
             const telephone = formData.get("telephone");
             const message = formData.get("message");
             const consentement = formData.get("consentement") === "on";
+
+            if (!currentSessionId) {
+                alert("Veuillez accepter l'analyse PredictNeed IA pour envoyer cette demande.");
+                return;
+            }
 
             if (!email && !telephone) {
                 alert("Veuillez renseigner au moins un email ou un téléphone.");
@@ -290,7 +703,7 @@
                 },
                 body: JSON.stringify({
                     api_key: apiKey,
-                    session_id: sessionId,
+                    session_id: currentSessionId,
                     nom: nom,
                     email: email,
                     telephone: telephone,
@@ -305,7 +718,7 @@
                 .then(function (data) {
                     if (data.success) {
                         if (!debugMode) {
-                            localStorage.setItem("predictneed_lead_sent", "true");
+                            localStorage.setItem(leadSentStorageKey, "true");
                         }
 
                         popup.querySelector(".predictneed-popup-box").innerHTML = `
@@ -322,7 +735,7 @@
                             popup.classList.add("minimized");
                         }, 2500);
                     } else {
-                        alert(data.error || "Erreur lors de l’envoi du contact.");
+                        alert(data.error || "Erreur lors de l'envoi du contact.");
                     }
                 })
                 .catch(function (error) {
@@ -332,7 +745,102 @@
         });
     }
 
+    function detecterAppareil() {
+        const largeur = window.innerWidth;
+        const userAgent = navigator.userAgent.toLowerCase();
+
+        let appareil = "Desktop";
+
+        if (/tablet|ipad/.test(userAgent)) {
+            appareil = "Tablette";
+        } else if (/mobile|iphone|android/.test(userAgent) || largeur < 768) {
+            appareil = "Mobile";
+        }
+
+        let navigateur = "Inconnu";
+
+        if (userAgent.includes("edge")) {
+            navigateur = "Edge";
+        } else if (userAgent.includes("chrome")) {
+            navigateur = "Chrome";
+        } else if (userAgent.includes("safari")) {
+            navigateur = "Safari";
+        } else if (userAgent.includes("firefox")) {
+            navigateur = "Firefox";
+        }
+
+        let systeme = "Inconnu";
+
+        if (userAgent.includes("mac")) {
+            systeme = "macOS";
+        } else if (userAgent.includes("windows")) {
+            systeme = "Windows";
+        } else if (userAgent.includes("iphone") || userAgent.includes("ipad")) {
+            systeme = "iOS";
+        } else if (userAgent.includes("android")) {
+            systeme = "Android";
+        }
+
+        return {
+            appareil: appareil,
+            navigateur: navigateur,
+            systeme_exploitation: systeme,
+            est_mobile: appareil === "Mobile",
+            est_tablette: appareil === "Tablette",
+            est_desktop: appareil === "Desktop"
+        };
+    }
+
+    function detecterSource() {
+        const params = new URLSearchParams(window.location.search);
+        const utmSource = params.get("utm_source");
+        const utmMedium = params.get("utm_medium");
+        const utmCampaign = params.get("utm_campaign");
+
+        let source = "direct";
+
+        if (utmSource) {
+            source = utmSource;
+        } else if (document.referrer) {
+            try {
+                const refererHost = new URL(document.referrer).hostname;
+
+                if (refererHost.includes("google")) {
+                    source = "google";
+                } else if (
+                    refererHost.includes("facebook") ||
+                    refererHost.includes("instagram") ||
+                    refererHost.includes("linkedin") ||
+                    refererHost.includes("x.com") ||
+                    refererHost.includes("twitter")
+                ) {
+                    source = "social";
+                } else {
+                    source = "referer";
+                }
+            } catch (error) {
+                source = "referer";
+            }
+        }
+
+        return {
+            source_visite: source,
+            utm_source: utmSource || "",
+            utm_medium: utmMedium || "",
+            utm_campaign: utmCampaign || "",
+        };
+    }
+
     function sendEvent(typeEvenement, page, valeur) {
+        const currentSessionId = getSessionId();
+
+        if (!currentSessionId) {
+            return;
+        }
+
+        const infosAppareil = detecterAppareil();
+        const infosSource = detecterSource();
+
         fetch(apiUrl, {
             method: "POST",
             headers: {
@@ -340,11 +848,24 @@
             },
             body: JSON.stringify({
                 api_key: apiKey,
-                session_id: sessionId,
+                session_id: currentSessionId,
+                consentement_tracking: true,
                 type_evenement: typeEvenement,
                 page: page,
                 valeur: valeur,
-            }),
+                user_agent: navigator.userAgent,
+                referer: document.referrer,
+                appareil: infosAppareil.appareil,
+                navigateur: infosAppareil.navigateur,
+                systeme_exploitation: infosAppareil.systeme_exploitation,
+                source_visite: infosSource.source_visite,
+                utm_source: infosSource.utm_source,
+                utm_medium: infosSource.utm_medium,
+                utm_campaign: infosSource.utm_campaign,
+                est_mobile: infosAppareil.est_mobile,
+                est_tablette: infosAppareil.est_tablette,
+                est_desktop: infosAppareil.est_desktop,
+            })
         })
             .then(function (response) {
                 return response.json();
@@ -359,38 +880,16 @@
             });
     }
 
-    sendEvent(
-        "page_vue",
-        window.location.pathname,
-        document.title
-    );
-
-    document.addEventListener("click", function (event) {
-        if (event.target.closest("#predictneed-popup")) {
+    function sendElapsedTime() {
+        if (!hasAnalyticsConsent() && !debugMode) {
             return;
         }
 
-        const elementClique = event.target.closest("a, button");
-
-        if (elementClique) {
-            const texte = elementClique.innerText || elementClique.href || "clic";
-
-            sendEvent(
-                "clic",
-                window.location.pathname,
-                texte
-            );
-        }
-    });
-
-    let dernierTempsEnvoye = 0;
-
-    function envoyerTempsPasse() {
-        const tempsTotal = Math.round((Date.now() - startTime) / 1000);
-        const difference = tempsTotal - dernierTempsEnvoye;
+        const totalSeconds = Math.round((Date.now() - startTime) / 1000);
+        const difference = totalSeconds - elapsedSecondsSent;
 
         if (difference >= 10) {
-            dernierTempsEnvoye = tempsTotal;
+            elapsedSecondsSent = totalSeconds;
 
             sendEvent(
                 "temps",
@@ -400,17 +899,60 @@
         }
     }
 
-    setInterval(envoyerTempsPasse, 10000);
+    function startTracking() {
+        if (hasStartedTracking || (!hasAnalyticsConsent() && !debugMode)) {
+            return;
+        }
+
+        hasStartedTracking = true;
+
+        sendEvent(
+            "page_vue",
+            window.location.pathname,
+            document.title
+        );
+    }
+
+    document.addEventListener("click", function (event) {
+        if (!hasStartedTracking || (!hasAnalyticsConsent() && !debugMode)) {
+            return;
+        }
+
+        if (event.target.closest("#predictneed-popup") || event.target.closest("#predictneed-consent-banner") || event.target.closest("#predictneed-consent-panel")) {
+            return;
+        }
+
+        const clickedElement = event.target.closest("a, button");
+
+        if (clickedElement) {
+            const text = clickedElement.innerText || clickedElement.href || "clic";
+
+            sendEvent(
+                "clic",
+                window.location.pathname,
+                text
+            );
+        }
+    });
+
+    setInterval(sendElapsedTime, 10000);
 
     window.addEventListener("beforeunload", function () {
-        const tempsPasse = Math.round((Date.now() - startTime) / 1000);
+        const currentSessionId = getSessionId();
+
+        if (!currentSessionId || (!hasAnalyticsConsent() && !debugMode)) {
+            return;
+        }
+
+        const elapsed = Math.round((Date.now() - startTime) / 1000);
 
         const data = {
             api_key: apiKey,
-            session_id: sessionId,
+            session_id: currentSessionId,
+            consentement_tracking: true,
             type_evenement: "temps",
             page: window.location.pathname,
-            valeur: tempsPasse + " secondes",
+            valeur: elapsed + " secondes",
         };
 
         const blob = new Blob(
@@ -420,4 +962,14 @@
 
         navigator.sendBeacon(apiUrl, blob);
     });
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", function () {
+            renderConsentBanner();
+            startTracking();
+        });
+    } else {
+        renderConsentBanner();
+        startTracking();
+    }
 })();

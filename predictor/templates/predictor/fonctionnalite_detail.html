@@ -1,0 +1,107 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ module.nom }} - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+</head>
+<body class="home-page">
+
+{% include "predictor/includes/navbar.html" %}
+
+<main class="pro-home feature-public-page">
+    <section class="pro-hero feature-hero">
+        <div class="pro-hero-content">
+            <span class="pro-badge">{{ module.badge }} - Module dashboard</span>
+            <h1>{{ module.nom }}</h1>
+            <p>{{ module.hero }}</p>
+
+            <div class="home-actions">
+                <a href="{% url 'inscription' %}" class="hero-button">Essayer PredictNeed IA</a>
+                <a href="{% url 'fonctionnalites' %}" class="secondary-button">Voir tous les modules</a>
+            </div>
+        </div>
+
+        <div class="pro-hero-panel feature-summary-panel">
+            <div class="panel-header">
+                <span></span>
+                <span></span>
+                <span></span>
+                <strong>{{ module.nom }}</strong>
+            </div>
+            <div class="signal-card active">
+                <small>Objectif</small>
+                <strong>{{ module.accroche }}</strong>
+                <p>{{ module.resume }}</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pro-section split-section">
+        <div>
+            <span class="section-kicker">Pourquoi c'est utile</span>
+            <h2>Ce que ce module apporte au professionnel</h2>
+            <p>{{ module.resume }}</p>
+        </div>
+
+        <div class="solution-list">
+            {% for benefice in module.benefices %}
+                <div>
+                    <strong>0{{ forloop.counter }}</strong>
+                    <span>{{ benefice }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="pro-section">
+        <span class="section-kicker">Dans le dashboard</span>
+        <h2>Ce que le client retrouve après inscription</h2>
+
+        <div class="public-dashboard-grid">
+            {% for item in module.dashboard %}
+                <div class="public-dashboard-item">
+                    <span>{{ forloop.counter|stringformat:"02d" }}</span>
+                    <strong>{{ item }}</strong>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="pro-section feature-scenario">
+        <span class="section-kicker">Exemple concret</span>
+        <h2>Comment le module peut servir au quotidien</h2>
+        <p>{{ module.scenario }}</p>
+    </section>
+
+    <section class="pro-section">
+        <span class="section-kicker">Autres modules</span>
+        <h2>Explorer d'autres fonctionnalités</h2>
+        <div class="public-module-grid compact">
+            {% for item in autres_modules %}
+                <a href="{% url 'fonctionnalite_detail' item.slug %}" class="public-module-card">
+                    <span>{{ item.badge }}</span>
+                    <h3>{{ item.nom }}</h3>
+                    <p>{{ item.accroche }}</p>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="final-cta">
+        <span class="section-kicker">Passer à l'action</span>
+        <h2>Voir comment ce module s'intègre dans PredictNeed IA</h2>
+        <div class="pro-actions">
+            <a href="{% url 'inscription' %}" class="hero-button">Créer un compte</a>
+            <a href="{% url 'simulateur' %}" class="secondary-button">Tester le simulateur</a>
+        </div>
+    </section>
+</main>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>

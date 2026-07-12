@@ -1,0 +1,75 @@
+{% load static %}
+
+<footer class="site-footer">
+    <div class="footer-guides">
+        <div>
+            <p class="footer-kicker">Guides par e-mail</p>
+            <h2>Recevez les nouveaux guides.</h2>
+            <p>
+                Des conseils concrets pour mieux comprendre vos visiteurs,
+                améliorer votre site et transformer vos opportunités.
+            </p>
+        </div>
+
+        <form class="footer-guides-form" action="#" method="post">
+            {% csrf_token %}
+            <input
+                type="text"
+                id="footer-guides-name"
+                name="prenom"
+                placeholder="Votre prénom"
+                autocomplete="given-name"
+            >
+            <input
+                type="email"
+                id="footer-guides-email"
+                name="email"
+                placeholder="votre@email.fr"
+                autocomplete="email"
+            >
+            <label class="footer-guides-consent">
+                <input type="checkbox" name="guides_consent">
+                <span>J'accepte de recevoir les guides par e-mail et je peux me désinscrire à tout moment.</span>
+            </label>
+            <button type="button">S'inscrire</button>
+        </form>
+    </div>
+
+    <div class="footer-main">
+        <div class="footer-brand">
+            <p class="footer-kicker">PredictNeed IA</p>
+            <h2>Prédiction des besoins visiteurs</h2>
+            <p>
+                Une application SaaS pour aider les professionnels à comprendre leurs visiteurs,
+                prioriser les prospects et transformer les visites en opportunités commerciales.
+            </p>
+        </div>
+
+        <div class="footer-column">
+            <h3>Explorer</h3>
+            <a href="{% url 'accueil' %}">Accueil</a>
+            <a href="{% url 'simulateur' %}">Simulateur</a>
+            <a href="{% url 'prix' %}">Prix</a>
+
+            {% if user.is_authenticated %}
+                <a href="{% url 'deconnexion' %}">Déconnexion</a>
+            {% else %}
+                <a href="{% url 'connexion' %}">Connexion</a>
+                <a href="{% url 'inscription' %}">Créer un compte</a>
+            {% endif %}
+        </div>
+
+        <div class="footer-column">
+            <h3>Informations légales</h3>
+            <a href="{% url 'mentions_legales' %}">Mentions légales</a>
+            <a href="{% url 'politique_confidentialite' %}">Politique de confidentialité (RGPD)</a>
+            <a href="{% url 'conditions_generales_utilisation' %}">Conditions générales d'utilisation</a>
+            <a href="{% url 'politique_cookies' %}">Politique de cookies</a>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <span>© PredictNeed IA</span>
+        <span>Tous droits réservés.</span>
+    </div>
+</footer>
