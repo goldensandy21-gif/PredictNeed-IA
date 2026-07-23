@@ -22,6 +22,7 @@
     const consentValidityMs = 180 * 24 * 60 * 60 * 1000;
 
     let sessionId = null;
+    let leadSessionId = null;
     let hasStartedTracking = false;
     let elapsedSecondsSent = 0;
     let offerTriggerInitialized = false;
@@ -103,6 +104,14 @@
         return consent && consent.analytics === true && consent.offers === true;
     }
 
+    function createSessionId() {
+        if (window.crypto && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+
+        return "session_" + Date.now() + "_" + Math.random().toString(36).substring(2);
+    }
+
     function getSessionId() {
         if (sessionId) {
             return sessionId;
@@ -115,11 +124,7 @@
         sessionId = localStorage.getItem(sessionStorageKey);
 
         if (!sessionId) {
-            if (window.crypto && crypto.randomUUID) {
-                sessionId = crypto.randomUUID();
-            } else {
-                sessionId = "session_" + Date.now() + "_" + Math.random().toString(36).substring(2);
-            }
+            sessionId = createSessionId();
 
             if (!debugMode) {
                 localStorage.setItem(sessionStorageKey, sessionId);
@@ -127,6 +132,20 @@
         }
 
         return sessionId;
+    }
+
+    function getLeadSessionId() {
+        const trackingSessionId = getSessionId();
+
+        if (trackingSessionId) {
+            return trackingSessionId;
+        }
+
+        if (!leadSessionId) {
+            leadSessionId = createSessionId();
+        }
+
+        return leadSessionId;
     }
 
     function removeTrackingStorage() {
@@ -439,10 +458,11 @@
 
         removeConsentUi();
 
+        initializeOfferTrigger();
+        tryShowOfferAfterEngagement();
+
         if (normalizedConsent.analytics) {
             startTracking();
-            initializeOfferTrigger();
-            tryShowOfferAfterEngagement();
         }
     }
 
@@ -459,11 +479,7 @@
             return !document.getElementById("predictneed-popup");
         }
 
-        if (!debugMode && !hasOfferConsent()) {
-            return false;
-        }
-
-        const leadAlreadySent = localStorage.getItem(leadSentStorageKey);
+        const leadAlreadySent = localStorage.getItem(leadSentStorageKey) || sessionStorage.getItem(leadSentStorageKey);
 
         if (leadAlreadySent) {
             return false;
@@ -555,10 +571,6 @@
     }
 
     function showOfferPopup(resultat) {
-        if (!hasOfferConsent() && !debugMode) {
-            return;
-        }
-
         clearOfferReopenTimer();
 
         const existingPopup = document.getElementById("predictneed-popup");
@@ -788,7 +800,7 @@
         form.addEventListener("submit", function (event) {
             event.preventDefault();
 
-            const currentSessionId = getSessionId();
+            const currentSessionId = getLeadSessionId();
             const formData = new FormData(form);
 
             const nom = formData.get("nom");
@@ -798,11 +810,6 @@
             const consentement = formData.get("consentement") === "on";
             const infosAppareil = detecterAppareil();
             const infosSource = detecterSource();
-
-            if (!currentSessionId) {
-                alert("Veuillez accepter l'analyse PredictNeed IA pour envoyer cette demande.");
-                return;
-            }
 
             if (!email && !telephone) {
                 alert("Veuillez renseigner au moins un email ou un téléphone.");
@@ -843,7 +850,11 @@
                 .then(function (data) {
                     if (data.success) {
                         if (!debugMode) {
-                            localStorage.setItem(leadSentStorageKey, "true");
+                            if (hasAnalyticsConsent()) {
+                                localStorage.setItem(leadSentStorageKey, "true");
+                            } else {
+                                sessionStorage.setItem(leadSentStorageKey, "true");
+                            }
                         }
 
                         popup.querySelector(".predictneed-popup-box").innerHTML = `
@@ -1138,9 +1149,11 @@
         document.addEventListener("DOMContentLoaded", function () {
             renderConsentBanner();
             startTracking();
+            initializeOfferTrigger();
         });
     } else {
         renderConsentBanner();
         startTracking();
+        initializeOfferTrigger();
     }
 })();
