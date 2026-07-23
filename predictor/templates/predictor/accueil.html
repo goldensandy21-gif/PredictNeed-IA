@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>PredictNeed IA - Prédiction des besoins visiteurs</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=104">
 </head>
 <body class="home-page">
 
@@ -37,11 +37,31 @@
             </div>
         </div>
 
-        <div class="hero-insight-card">
-            <span>Signal chaud</span>
-            <strong>Page prix + clic offre</strong>
-            <p>Action proposée : afficher une prise de contact.</p>
-        </div>
+        <aside class="hero-dashboard-preview" aria-label="Aperçu du dashboard PredictNeed IA">
+            <div class="hero-preview-toolbar">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="hero-preview-grid">
+                <div class="hero-preview-metric">
+                    <small>Score chaud</small>
+                    <strong>87%</strong>
+                </div>
+                <div class="hero-preview-metric">
+                    <small>Leads</small>
+                    <strong>+242%</strong>
+                </div>
+                <div class="hero-preview-wide">
+                    <small>Intentions détectées</small>
+                    <div class="hero-preview-bars">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        </aside>
     </section>
 
     <section class="home-proof-strip" aria-label="Points forts PredictNeed IA">
