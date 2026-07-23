@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Connecteurs - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=103">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=105">
 </head>
 <body>
 
@@ -219,6 +219,46 @@
         {% empty %}
             <p>Aucun site actif disponible pour ce module.</p>
         {% endfor %}
+    </div>
+
+    <div class="dashboard-section connector-privacy-kit">
+        <h2>Confidentialité et cookies à ajouter sur le site</h2>
+        <p class="section-description">
+            En complément du script PredictNeed IA, ajoutez ces mentions dans la politique
+            de confidentialité et la politique cookies du site client. Elles doivent être
+            adaptées avec les coordonnées et durées définitives du responsable de traitement.
+        </p>
+
+        <div class="privacy-kit-grid">
+            <article class="privacy-kit-card">
+                <div class="legal-copy-heading">
+                    <h3>Politique de confidentialité</h3>
+                    <button type="button" class="copy-code-button" data-copy-target="#connector-privacy-copy">
+                        Copier
+                    </button>
+                </div>
+                <pre id="connector-privacy-copy" class="legal-code-block">Nous utilisons PredictNeed IA afin d'analyser les parcours de navigation sur notre site, identifier les pages consultées, les clics, le temps passé et les signaux pouvant indiquer une intention commerciale.
+
+Lorsque la réglementation l'exige, ce suivi est déclenché uniquement après consentement. Les données collectées peuvent inclure un identifiant de session, les pages vues, les interactions, la source de visite, l'appareil, le navigateur, le système d'exploitation et les paramètres de campagne.
+
+Ces informations nous aident à améliorer le site, qualifier les demandes reçues et proposer une réponse commerciale plus pertinente. Vous pouvez exercer vos droits ou retirer votre consentement en nous contactant à : [adresse email RGPD du client].</pre>
+            </article>
+
+            <article class="privacy-kit-card">
+                <div class="legal-copy-heading">
+                    <h3>Politique cookies</h3>
+                    <button type="button" class="copy-code-button" data-copy-target="#connector-cookies-copy">
+                        Copier
+                    </button>
+                </div>
+                <pre id="connector-cookies-copy" class="legal-code-block">Traceur : PredictNeed IA
+Type : analyse comportementale et qualification commerciale.
+Finalité : mesurer les pages vues, clics, temps passé, sources de visite et intentions commerciales.
+Consentement : requis avant déclenchement lorsque la réglementation l'impose.
+Données : identifiant de session, événements de navigation, appareil, navigateur, système d'exploitation, référent et paramètres UTM.
+Durée indicative : choix de consentement 6 mois ; données détaillées 13 mois maximum sauf durée différente validée.</pre>
+            </article>
+        </div>
     </div>
 </section>
 

@@ -48,12 +48,16 @@ def statut_configuration_fournisseurs():
     statuts = []
 
     for plateforme, fournisseur in fournisseurs_connecteurs().items():
+        variables_requises = fournisseur.get("variables_requises", [])
+        variables_optionnelles = fournisseur.get("variables_optionnelles", [])
         statuts.append({
             "plateforme": plateforme,
             "nom": fournisseur["nom"],
             "description": fournisseur["description"],
             "configure": fournisseur_est_configure(plateforme),
             "scopes": ", ".join(fournisseur.get("scopes", [])),
+            "variables_requises": variables_requises,
+            "variables_optionnelles": variables_optionnelles,
         })
 
     return statuts

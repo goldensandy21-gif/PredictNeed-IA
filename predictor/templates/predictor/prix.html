@@ -6,39 +6,49 @@
     <meta charset="UTF-8">
     <title>Prix - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=105">
 </head>
 <body class="pricing-body">
 
 {% include "predictor/includes/navbar.html" %}
 
-<main class="pricing-page">
-    <section class="pricing-hero">
+<main class="pricing-page pricing-page-detailed">
+    <section class="pricing-alert-band" aria-label="Conditions d'abonnement">
+        <strong>Pour poursuivre votre inscription, activez la formule PredictNeed IA Pro.</strong>
+        <span>Aucun engagement.</span>
+        <span>Annulation possible à tout moment.</span>
+        <span>{{ periode_essai_jours|default:30 }} jours d'essai inclus.</span>
+    </section>
+
+    <section class="pricing-hero pricing-hero-detailed">
         <div class="pricing-copy">
             <p class="section-kicker">Abonnement SaaS</p>
-            <h1>PredictNeed IA Pro</h1>
+            <h1>Une seule formule pour transformer les visites en opportunités.</h1>
             <p>
-                Un abonnement mensuel pour suivre les comportements visiteurs, détecter
-                les intentions, capturer les leads et piloter vos opportunités depuis un
-                dashboard professionnel.
+                PredictNeed IA Pro regroupe le suivi visiteurs, la prédiction des intentions,
+                la capture de leads, les modules intelligents et le script d'installation
+                dans un seul abonnement.
             </p>
             <p>
-                L'offre est pensée pour les indépendants, TPE, sites vitrines et activités
-                en ligne qui veulent comprendre ce qui se passe avant une demande de contact
-                ou une décision d'achat.
+                L'offre est pensée pour les indépendants, TPE, sites vitrines, consultants
+                et activités en ligne qui veulent comprendre ce qui se passe avant une
+                demande de contact ou une décision d'achat.
             </p>
         </div>
 
-        <div class="pricing-card">
-            <span class="pricing-plan">Plan professionnel</span>
+        <div class="pricing-card pricing-card-featured">
+            <span class="pricing-plan">Formule unique</span>
+            <span class="pricing-popular">La formule PredictNeed IA</span>
             <div class="pricing-amount">
                 <strong>{{ prix_abonnement }}</strong>
                 <span>/ mois</span>
             </div>
+            <p class="pricing-trial-note">
+                Essai gratuit de {{ periode_essai_jours|default:30 }} jours avant la première facturation.
+            </p>
             <p class="pricing-tax-note">
-                Un seul abonnement pour accéder au dashboard PredictNeed IA Pro,
-                connecter vos sites et exploiter les modules disponibles.
-                Taxes applicables calculées selon vos informations de facturation.
+                Paiement sécurisé par Stripe. Les taxes applicables sont calculées selon
+                vos informations de facturation.
             </p>
 
             <ul class="pricing-list">
@@ -54,53 +64,130 @@
             {% if user.is_authenticated %}
                 <a href="{% url 'dashboard' %}" class="hero-button pricing-button">Accéder au dashboard</a>
             {% else %}
-                <a href="{% url 'inscription' %}" class="hero-button pricing-button">S'abonner maintenant</a>
+                <a href="{% url 'inscription' %}" class="hero-button pricing-button">Commencer l'essai gratuit</a>
             {% endif %}
 
-            <p class="pricing-secure">Paiement sécurisé par Stripe. Le compte est activé après validation du paiement.</p>
         </div>
     </section>
 
-    <section class="pricing-details">
-        <div>
-            <h2>Ce qui est inclus</h2>
+    <section class="pricing-plan-showcase" aria-label="Détail de la formule">
+        <article class="pricing-single-plan">
+            <div class="pricing-plan-visual">
+                <img src="{% static 'predictor/home-hero-dashboard.png' %}" alt="Aperçu du dashboard PredictNeed IA">
+            </div>
+
+            <div class="pricing-single-plan-copy">
+                <span class="pricing-popular">Tout est inclus</span>
+                <h2>PredictNeed IA Pro</h2>
+                <p>
+                    Une formule claire pour installer le script, suivre les visiteurs,
+                    comprendre les intentions et relancer les prospects les plus chauds.
+                </p>
+
+                <div class="pricing-amount pricing-single-amount">
+                    <strong>{{ prix_abonnement }}</strong>
+                    <span>par mois</span>
+                </div>
+
+                <div class="pricing-metrics">
+                    <div>
+                        <strong>{{ periode_essai_jours|default:30 }} jours</strong>
+                        <span>d'essai inclus</span>
+                    </div>
+                    <div>
+                        <strong>1 espace</strong>
+                        <span>dashboard professionnel</span>
+                    </div>
+                    <div>
+                        <strong>Modules</strong>
+                        <span>prédiction, segmentation, historique, sécurité</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="pricing-details pricing-included-section">
+        <div class="pricing-section-heading">
+            <span class="section-kicker">Inclus dans la formule</span>
+            <h2>Le client retrouve tous les outils essentiels dans son dashboard.</h2>
             <p>
-                PredictNeed IA centralise les données comportementales utiles pour mieux
-                comprendre les visiteurs et prioriser les actions commerciales.
-            </p>
-            <p>
-                Le prix couvre l'accès à l'outil, aux modules métiers, aux tableaux de bord
-                et aux fonctions de suivi des leads. Les intégrations externes dépendront
-                ensuite des services activés et des clés fournies.
+                Même avec une seule formule, le détail reste visible : le client sait
+                exactement ce qu'il paie, ce qu'il installe et ce qu'il peut suivre.
             </p>
         </div>
 
         <div class="pricing-feature-grid">
             <article>
-                <h3>Analyse comportementale</h3>
-                <p>Pages vues, clics, temps passé, sources et campagnes sont transformés en signaux exploitables.</p>
+                <h3>Suivi des visiteurs</h3>
+                <ul class="pricing-check-list">
+                    <li>Pages vues en temps réel</li>
+                    <li>Parcours client et points de contact</li>
+                    <li>Clics, temps passé, sources et campagnes UTM</li>
+                    <li>Pages consultées avant la conversion</li>
+                </ul>
             </article>
             <article>
-                <h3>Prédictions et scores</h3>
-                <p>Chaque session peut recevoir un profil, une intention et une recommandation commerciale.</p>
+                <h3>Analyse commerciale</h3>
+                <ul class="pricing-check-list">
+                    <li>Score d'intention visiteur</li>
+                    <li>Profil et besoin probable</li>
+                    <li>Leads prioritaires et opportunités CRM</li>
+                    <li>Recommandations d'action commerciale</li>
+                </ul>
             </article>
             <article>
-                <h3>Leads et opportunités</h3>
-                <p>Les visiteurs intéressés peuvent laisser leurs coordonnées et être suivis dans le CRM intégré.</p>
+                <h3>Modules intelligents</h3>
+                <ul class="pricing-check-list">
+                    <li>Prédiction avancée</li>
+                    <li>Segmentation intelligente</li>
+                    <li>Visualisations, historique et multi-canal</li>
+                    <li>Connecteurs, publicité et sécurité entreprise</li>
+                </ul>
             </article>
             <article>
-                <h3>Installation guidée</h3>
-                <p>Le dashboard fournit le script de suivi et les informations nécessaires pour connecter le site.</p>
+                <h3>Installation et conformité</h3>
+                <ul class="pricing-check-list">
+                    <li>Script d'installation par site</li>
+                    <li>Bandeau de consentement intégré au tracker</li>
+                    <li>Textes confidentialité et cookies à copier</li>
+                    <li>Purge RGPD et données maîtrisées</li>
+                </ul>
             </article>
         </div>
+    </section>
 
-        <div class="pricing-note-panel">
-            <h3>Avant la mise en ligne</h3>
+    <section class="payment-details-section">
+        <div class="pricing-section-heading">
+            <span class="section-kicker">Paiement</span>
+            <h2>Un paiement simple, sécurisé et lisible pour le client.</h2>
             <p>
-                Le paiement, les emails automatiques, les pages légales et les réglages de
-                confidentialité doivent être configurés avec vos informations définitives
-                avant l'ouverture commerciale du service.
+                Le compte est créé, l'abonnement est préparé dans Stripe, puis le dashboard
+                devient accessible après validation du checkout.
             </p>
+        </div>
+
+        <div class="payment-detail-grid">
+            <article>
+                <span>01</span>
+                <h3>Création du compte</h3>
+                <p>Le client renseigne son entreprise, son site et accepte les conditions avant de passer au paiement sécurisé.</p>
+            </article>
+            <article>
+                <span>02</span>
+                <h3>Checkout Stripe</h3>
+                <p>Stripe gère la carte, la facturation, l'adresse de facturation et les contrôles de sécurité du paiement.</p>
+            </article>
+            <article>
+                <span>03</span>
+                <h3>Essai puis abonnement</h3>
+                <p>Les {{ periode_essai_jours|default:30 }} jours d'essai sont appliqués à l'abonnement, puis la facturation mensuelle démarre si le compte reste actif.</p>
+            </article>
+            <article>
+                <span>04</span>
+                <h3>Accès dashboard</h3>
+                <p>Après validation, le client peut revenir sur le site public et retrouver le dashboard depuis la navbar.</p>
+            </article>
         </div>
     </section>
 </main>

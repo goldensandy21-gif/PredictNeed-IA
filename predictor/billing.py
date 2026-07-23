@@ -84,6 +84,11 @@ def create_subscription_checkout_session(*, client, success_url, cancel_url):
     if settings.STRIPE_AUTOMATIC_TAX:
         payload["automatic_tax[enabled]"] = "true"
 
+    if settings.PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS > 0:
+        payload["subscription_data[trial_period_days]"] = str(
+            settings.PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS
+        )
+
     if settings.STRIPE_PRICE_ID:
         payload["line_items[0][price]"] = settings.STRIPE_PRICE_ID
     else:

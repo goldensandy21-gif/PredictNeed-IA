@@ -684,6 +684,7 @@ def politique_cookies(request):
 def _subscription_context():
     return {
         "prix_abonnement": format_subscription_price(),
+        "periode_essai_jours": settings.PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS,
         "paiement_configure": stripe_is_configured(),
     }
 
@@ -1950,6 +1951,13 @@ def get_sites_utilisateur(request):
         return SiteClient.objects.none()
 
 
+def get_client_professionnel_utilisateur(request):
+    try:
+        return request.user.client_professionnel
+    except ClientProfessionnel.DoesNotExist:
+        return None
+
+
 def get_module_scope(request, module_field=None, ecommerce=False):
     sites = get_sites_utilisateur(request)
 
@@ -2812,10 +2820,10 @@ def module_multicanal(request):
         .annotate(total=Count("id"))
         .order_by("-total")[:8]
     )
-    comptes_externes = CompteConnecteExterne.objects.filter(
-        client=request.user.client_professionnel,
-        statut="connecte"
-    )
+    client_connecte = get_client_professionnel_utilisateur(request)
+    comptes_externes = CompteConnecteExterne.objects.filter(statut="connecte")
+    if not request.user.is_superuser or client_connecte is not None:
+        comptes_externes = comptes_externes.filter(client=client_connecte)
 
     return render(request, "predictor/module_multicanal.html", {
         "sites": scope["sites_actifs"],
@@ -2838,9 +2846,11 @@ def module_connecteurs(request):
 
     sessions = SessionVisiteur.objects.filter(site__in=scope["sites_filtres"])
     leads = LeadCapture.objects.filter(site__in=scope["sites_filtres"])
-    comptes_externes = CompteConnecteExterne.objects.filter(
-        client=request.user.client_professionnel
-    ).select_related("site")
+    client_connecte = get_client_professionnel_utilisateur(request)
+    comptes_externes = CompteConnecteExterne.objects.all()
+    if not request.user.is_superuser or client_connecte is not None:
+        comptes_externes = comptes_externes.filter(client=client_connecte)
+    comptes_externes = comptes_externes.select_related("site")
     base_url = request.build_absolute_uri("/").rstrip("/")
 
     scripts_installation = []
@@ -2961,12 +2971,14 @@ def module_publicite(request):
         .annotate(total=Count("id"))
         .order_by("-total")[:10]
     )
-    comptes_externes = CompteConnecteExterne.objects.filter(
-        client=request.user.client_professionnel
-    ).select_related("site")
-    campagnes_externes = CampagneExterne.objects.filter(
-        compte__client=request.user.client_professionnel
-    ).select_related("compte", "site")[:12]
+    client_connecte = get_client_professionnel_utilisateur(request)
+    comptes_externes = CompteConnecteExterne.objects.all()
+    campagnes_externes = CampagneExterne.objects.all()
+    if not request.user.is_superuser or client_connecte is not None:
+        comptes_externes = comptes_externes.filter(client=client_connecte)
+        campagnes_externes = campagnes_externes.filter(compte__client=client_connecte)
+    comptes_externes = comptes_externes.select_related("site")
+    campagnes_externes = campagnes_externes.select_related("compte", "site")[:12]
 
     return render(request, "predictor/module_publicite.html", {
         "sites": scope["sites_actifs"],

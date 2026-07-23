@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Inscription professionnelle - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=105">
 </head>
 <body>
 
@@ -20,7 +20,22 @@
         <div class="signup-price-summary">
             <span>Abonnement PredictNeed IA Pro</span>
             <strong>{{ prix_abonnement }} / mois</strong>
-            <p>Paiement sécurisé, facturation mensuelle et accès au dashboard après validation du paiement.</p>
+            <p>{{ periode_essai_jours|default:30 }} jours d'essai inclus, paiement sécurisé et accès au dashboard après validation Stripe.</p>
+        </div>
+
+        <div class="signup-trial-grid" aria-label="Détails de l'essai et du paiement">
+            <div>
+                <strong>{{ periode_essai_jours|default:30 }} jours d'essai</strong>
+                <span>Vous pouvez installer le script et tester les premières remontées avant la première facturation.</span>
+            </div>
+            <div>
+                <strong>Aucun engagement</strong>
+                <span>L'abonnement peut être arrêté avant la fin de l'essai si PredictNeed IA ne convient pas.</span>
+            </div>
+            <div>
+                <strong>Paiement Stripe</strong>
+                <span>Stripe sécurise la carte, les informations de facturation et l'abonnement mensuel.</span>
+            </div>
         </div>
 
         {% if erreur %}

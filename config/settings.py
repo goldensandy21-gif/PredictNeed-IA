@@ -25,7 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
-    "django-insecure-local-development-key-predictneed-ia-change-before-production"
+    os.environ.get(
+        "SECRET_KEY",
+        "django-insecure-local-development-key-predictneed-ia-change-before-production"
+    )
 )
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
@@ -208,6 +211,9 @@ PREDICTNEED_SUBSCRIPTION_INTERVAL = os.environ.get(
     "PREDICTNEED_SUBSCRIPTION_INTERVAL",
     "month"
 )
+PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS = int(
+    os.environ.get("PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS", "30")
+)
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_PRICE_ID = os.environ.get("STRIPE_PRICE_ID", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
@@ -237,6 +243,14 @@ PREDICTNEED_EXTERNAL_CONNECTORS = {
         "client_secret": os.environ.get("GOOGLE_ADS_CLIENT_SECRET", ""),
         "developer_token": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN", ""),
         "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", ""),
+        "variables_requises": [
+            "GOOGLE_ADS_CLIENT_ID",
+            "GOOGLE_ADS_CLIENT_SECRET",
+        ],
+        "variables_optionnelles": [
+            "GOOGLE_ADS_DEVELOPER_TOKEN",
+            "GOOGLE_ADS_LOGIN_CUSTOMER_ID",
+        ],
         "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
         "token_url": "https://oauth2.googleapis.com/token",
         "scopes": ["https://www.googleapis.com/auth/adwords"],
@@ -258,6 +272,14 @@ PREDICTNEED_EXTERNAL_CONNECTORS = {
             "META_ADS_TOKEN_URL",
             "https://graph.facebook.com/v20.0/oauth/access_token",
         ),
+        "variables_requises": [
+            "META_ADS_CLIENT_ID",
+            "META_ADS_CLIENT_SECRET",
+        ],
+        "variables_optionnelles": [
+            "META_ADS_AUTH_URL",
+            "META_ADS_TOKEN_URL",
+        ],
         "scopes": ["ads_read", "business_management"],
     },
     "linkedin_ads": {
@@ -265,6 +287,10 @@ PREDICTNEED_EXTERNAL_CONNECTORS = {
         "description": "Connexion OAuth pour lire les campagnes LinkedIn autorisées.",
         "client_id": os.environ.get("LINKEDIN_ADS_CLIENT_ID", ""),
         "client_secret": os.environ.get("LINKEDIN_ADS_CLIENT_SECRET", ""),
+        "variables_requises": [
+            "LINKEDIN_ADS_CLIENT_ID",
+            "LINKEDIN_ADS_CLIENT_SECRET",
+        ],
         "auth_url": "https://www.linkedin.com/oauth/v2/authorization",
         "token_url": "https://www.linkedin.com/oauth/v2/accessToken",
         "scopes": ["r_ads", "r_ads_reporting"],
@@ -276,6 +302,15 @@ PREDICTNEED_EXTERNAL_CONNECTORS = {
         "client_secret": os.environ.get("TIKTOK_ADS_CLIENT_SECRET", ""),
         "auth_url": os.environ.get("TIKTOK_ADS_AUTH_URL", ""),
         "token_url": os.environ.get("TIKTOK_ADS_TOKEN_URL", ""),
+        "variables_requises": [
+            "TIKTOK_ADS_CLIENT_ID",
+            "TIKTOK_ADS_CLIENT_SECRET",
+            "TIKTOK_ADS_AUTH_URL",
+            "TIKTOK_ADS_TOKEN_URL",
+        ],
+        "variables_optionnelles": [
+            "TIKTOK_ADS_SCOPES",
+        ],
         "scopes": [
             scope
             for scope in os.environ.get("TIKTOK_ADS_SCOPES", "advertiser.read").split(",")

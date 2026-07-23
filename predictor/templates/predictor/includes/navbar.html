@@ -26,7 +26,7 @@
                 Fonctionnalités
             </button>
             <div class="nav-dropdown-menu">
-                <a href="{% url 'fonctionnalites' %}">Vue d'ensemble du dashboard</a>
+                <a href="{% url 'fonctionnalites' %}">Vue d'ensemble des fonctionnalités</a>
                 <a href="{% url 'fonctionnalite_detail' 'prediction-avancee' %}">Prédiction avancée</a>
                 <a href="{% url 'fonctionnalite_detail' 'segmentation' %}">Segmentation intelligente</a>
                 <a href="{% url 'fonctionnalite_detail' 'ecommerce' %}">E-commerce</a>
@@ -43,6 +43,7 @@
         <a href="{% url 'prix' %}">Prix</a>
 
         {% if user.is_authenticated %}
+            <a href="{% url 'dashboard' %}" class="nav-dashboard-link">Dashboard</a>
             <a href="{% url 'deconnexion' %}">Déconnexion</a>
         {% else %}
             <a href="{% url 'connexion' %}">Connexion</a>
@@ -55,11 +56,35 @@
     document.addEventListener("DOMContentLoaded", function () {
         const navbar = document.querySelector(".navbar");
         const menuButton = document.querySelector(".navbar-menu-toggle");
+        const navLinks = document.querySelector(".navbar-links");
         const dropdown = document.querySelector(".nav-dropdown");
 
         if (!navbar) {
             return;
         }
+
+        const closeDropdown = function () {
+            if (!dropdown) {
+                return;
+            }
+
+            const button = dropdown.querySelector(".nav-dropdown-toggle");
+            dropdown.classList.remove("open");
+            if (button) {
+                button.setAttribute("aria-expanded", "false");
+            }
+        };
+
+        const closeMobileMenu = function () {
+            if (!menuButton) {
+                return;
+            }
+
+            navbar.classList.remove("menu-open");
+            menuButton.setAttribute("aria-expanded", "false");
+            menuButton.setAttribute("aria-label", "Ouvrir le menu");
+            closeDropdown();
+        };
 
         if (menuButton) {
             menuButton.addEventListener("click", function (event) {
@@ -67,6 +92,12 @@
                 const isOpen = navbar.classList.toggle("menu-open");
                 menuButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
                 menuButton.setAttribute("aria-label", isOpen ? "Fermer le menu" : "Ouvrir le menu");
+
+                if (!isOpen) {
+                    closeDropdown();
+                } else if (navLinks) {
+                    navLinks.scrollTop = 0;
+                }
             });
         }
 
@@ -77,6 +108,7 @@
         const button = dropdown.querySelector(".nav-dropdown-toggle");
 
         button.addEventListener("click", function (event) {
+            event.preventDefault();
             event.stopPropagation();
             const isOpen = dropdown.classList.toggle("open");
             button.setAttribute("aria-expanded", isOpen ? "true" : "false");
@@ -84,40 +116,36 @@
 
         document.addEventListener("click", function (event) {
             if (menuButton && !navbar.contains(event.target)) {
-                navbar.classList.remove("menu-open");
-                menuButton.setAttribute("aria-expanded", "false");
-                menuButton.setAttribute("aria-label", "Ouvrir le menu");
+                closeMobileMenu();
             }
 
             if (!dropdown.contains(event.target)) {
-                dropdown.classList.remove("open");
-                button.setAttribute("aria-expanded", "false");
+                closeDropdown();
             }
         });
 
         document.addEventListener("keydown", function (event) {
             if (event.key === "Escape") {
                 if (menuButton) {
-                    navbar.classList.remove("menu-open");
-                    menuButton.setAttribute("aria-expanded", "false");
-                    menuButton.setAttribute("aria-label", "Ouvrir le menu");
+                    closeMobileMenu();
                     menuButton.blur();
                 }
 
-                dropdown.classList.remove("open");
-                button.setAttribute("aria-expanded", "false");
+                closeDropdown();
                 button.blur();
             }
         });
 
         navbar.querySelectorAll(".navbar-links a").forEach((link) => {
             link.addEventListener("click", function () {
-                if (menuButton) {
-                    navbar.classList.remove("menu-open");
-                    menuButton.setAttribute("aria-expanded", "false");
-                    menuButton.setAttribute("aria-label", "Ouvrir le menu");
-                }
+                closeMobileMenu();
             });
+        });
+
+        window.addEventListener("resize", function () {
+            if (window.innerWidth > 900) {
+                closeMobileMenu();
+            }
         });
     });
 </script>

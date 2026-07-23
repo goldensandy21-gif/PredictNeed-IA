@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Politique de cookies - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=105">
 </head>
 <body class="legal-body">
 
@@ -25,6 +25,40 @@
             <strong>À compléter</strong> selon la configuration de production.
         </div>
     </header>
+
+    <section class="legal-section legal-copy-section">
+        <div class="legal-copy-heading">
+            <div>
+                <p class="footer-kicker">Cookies PredictNeed IA</p>
+                <h2>Bloc à copier dans la politique cookies du client</h2>
+            </div>
+            <button type="button" class="copy-code-button" data-copy-target="#cookies-client-copy">
+                Copier
+            </button>
+        </div>
+        <p>
+            Ce modèle décrit le traceur PredictNeed IA installé sur un site client.
+            Il doit être adapté au domaine, au bandeau de consentement et aux durées
+            réellement retenues.
+        </p>
+        <pre id="cookies-client-copy" class="legal-code-block">Traceur PredictNeed IA
+
+Type : outil d'analyse comportementale et de qualification commerciale.
+
+Nom ou mécanisme : predictneed_session_id, predictneed_consent_v2, predictneed_popup_shown, predictneed_lead_sent et événements envoyés au service PredictNeed IA.
+
+Domaine : domaine du site client sur lequel le script PredictNeed IA est installé.
+
+Finalité : comprendre les parcours visiteurs, mesurer les pages consultées, les clics, le temps passé, les sources de visite, détecter les intentions commerciales et permettre la capture volontaire de leads.
+
+Données concernées : identifiant de session, pages vues, interactions, temps passé, référent, appareil, navigateur, système d'exploitation, paramètres UTM et, si la personne remplit un formulaire, coordonnées et message transmis volontairement.
+
+Consentement : requis avant le déclenchement du suivi lorsque la réglementation l'impose. Le visiteur peut accepter, refuser ou modifier son choix depuis le bandeau de confidentialité.
+
+Durée indicative : choix de consentement conservé 6 mois ; données détaillées d'analyse conservées 13 mois maximum, sauf durée différente validée par le responsable de traitement.
+
+Retrait : le visiteur peut modifier son choix via le bouton ou lien de gestion des cookies disponible sur le site.</pre>
+    </section>
 
     <section class="legal-section">
         <h2>Qu'est-ce qu'un cookie ou un traceur ?</h2>
@@ -65,7 +99,7 @@
                         <td>Durée configurée par Django.</td>
                     </tr>
                     <tr>
-                        <td>predictneed_consent_v1</td>
+                        <td>predictneed_consent_v2</td>
                         <td>Mémorise le choix du visiteur pour ne pas le solliciter à chaque page et pour permettre la preuve du choix exprimé.</td>
                         <td>Stockage local strictement lié au consentement</td>
                         <td>Exempté lorsqu'il sert uniquement à conserver le choix de consentement.</td>

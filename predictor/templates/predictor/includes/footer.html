@@ -1,6 +1,30 @@
 {% load static %}
 
 <footer class="site-footer">
+    {% with current_route=request.resolver_match.url_name %}
+        {% if current_route == "accueil" or current_route == "fonctionnalites" or current_route == "fonctionnalite_detail" or current_route == "simulateur" or current_route == "prix" or current_route == "connexion" or current_route == "inscription" or current_route == "paiement_succes" or current_route == "paiement_annule" %}
+            <section
+                class="footer-trial-band"
+                style="--trial-band-image: url({% static 'predictor/footer-analytics.png' %});"
+                aria-label="Essai gratuit PredictNeed IA"
+            >
+                <div class="footer-trial-overlay">
+                    <p class="footer-kicker">Commençons</p>
+                    <h2>Essayez PredictNeed IA pendant {{ periode_essai_jours|default:30 }} jours.</h2>
+                    <p>
+                        Configurez votre compte, installez le script sur votre site et vérifiez
+                        les premières intentions visiteurs avant la première facturation.
+                    </p>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard' %}" class="hero-button footer-trial-button">Retourner au dashboard</a>
+                    {% else %}
+                        <a href="{% url 'inscription' %}" class="hero-button footer-trial-button">Démarrer l'essai gratuit</a>
+                    {% endif %}
+                </div>
+            </section>
+        {% endif %}
+    {% endwith %}
+
     <div class="footer-guides">
         <div>
             <p class="footer-kicker">Guides par e-mail</p>
@@ -52,6 +76,7 @@
             <a href="{% url 'prix' %}">Prix</a>
 
             {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}">Dashboard</a>
                 <a href="{% url 'deconnexion' %}">Déconnexion</a>
             {% else %}
                 <a href="{% url 'connexion' %}">Connexion</a>
@@ -73,3 +98,61 @@
         <span>Tous droits réservés.</span>
     </div>
 </footer>
+
+{% with current_route=request.resolver_match.url_name %}
+    {% if current_route == "accueil" or current_route == "fonctionnalites" or current_route == "fonctionnalite_detail" or current_route == "simulateur" or current_route == "prix" or current_route == "connexion" or current_route == "inscription" or current_route == "paiement_succes" or current_route == "paiement_annule" %}
+        <script
+            src="{% static 'predictor/tracker.js' %}?v=97"
+            data-api-key="35fa47f9-7d4f-4e33-ace4-d20316aa1338"
+            data-api-url="/api/track/"
+            data-lead-url="/api/lead/"
+            data-privacy-url="{% url 'politique_confidentialite' %}"
+            data-cookies-url="{% url 'politique_cookies' %}">
+        </script>
+    {% endif %}
+{% endwith %}
+
+<script>
+    document.addEventListener("click", function (event) {
+        const button = event.target.closest("[data-copy-target]");
+
+        if (!button) {
+            return;
+        }
+
+        const target = document.querySelector(button.getAttribute("data-copy-target"));
+
+        if (!target) {
+            return;
+        }
+
+        const text = (target.value || target.innerText || target.textContent || "").trim();
+        const originalText = button.textContent;
+        const markCopied = function () {
+            button.textContent = "Copié";
+            window.setTimeout(function () {
+                button.textContent = originalText;
+            }, 1800);
+        };
+
+        const fallbackCopy = function () {
+            const temporaryInput = document.createElement("textarea");
+            temporaryInput.value = text;
+            temporaryInput.setAttribute("readonly", "");
+            temporaryInput.style.position = "fixed";
+            temporaryInput.style.left = "-9999px";
+            document.body.appendChild(temporaryInput);
+            temporaryInput.select();
+            document.execCommand("copy");
+            temporaryInput.remove();
+            markCopied();
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(markCopied).catch(fallbackCopy);
+            return;
+        }
+
+        fallbackCopy();
+    });
+</script>
