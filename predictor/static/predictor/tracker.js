@@ -15,6 +15,16 @@
     const requireConsent = script.getAttribute("data-require-consent") !== "false";
     const privacyUrl = script.getAttribute("data-privacy-url") || "";
     const cookiesUrl = script.getAttribute("data-cookies-url") || "";
+    const retargetingEnabled = script.getAttribute("data-retargeting-enabled") === "true";
+    const retargetingConfig = {
+        metaPixelId: script.getAttribute("data-meta-pixel-id") || "",
+        googleAdsId: script.getAttribute("data-google-ads-id") || "",
+        googleAdsConversionLabel: script.getAttribute("data-google-ads-conversion-label") || "",
+        tiktokPixelId: script.getAttribute("data-tiktok-pixel-id") || "",
+        linkedinPartnerId: script.getAttribute("data-linkedin-partner-id") || "",
+        linkedinConversionId: script.getAttribute("data-linkedin-conversion-id") || "",
+        pinterestTagId: script.getAttribute("data-pinterest-tag-id") || "",
+    };
 
     const consentStorageKey = "predictneed_consent_v3";
     const sessionStorageKey = "predictneed_session_id";
@@ -31,6 +41,14 @@
     let offerReopenTimer = null;
     let latestPredictionResult = null;
     let mobileOfferDismissed = false;
+    let retargetingPageTracked = false;
+    const retargetingState = {
+        metaInitialized: false,
+        googleInitialized: false,
+        tiktokInitialized: false,
+        linkedinInitialized: false,
+        pinterestInitialized: false,
+    };
     const startTime = Date.now();
     const offerPopupInitialDelayMs = 5000;
     const offerPopupReopenDelayMs = 10000;
@@ -348,7 +366,7 @@
             <p class="predictneed-consent-title">Nous respectons votre confidentialité</p>
             <p class="predictneed-consent-text">
                 Nous utilisons des cookies et outils pour mieux comprendre l'utilisation
-                du site, améliorer votre expérience et proposer des contenus plus pertinents.
+                du site, améliorer votre expérience et proposer des contenus ou publicités plus pertinents.
                 Vous pouvez accepter, refuser ou personnaliser vos choix à tout moment.
             </p>
             <div class="predictneed-consent-actions">
@@ -413,8 +431,9 @@
             <label class="predictneed-consent-choice">
                 <input type="checkbox" name="offers" ${storedConsent.offers ? "checked" : ""}>
                 <span>
-                    <strong>Contenus pertinents</strong><br>
-                    Adapter certains messages ou contenus selon l'intérêt exprimé pendant la navigation.
+                    <strong>Contenus et publicités pertinents</strong><br>
+                    Adapter certains messages ou déclencher les pixels publicitaires configurés
+                    selon l'intérêt exprimé pendant la navigation.
                 </span>
             </label>
             <div class="predictneed-consent-actions">
@@ -460,6 +479,7 @@
 
         initializeOfferTrigger();
         tryShowOfferAfterEngagement();
+        trackRetargetingPage();
 
         if (normalizedConsent.analytics) {
             startTracking();
@@ -849,6 +869,8 @@
                 })
                 .then(function (data) {
                     if (data.success) {
+                        trackRetargetingLead();
+
                         if (!debugMode) {
                             if (hasAnalyticsConsent()) {
                                 localStorage.setItem(leadSentStorageKey, "true");
@@ -991,6 +1013,304 @@
             utm_medium: utmMedium || "",
             utm_campaign: utmCampaign || "",
         };
+    }
+
+    function hasRetargetingConnector() {
+        return Boolean(
+            retargetingConfig.metaPixelId ||
+            retargetingConfig.googleAdsId ||
+            retargetingConfig.tiktokPixelId ||
+            retargetingConfig.linkedinPartnerId ||
+            retargetingConfig.pinterestTagId
+        );
+    }
+
+    function canUseRetargeting() {
+        if (!retargetingEnabled || !hasRetargetingConnector()) {
+            return false;
+        }
+
+        return debugMode || hasOfferConsent();
+    }
+
+    function loadExternalScript(id, src) {
+        if (document.getElementById(id)) {
+            return;
+        }
+
+        const scriptElement = document.createElement("script");
+        scriptElement.id = id;
+        scriptElement.async = true;
+        scriptElement.src = src;
+
+        const firstScript = document.getElementsByTagName("script")[0];
+
+        if (firstScript && firstScript.parentNode) {
+            firstScript.parentNode.insertBefore(scriptElement, firstScript);
+        } else {
+            document.head.appendChild(scriptElement);
+        }
+    }
+
+    function ensureMetaPixel() {
+        const pixelId = retargetingConfig.metaPixelId;
+
+        if (!pixelId || retargetingState.metaInitialized) {
+            return;
+        }
+
+        if (!window.fbq) {
+            const fbq = function () {
+                if (fbq.callMethod) {
+                    fbq.callMethod.apply(fbq, arguments);
+                } else {
+                    fbq.queue.push(arguments);
+                }
+            };
+
+            fbq.push = fbq;
+            fbq.loaded = true;
+            fbq.version = "2.0";
+            fbq.queue = [];
+            window.fbq = fbq;
+            window._fbq = fbq;
+            loadExternalScript("predictneed-meta-pixel", "https://connect.facebook.net/en_US/fbevents.js");
+        }
+
+        window.fbq("init", pixelId);
+        retargetingState.metaInitialized = true;
+    }
+
+    function ensureGoogleAdsTag() {
+        const adsId = retargetingConfig.googleAdsId;
+
+        if (!adsId || retargetingState.googleInitialized) {
+            return;
+        }
+
+        window.dataLayer = window.dataLayer || [];
+
+        if (!window.gtag) {
+            window.gtag = function () {
+                window.dataLayer.push(arguments);
+            };
+        }
+
+        loadExternalScript(
+            "predictneed-google-ads-tag",
+            "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(adsId)
+        );
+        window.gtag("js", new Date());
+        window.gtag("config", adsId, { send_page_view: false });
+        retargetingState.googleInitialized = true;
+    }
+
+    function ensureTikTokPixel() {
+        const pixelId = retargetingConfig.tiktokPixelId;
+
+        if (!pixelId || retargetingState.tiktokInitialized) {
+            return;
+        }
+
+        if (!window.ttq) {
+            const ttq = [];
+            ttq.methods = [
+                "page",
+                "track",
+                "identify",
+                "instances",
+                "debug",
+                "on",
+                "off",
+                "once",
+                "ready",
+                "alias",
+                "group",
+                "enableCookie",
+                "disableCookie",
+            ];
+            ttq.setAndDefer = function (target, method) {
+                target[method] = function () {
+                    target.push([method].concat(Array.prototype.slice.call(arguments, 0)));
+                };
+            };
+
+            for (let index = 0; index < ttq.methods.length; index += 1) {
+                ttq.setAndDefer(ttq, ttq.methods[index]);
+            }
+
+            ttq.load = function (id) {
+                loadExternalScript(
+                    "predictneed-tiktok-pixel-" + id,
+                    "https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=" + encodeURIComponent(id) + "&lib=ttq"
+                );
+            };
+
+            window.ttq = ttq;
+        }
+
+        window.ttq.load(pixelId);
+        retargetingState.tiktokInitialized = true;
+    }
+
+    function ensureLinkedInInsight() {
+        const partnerId = retargetingConfig.linkedinPartnerId;
+
+        if (!partnerId || retargetingState.linkedinInitialized) {
+            return;
+        }
+
+        window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];
+
+        if (!window._linkedin_data_partner_ids.includes(partnerId)) {
+            window._linkedin_data_partner_ids.push(partnerId);
+        }
+
+        window._linkedin_partner_id = partnerId;
+        loadExternalScript("predictneed-linkedin-insight", "https://snap.licdn.com/li.lms-analytics/insight.min.js");
+        retargetingState.linkedinInitialized = true;
+    }
+
+    function ensurePinterestTag() {
+        const tagId = retargetingConfig.pinterestTagId;
+
+        if (!tagId || retargetingState.pinterestInitialized) {
+            return;
+        }
+
+        if (!window.pintrk) {
+            const pintrk = function () {
+                pintrk.queue.push(Array.prototype.slice.call(arguments));
+            };
+
+            pintrk.queue = [];
+            pintrk.version = "3.0";
+            window.pintrk = pintrk;
+            loadExternalScript("predictneed-pinterest-tag", "https://s.pinimg.com/ct/core.js");
+        }
+
+        window.pintrk("load", tagId);
+        retargetingState.pinterestInitialized = true;
+    }
+
+    function initializeRetargetingConnectors() {
+        if (!canUseRetargeting()) {
+            return false;
+        }
+
+        ensureMetaPixel();
+        ensureGoogleAdsTag();
+        ensureTikTokPixel();
+        ensureLinkedInInsight();
+        ensurePinterestTag();
+        return true;
+    }
+
+    function getRetargetingPayload() {
+        return {
+            page_title: document.title,
+            page_path: window.location.pathname,
+            page_location: window.location.href,
+            content_name: document.title,
+            content_category: window.location.pathname,
+            content_ids: [window.location.pathname],
+            content_type: "product",
+        };
+    }
+
+    function trackRetargetingPage() {
+        if (retargetingPageTracked || !initializeRetargetingConnectors()) {
+            return;
+        }
+
+        const payload = getRetargetingPayload();
+
+        if (retargetingConfig.metaPixelId && window.fbq) {
+            window.fbq("track", "PageView");
+            window.fbq("track", "ViewContent", {
+                content_name: payload.content_name,
+                content_category: payload.content_category,
+                content_ids: payload.content_ids,
+                content_type: payload.content_type,
+            });
+        }
+
+        if (retargetingConfig.googleAdsId && window.gtag) {
+            window.gtag("event", "page_view", {
+                send_to: retargetingConfig.googleAdsId,
+                page_title: payload.page_title,
+                page_path: payload.page_path,
+                page_location: payload.page_location,
+            });
+            window.gtag("event", "view_item", {
+                send_to: retargetingConfig.googleAdsId,
+                items: [{ item_name: payload.content_name }],
+            });
+        }
+
+        if (retargetingConfig.tiktokPixelId && window.ttq) {
+            window.ttq.page();
+            window.ttq.track("ViewContent", {
+                content_name: payload.content_name,
+                content_type: payload.content_type,
+            });
+        }
+
+        if (retargetingConfig.pinterestTagId && window.pintrk) {
+            window.pintrk("page");
+            window.pintrk("track", "pagevisit", {
+                property: "PredictNeed IA",
+                line_items: [{ product_name: payload.content_name }],
+            });
+        }
+
+        retargetingPageTracked = true;
+    }
+
+    function trackRetargetingLead() {
+        if (!initializeRetargetingConnectors()) {
+            return;
+        }
+
+        const payload = getRetargetingPayload();
+
+        if (retargetingConfig.metaPixelId && window.fbq) {
+            window.fbq("track", "Lead", {
+                content_name: payload.content_name,
+                content_category: payload.content_category,
+            });
+        }
+
+        if (retargetingConfig.googleAdsId && window.gtag) {
+            window.gtag("event", "generate_lead", {
+                send_to: retargetingConfig.googleAdsId,
+                page_path: payload.page_path,
+            });
+
+            if (retargetingConfig.googleAdsConversionLabel) {
+                window.gtag("event", "conversion", {
+                    send_to: retargetingConfig.googleAdsId + "/" + retargetingConfig.googleAdsConversionLabel,
+                });
+            }
+        }
+
+        if (retargetingConfig.tiktokPixelId && window.ttq) {
+            window.ttq.track("SubmitForm", {
+                content_name: payload.content_name,
+            });
+        }
+
+        if (retargetingConfig.linkedinConversionId && window.lintrk) {
+            window.lintrk("track", {
+                conversion_id: retargetingConfig.linkedinConversionId,
+            });
+        }
+
+        if (retargetingConfig.pinterestTagId && window.pintrk) {
+            window.pintrk("track", "lead", {
+                lead_type: "formulaire PredictNeed IA",
+            });
+        }
     }
 
     function sendEvent(typeEvenement, page, valeur) {
@@ -1150,10 +1470,12 @@
             renderConsentBanner();
             startTracking();
             initializeOfferTrigger();
+            trackRetargetingPage();
         });
     } else {
         renderConsentBanner();
         startTracking();
         initializeOfferTrigger();
+        trackRetargetingPage();
     }
 })();

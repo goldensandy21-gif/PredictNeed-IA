@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Politique de cookies - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=105">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=106">
 </head>
 <body class="legal-body">
 
@@ -99,7 +99,7 @@ Retrait : le visiteur peut modifier son choix via le bouton ou lien de gestion d
                         <td>Durée configurée par Django.</td>
                     </tr>
                     <tr>
-                        <td>predictneed_consent_v2</td>
+                        <td>predictneed_consent_v3</td>
                         <td>Mémorise le choix du visiteur pour ne pas le solliciter à chaque page et pour permettre la preuve du choix exprimé.</td>
                         <td>Stockage local strictement lié au consentement</td>
                         <td>Exempté lorsqu'il sert uniquement à conserver le choix de consentement.</td>
@@ -132,6 +132,13 @@ Retrait : le visiteur peut modifier son choix via le bouton ou lien de gestion d
                         <td>Traceur d'analyse comportementale</td>
                         <td>Consentement requis. L'API refuse les événements qui ne transmettent pas le marqueur de consentement tracking.</td>
                         <td>Voir politique de confidentialité.</td>
+                    </tr>
+                    <tr>
+                        <td>Pixels publicitaires activés par le client</td>
+                        <td>Page vue, contenu consulté et demande de contact envoyée, selon les IDs Meta, Google Ads, TikTok, LinkedIn ou Pinterest renseignés par le client.</td>
+                        <td>Cookies et technologies publicitaires tiers</td>
+                        <td>Consentement marketing requis avant chargement des scripts tiers.</td>
+                        <td>Selon les durées définies par chaque plateforme publicitaire et le paramétrage du client.</td>
                     </tr>
                 </tbody>
             </table>
@@ -166,8 +173,10 @@ Retrait : le visiteur peut modifier son choix via le bouton ou lien de gestion d
     <section class="legal-section">
         <h2>Cookies tiers</h2>
         <p>
-            L’outil PredictNeed IA installé sur les pages du site ne déclare pas, à ce
-            stade, de cookies tiers de publicité ou de mesure d'audience externe.
+            Lorsque le client active les pixels de retargeting dans son dashboard, le script
+            PredictNeed IA peut charger des technologies tierces telles que Meta Pixel,
+            Google Ads Tag, TikTok Pixel, LinkedIn Insight Tag ou Pinterest Tag. Ces scripts
+            ne doivent être chargés qu'après consentement marketing du visiteur.
         </p>
         <p>
             Le paiement de l'abonnement est redirigé vers Stripe Checkout. Stripe peut

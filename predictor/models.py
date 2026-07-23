@@ -79,6 +79,15 @@ class SiteClient(models.Model):
     module_publicite_actif = models.BooleanField(default=False)
     module_securite_entreprise_actif = models.BooleanField(default=False)
 
+    retargeting_actif = models.BooleanField(default=False)
+    meta_pixel_id = models.CharField(max_length=80, blank=True, null=True)
+    google_ads_id = models.CharField(max_length=80, blank=True, null=True)
+    google_ads_conversion_label = models.CharField(max_length=120, blank=True, null=True)
+    tiktok_pixel_id = models.CharField(max_length=80, blank=True, null=True)
+    linkedin_partner_id = models.CharField(max_length=80, blank=True, null=True)
+    linkedin_conversion_id = models.CharField(max_length=80, blank=True, null=True)
+    pinterest_tag_id = models.CharField(max_length=80, blank=True, null=True)
+
     def __str__(self):
         return f"{self.nom_site} - {self.domaine}"
 

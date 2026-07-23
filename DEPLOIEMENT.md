@@ -78,6 +78,13 @@ Configurer un vrai SMTP. Tant que `DJANGO_EMAIL_BACKEND` reste sur console, les 
 
 Les connecteurs OAuth sont prêts côté application, mais chaque plateforme demande ses propres clés développeur.
 
+Les pixels de retargeting sont configurables par site depuis le module Connecteurs :
+Meta Pixel ID, Google Ads ID, label de conversion Google, TikTok Pixel ID,
+LinkedIn Partner ID, LinkedIn Conversion ID et Pinterest Tag ID. Ces valeurs ne
+sont pas des secrets Fly : chaque client les renseigne dans son dashboard, puis
+recopie le script PredictNeed IA mis à jour sur son site. Les pixels ne sont
+chargés qu'après consentement marketing du visiteur.
+
 URLs callback à déclarer selon le domaine :
 
 ```text

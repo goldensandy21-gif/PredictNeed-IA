@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Connecteurs - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=105">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=106">
 </head>
 <body>
 
@@ -146,6 +146,112 @@
         </div>
     </div>
 
+    <div class="dashboard-section retargeting-setup-section">
+        <h2>Pixels de retargeting</h2>
+        <p class="section-description">
+            Renseignez les identifiants officiels fournis par les plateformes publicitaires.
+            PredictNeed IA déclenchera ces pixels uniquement après accord marketing du visiteur.
+        </p>
+
+        <div class="retargeting-site-grid">
+            {% for item in scripts_installation %}
+                <form
+                    method="post"
+                    action="{% url 'mettre_a_jour_retargeting_site' item.site.id %}"
+                    class="retargeting-card"
+                >
+                    {% csrf_token %}
+                    <div class="retargeting-card-header">
+                        <div>
+                            <h3>{{ item.site.nom_site }}</h3>
+                            <p>{{ item.site.domaine }}</p>
+                        </div>
+                        <label class="retargeting-switch">
+                            <input
+                                type="checkbox"
+                                name="retargeting_actif"
+                                {% if item.site.retargeting_actif %}checked{% endif %}
+                            >
+                            <span>Activer</span>
+                        </label>
+                    </div>
+
+                    <div class="retargeting-field-grid">
+                        <label>
+                            <span>Meta Pixel ID</span>
+                            <input
+                                type="text"
+                                name="meta_pixel_id"
+                                value="{{ item.site.meta_pixel_id|default_if_none:'' }}"
+                                placeholder="123456789012345"
+                            >
+                        </label>
+                        <label>
+                            <span>Google Ads ID</span>
+                            <input
+                                type="text"
+                                name="google_ads_id"
+                                value="{{ item.site.google_ads_id|default_if_none:'' }}"
+                                placeholder="AW-123456789"
+                            >
+                        </label>
+                        <label>
+                            <span>Label conversion Google</span>
+                            <input
+                                type="text"
+                                name="google_ads_conversion_label"
+                                value="{{ item.site.google_ads_conversion_label|default_if_none:'' }}"
+                                placeholder="abcDEFghiJKL"
+                            >
+                        </label>
+                        <label>
+                            <span>TikTok Pixel ID</span>
+                            <input
+                                type="text"
+                                name="tiktok_pixel_id"
+                                value="{{ item.site.tiktok_pixel_id|default_if_none:'' }}"
+                                placeholder="C123ABC..."
+                            >
+                        </label>
+                        <label>
+                            <span>LinkedIn Partner ID</span>
+                            <input
+                                type="text"
+                                name="linkedin_partner_id"
+                                value="{{ item.site.linkedin_partner_id|default_if_none:'' }}"
+                                placeholder="123456"
+                            >
+                        </label>
+                        <label>
+                            <span>LinkedIn conversion ID</span>
+                            <input
+                                type="text"
+                                name="linkedin_conversion_id"
+                                value="{{ item.site.linkedin_conversion_id|default_if_none:'' }}"
+                                placeholder="12345678"
+                            >
+                        </label>
+                        <label>
+                            <span>Pinterest Tag ID</span>
+                            <input
+                                type="text"
+                                name="pinterest_tag_id"
+                                value="{{ item.site.pinterest_tag_id|default_if_none:'' }}"
+                                placeholder="2612345678901"
+                            >
+                        </label>
+                    </div>
+
+                    <button type="submit" class="module-filter-button">
+                        Enregistrer les pixels
+                    </button>
+                </form>
+            {% empty %}
+                <p>Aucun site actif disponible pour configurer le retargeting.</p>
+            {% endfor %}
+        </div>
+    </div>
+
     {% if user.is_superuser %}
         <div class="dashboard-section connector-payment-section">
             <h2>Paiement Stripe</h2>
@@ -257,6 +363,20 @@ Finalité : mesurer les pages vues, clics, temps passé, sources de visite et in
 Consentement : requis avant déclenchement lorsque la réglementation l'impose.
 Données : identifiant de session, événements de navigation, appareil, navigateur, système d'exploitation, référent et paramètres UTM.
 Durée indicative : choix de consentement 6 mois ; données détaillées 13 mois maximum sauf durée différente validée.</pre>
+            </article>
+        </div>
+
+        <div class="privacy-kit-grid">
+            <article class="privacy-kit-card">
+                <div class="legal-copy-heading">
+                    <h3>Mention retargeting</h3>
+                    <button type="button" class="copy-code-button" data-copy-target="#connector-retargeting-copy">
+                        Copier
+                    </button>
+                </div>
+                <pre id="connector-retargeting-copy" class="legal-code-block">Lorsque vous acceptez les cookies marketing, notre site peut déclencher des pixels publicitaires configurés via PredictNeed IA, par exemple Meta Pixel, Google Ads Tag, TikTok Pixel, LinkedIn Insight Tag ou Pinterest Tag.
+
+Ces pixels peuvent transmettre aux plateformes concernées des événements tels qu'une page vue, un contenu consulté ou une demande de contact envoyée, afin de mesurer les conversions et de proposer des publicités plus pertinentes. Vous pouvez refuser ou modifier ce choix depuis le module de gestion des cookies.</pre>
             </article>
         </div>
     </div>

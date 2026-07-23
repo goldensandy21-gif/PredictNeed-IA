@@ -1184,15 +1184,7 @@ def dashboard(request):
         else:
             statut_site = "En attente d’installation"
 
-        script = f'''<script
-        src="{base_url}/static/predictor/tracker.js"
-        data-api-key="{site.cle_api}"
-        data-api-url="{base_url}/api/track/"
-        data-lead-url="{base_url}/api/lead/"
-        data-require-consent="true"
-        data-privacy-url="{base_url}{reverse('politique_confidentialite')}"
-        data-cookies-url="{base_url}{reverse('politique_cookies')}">
-    </script>'''
+        script = generer_script_installation_site(base_url, site)
 
         scripts_installation.append({
             "site": site,
@@ -2750,6 +2742,83 @@ def deconnecter_compte_connecteur(request, compte_id):
     return redirect("module_connecteurs")
 
 
+def nettoyer_identifiant_retargeting(valeur, longueur_max=120):
+    valeur = (valeur or "").strip()
+    valeur = re.sub(r"[^A-Za-z0-9_./:-]", "", valeur)
+    return valeur[:longueur_max]
+
+
+def generer_script_installation_site(base_url, site):
+    retargeting_enabled = str(site.retargeting_actif).lower()
+    meta_pixel_id = nettoyer_identifiant_retargeting(site.meta_pixel_id, 80)
+    google_ads_id = nettoyer_identifiant_retargeting(site.google_ads_id, 80)
+    google_ads_conversion_label = nettoyer_identifiant_retargeting(
+        site.google_ads_conversion_label,
+        120,
+    )
+    tiktok_pixel_id = nettoyer_identifiant_retargeting(site.tiktok_pixel_id, 80)
+    linkedin_partner_id = nettoyer_identifiant_retargeting(site.linkedin_partner_id, 80)
+    linkedin_conversion_id = nettoyer_identifiant_retargeting(site.linkedin_conversion_id, 80)
+    pinterest_tag_id = nettoyer_identifiant_retargeting(site.pinterest_tag_id, 80)
+
+    return f'''<script
+        src="{base_url}/static/predictor/tracker.js"
+        data-api-key="{site.cle_api}"
+        data-api-url="{base_url}/api/track/"
+        data-lead-url="{base_url}/api/lead/"
+        data-require-consent="true"
+        data-retargeting-enabled="{retargeting_enabled}"
+        data-meta-pixel-id="{meta_pixel_id}"
+        data-google-ads-id="{google_ads_id}"
+        data-google-ads-conversion-label="{google_ads_conversion_label}"
+        data-tiktok-pixel-id="{tiktok_pixel_id}"
+        data-linkedin-partner-id="{linkedin_partner_id}"
+        data-linkedin-conversion-id="{linkedin_conversion_id}"
+        data-pinterest-tag-id="{pinterest_tag_id}"
+        data-privacy-url="{base_url}{reverse('politique_confidentialite')}"
+        data-cookies-url="{base_url}{reverse('politique_cookies')}">
+    </script>'''
+
+
+@login_required
+@require_POST
+def mettre_a_jour_retargeting_site(request, site_id):
+    site = get_object_or_404(get_sites_utilisateur(request), id=site_id)
+
+    champs = {
+        "meta_pixel_id": 80,
+        "google_ads_id": 80,
+        "google_ads_conversion_label": 120,
+        "tiktok_pixel_id": 80,
+        "linkedin_partner_id": 80,
+        "linkedin_conversion_id": 80,
+        "pinterest_tag_id": 80,
+    }
+
+    site.retargeting_actif = request.POST.get("retargeting_actif") == "on"
+
+    for champ, longueur_max in champs.items():
+        setattr(
+            site,
+            champ,
+            nettoyer_identifiant_retargeting(
+                request.POST.get(champ),
+                longueur_max=longueur_max,
+            )
+        )
+
+    site.save(update_fields=[
+        "retargeting_actif",
+        *champs.keys(),
+    ])
+
+    messages.success(
+        request,
+        f"Pixels de retargeting mis à jour pour {site.nom_site}."
+    )
+    return redirect(f"{reverse('module_connecteurs')}?site={site.id}")
+
+
 @login_required
 def module_multicanal(request):
     scope = get_module_scope(request, module_field="module_multicanal_actif")
@@ -2858,15 +2927,7 @@ def module_connecteurs(request):
     for site in scope["sites_filtres"]:
         scripts_installation.append({
             "site": site,
-            "script": f'''<script
-        src="{base_url}/static/predictor/tracker.js"
-        data-api-key="{site.cle_api}"
-        data-api-url="{base_url}/api/track/"
-        data-lead-url="{base_url}/api/lead/"
-        data-require-consent="true"
-        data-privacy-url="{base_url}{reverse('politique_confidentialite')}"
-        data-cookies-url="{base_url}{reverse('politique_cookies')}">
-    </script>'''
+            "script": generer_script_installation_site(base_url, site),
         })
 
     fournisseurs = statut_configuration_fournisseurs()
@@ -2912,6 +2973,11 @@ def module_connecteurs(request):
             "nom": "Comptes publicitaires externes",
             "statut": "Actif" if comptes_externes.filter(statut="connecte").exists() else "À connecter",
             "description": "Relie Google Ads, Meta Ads, LinkedIn Ads ou TikTok Ads via OAuth pour rapprocher campagnes, sources et leads.",
+        },
+        {
+            "nom": "Pixels de retargeting",
+            "statut": "Actif" if scope["sites_filtres"].filter(retargeting_actif=True).exists() else "À configurer",
+            "description": "Déclenche Meta Pixel, Google Ads, TikTok Pixel, LinkedIn Insight et Pinterest après consentement marketing.",
         },
         {
             "nom": "Stripe / Paiement",

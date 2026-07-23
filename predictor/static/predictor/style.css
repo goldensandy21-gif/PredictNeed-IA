@@ -7724,12 +7724,87 @@ body.pricing-body {
     color: #f8fafc !important;
 }
 
+.retargeting-site-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.retargeting-card {
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1rem, 2vw, 1.5rem);
+    border: 1px solid #d5e5f2;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.retargeting-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.dashboard.module-page .retargeting-card h3 {
+    margin: 0;
+    color: #102033 !important;
+}
+
+.retargeting-card-header p {
+    margin: 0.25rem 0 0;
+}
+
+.retargeting-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 40px;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #c7d8e8;
+    border-radius: 999px;
+    color: #102033;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.retargeting-switch input {
+    width: 18px;
+    height: 18px;
+    accent-color: #0f766e;
+}
+
+.retargeting-field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.retargeting-field-grid label {
+    display: grid;
+    gap: 0.35rem;
+    color: #102033;
+    font-weight: 800;
+}
+
+.retargeting-field-grid input {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #c7d8e8;
+    border-radius: 10px;
+    padding: 0.75rem 0.85rem;
+    color: #102033;
+    background: #f8fbfd;
+}
+
 @media (max-width: 960px) {
     .pricing-single-plan,
     .pricing-metrics,
     .payment-detail-grid,
     .signup-trial-grid,
-    .privacy-kit-grid {
+    .privacy-kit-grid,
+    .retargeting-site-grid {
         grid-template-columns: 1fr;
     }
 
@@ -7775,5 +7850,14 @@ body.pricing-body {
 
     .copy-code-button {
         width: 100%;
+    }
+
+    .retargeting-card-header,
+    .retargeting-field-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .retargeting-card-header {
+        flex-direction: column;
     }
 }

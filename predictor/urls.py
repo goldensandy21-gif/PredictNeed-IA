@@ -38,6 +38,11 @@ urlpatterns = [
         views.deconnecter_compte_connecteur,
         name="deconnecter_compte_connecteur"
     ),
+    path(
+        "connecteurs/sites/<int:site_id>/retargeting/",
+        views.mettre_a_jour_retargeting_site,
+        name="mettre_a_jour_retargeting_site"
+    ),
 
     path(
         'leads/<int:lead_id>/statut/<str:nouveau_statut>/',

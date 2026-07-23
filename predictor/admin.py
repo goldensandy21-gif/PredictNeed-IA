@@ -65,6 +65,7 @@ class SiteClientAdmin(admin.ModelAdmin):
         "module_connecteurs_actif",
         "module_publicite_actif",
         "module_securite_entreprise_actif",
+        "retargeting_actif",
         "actif",
         "date_creation",
     )
@@ -80,6 +81,7 @@ class SiteClientAdmin(admin.ModelAdmin):
         "module_connecteurs_actif",
         "module_publicite_actif",
         "module_securite_entreprise_actif",
+        "retargeting_actif",
         "actif",
     )
 
@@ -100,6 +102,7 @@ class SiteClientAdmin(admin.ModelAdmin):
         "module_connecteurs_actif",
         "module_publicite_actif",
         "module_securite_entreprise_actif",
+        "retargeting_actif",
         "actif",
     )
 
