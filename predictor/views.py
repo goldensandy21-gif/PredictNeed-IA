@@ -30,6 +30,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
 import re
+from urllib.parse import urlparse
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -252,6 +253,248 @@ def _public_site_base_url(request):
     return request.build_absolute_uri("/").rstrip("/")
 
 
+def _coerce_bool(value, default=False):
+    if value in [True, "true", "True", "1", 1, "on", "yes", "oui"]:
+        return True
+
+    if value in [False, "false", "False", "0", 0, "off", "no", "non"]:
+        return False
+
+    return default
+
+
+PUBLIC_VISITOR_DOMAINS = {
+    "gmail.com",
+    "googlemail.com",
+    "hotmail.com",
+    "live.com",
+    "outlook.com",
+    "icloud.com",
+    "me.com",
+    "msn.com",
+    "orange.fr",
+    "wanadoo.fr",
+    "free.fr",
+    "laposte.net",
+    "yahoo.com",
+    "yahoo.fr",
+    "proton.me",
+    "protonmail.com",
+}
+
+GENERIC_REFERRER_DOMAINS = {
+    "google",
+    "bing",
+    "yahoo",
+    "duckduckgo",
+    "facebook",
+    "instagram",
+    "linkedin",
+    "twitter",
+    "x",
+    "youtube",
+    "tiktok",
+    "predictneed",
+}
+
+
+def _domain_from_value(value):
+    normalized_value = (value or "").strip().lower()
+
+    if not normalized_value:
+        return ""
+
+    if "@" in normalized_value:
+        normalized_value = normalized_value.rsplit("@", 1)[1]
+
+    parsed = urlparse(normalized_value if "://" in normalized_value else f"//{normalized_value}")
+    hostname = parsed.hostname or normalized_value.split("/", 1)[0]
+
+    return hostname.removeprefix("www.").strip(".")
+
+
+def _company_name_from_domain(value):
+    domain = _domain_from_value(value)
+
+    if not domain or domain in PUBLIC_VISITOR_DOMAINS:
+        return ""
+
+    parts = [part for part in domain.split(".") if part]
+
+    if not parts:
+        return ""
+
+    base = parts[-2] if len(parts) >= 2 else parts[0]
+
+    if base in GENERIC_REFERRER_DOMAINS:
+        return ""
+
+    words = [word for word in re.split(r"[-_]+", base) if word]
+
+    return " ".join(word.upper() if len(word) <= 3 else word.capitalize() for word in words)
+
+
+def _host_matches_domain(host, domain):
+    normalized_host = _domain_from_value(host)
+    normalized_domain = _domain_from_value(domain)
+
+    if not normalized_host or not normalized_domain:
+        return False
+
+    return normalized_host == normalized_domain or normalized_host.endswith(f".{normalized_domain}")
+
+
+def _detect_visitor_company(session_visiteur, leads_prefetch=None):
+    for lead in leads_prefetch or []:
+        entreprise = _company_name_from_domain(lead.email)
+
+        if entreprise:
+            return entreprise, "Email du visiteur"
+
+    referer_host = _domain_from_value(session_visiteur.referer)
+    site_domain = session_visiteur.site.domaine if session_visiteur.site else ""
+
+    if referer_host and not _host_matches_domain(referer_host, site_domain):
+        entreprise = _company_name_from_domain(referer_host)
+
+        if entreprise:
+            return entreprise, "Domaine référent"
+
+    return "Non identifiée", "Signal insuffisant"
+
+
+def _detect_client_device(user_agent):
+    ua = (user_agent or "").lower()
+
+    is_iphone = "iphone" in ua or "ipod" in ua
+    is_ipad = "ipad" in ua or ("macintosh" in ua and "mobile" in ua and "safari" in ua)
+    is_android = "android" in ua
+    is_android_mobile = is_android and "mobile" in ua
+    is_android_tablet = is_android and "mobile" not in ua
+
+    appareil = "Desktop"
+
+    if is_ipad:
+        appareil = "Tablette iPad"
+    elif is_iphone:
+        appareil = "Mobile iPhone"
+    elif is_android_tablet or "tablet" in ua:
+        appareil = "Tablette Android"
+    elif is_android_mobile or "mobile" in ua:
+        appareil = "Mobile Android" if is_android else "Mobile"
+
+    navigateur = "Inconnu"
+
+    if "edgios" in ua or "edg/" in ua:
+        navigateur = "Edge iOS" if is_iphone or is_ipad else "Edge"
+    elif "crios" in ua:
+        navigateur = "Chrome iOS"
+    elif "fxios" in ua:
+        navigateur = "Firefox iOS"
+    elif "samsungbrowser" in ua:
+        navigateur = "Samsung Internet"
+    elif "opr/" in ua:
+        navigateur = "Opera"
+    elif "chrome" in ua or "chromium" in ua:
+        navigateur = "Chrome"
+    elif "safari" in ua:
+        navigateur = "Safari iOS" if is_iphone or is_ipad else "Safari"
+    elif "firefox" in ua:
+        navigateur = "Firefox"
+
+    systeme = "Inconnu"
+
+    if is_ipad:
+        systeme = "iPadOS"
+    elif is_iphone:
+        systeme = "iOS"
+    elif is_android:
+        systeme = "Android"
+    elif "windows" in ua:
+        systeme = "Windows"
+    elif "mac" in ua:
+        systeme = "macOS"
+    elif "linux" in ua:
+        systeme = "Linux"
+
+    appareil_lower = appareil.lower()
+
+    return {
+        "appareil": appareil,
+        "navigateur": navigateur,
+        "systeme_exploitation": systeme,
+        "est_mobile": "mobile" in appareil_lower,
+        "est_tablette": "tablette" in appareil_lower,
+        "est_desktop": "mobile" not in appareil_lower and "tablette" not in appareil_lower,
+    }
+
+
+def _update_session_client_info(session_visiteur, data):
+    user_agent = data.get("user_agent") or session_visiteur.user_agent or ""
+    detected = _detect_client_device(user_agent)
+    incoming_appareil = data.get("appareil")
+    incoming_navigateur = data.get("navigateur")
+    incoming_systeme = data.get("systeme_exploitation")
+
+    detected_is_mobile_context = detected["est_mobile"] or detected["est_tablette"]
+    incoming_is_desktop = incoming_appareil == "Desktop"
+
+    session_visiteur.user_agent = user_agent or session_visiteur.user_agent
+    session_visiteur.referer = data.get("referer", session_visiteur.referer)
+
+    if detected_is_mobile_context and (not incoming_appareil or incoming_is_desktop):
+        session_visiteur.appareil = detected["appareil"]
+    else:
+        session_visiteur.appareil = incoming_appareil or session_visiteur.appareil or detected["appareil"]
+
+    if detected_is_mobile_context and detected["navigateur"] != "Inconnu":
+        session_visiteur.navigateur = detected["navigateur"]
+    else:
+        session_visiteur.navigateur = (
+            incoming_navigateur
+            or session_visiteur.navigateur
+            or detected["navigateur"]
+        )
+
+    if detected_is_mobile_context and detected["systeme_exploitation"] != "Inconnu":
+        session_visiteur.systeme_exploitation = detected["systeme_exploitation"]
+    else:
+        session_visiteur.systeme_exploitation = (
+            incoming_systeme
+            or session_visiteur.systeme_exploitation
+            or detected["systeme_exploitation"]
+        )
+
+    session_visiteur.source_visite = data.get("source_visite", session_visiteur.source_visite)
+    session_visiteur.utm_source = data.get("utm_source", session_visiteur.utm_source)
+    session_visiteur.utm_medium = data.get("utm_medium", session_visiteur.utm_medium)
+    session_visiteur.utm_campaign = data.get("utm_campaign", session_visiteur.utm_campaign)
+
+    session_visiteur.est_mobile = _coerce_bool(
+        data.get("est_mobile"),
+        detected["est_mobile"] or session_visiteur.est_mobile
+    )
+    session_visiteur.est_tablette = _coerce_bool(
+        data.get("est_tablette"),
+        detected["est_tablette"] or session_visiteur.est_tablette
+    )
+    session_visiteur.est_desktop = _coerce_bool(
+        data.get("est_desktop"),
+        detected["est_desktop"] and not session_visiteur.est_mobile and not session_visiteur.est_tablette
+    )
+
+    appareil_lower = (session_visiteur.appareil or "").lower()
+
+    if "mobile" in appareil_lower:
+        session_visiteur.est_mobile = True
+        session_visiteur.est_tablette = False
+        session_visiteur.est_desktop = False
+    elif "tablette" in appareil_lower:
+        session_visiteur.est_mobile = False
+        session_visiteur.est_tablette = True
+        session_visiteur.est_desktop = False
+
+
 def robots_txt(request):
     base_url = _public_site_base_url(request)
     content = "\n".join([
@@ -321,17 +564,14 @@ def sitemap_xml(request):
 def accueil(request):
     resultat = None
 
-    # Créer une session Django si elle n'existe pas encore
-    if not request.session.session_key:
-        request.session.create()
-
-    session_id = request.session.session_key
-
-    session_visiteur, created = SessionVisiteur.objects.get_or_create(
-        session_id=session_id
-    )
-
     if request.method == "POST":
+        if not request.session.session_key:
+            request.session.create()
+
+        session_visiteur, created = SessionVisiteur.objects.get_or_create(
+            session_id=request.session.session_key
+        )
+
         page_visitee = request.POST.get("page_visitee")
         temps = request.POST.get("temps")
         clics = request.POST.get("clics")
@@ -770,8 +1010,8 @@ def dashboard(request):
 
     if request.user.is_superuser and client is None:
         sites = SiteClient.objects.all()
-        sessions = SessionVisiteur.objects.all()
-        predictions = PredictionBesoin.objects.all()
+        sessions = SessionVisiteur.objects.filter(site__isnull=False)
+        predictions = PredictionBesoin.objects.filter(session__site__isnull=False)
         leads = LeadCapture.objects.all()
         opportunites = OpportuniteCRM.objects.all()
         automatisations_email = AutomatisationEmail.objects.all()
@@ -872,6 +1112,58 @@ def dashboard(request):
     dernieres_predictions = predictions.order_by("-date_creation")[:5]
 
     leads_chauds = leads.order_by("-score", "-date_creation")[:5]
+    messages_visiteurs = (
+        leads
+        .exclude(Q(message__isnull=True) | Q(message=""))
+        .select_related("site", "session")
+        .order_by("-date_creation")[:8]
+    )
+
+    sessions_recentes = (
+        sessions
+        .select_related("site", "site__client")
+        .prefetch_related(
+            Prefetch(
+                "evenements",
+                queryset=EvenementUtilisateur.objects.filter(
+                    type_evenement="page_vue"
+                ).order_by("date_creation"),
+                to_attr="pages_vues_prefetch",
+            ),
+            Prefetch(
+                "leads",
+                queryset=LeadCapture.objects.order_by("-date_creation"),
+                to_attr="leads_prefetch",
+            ),
+        )
+        .order_by("-derniere_activite")[:12]
+    )
+    sessions_visiteurs_detaillees = []
+
+    for session_visiteur in sessions_recentes:
+        pages_vues = [
+            evenement.page
+            for evenement in getattr(session_visiteur, "pages_vues_prefetch", [])
+            if evenement.page
+        ]
+        pages_affichees = pages_vues[-8:]
+        leads_session = list(getattr(session_visiteur, "leads_prefetch", []))
+        dernier_lead = leads_session[0] if leads_session else None
+        entreprise_detectee, entreprise_signal = _detect_visitor_company(
+            session_visiteur,
+            leads_session,
+        )
+
+        sessions_visiteurs_detaillees.append({
+            "session": session_visiteur,
+            "site": session_visiteur.site,
+            "pages": pages_affichees,
+            "pages_supplementaires": max(len(pages_vues) - len(pages_affichees), 0),
+            "entreprise_detectee": entreprise_detectee,
+            "entreprise_signal": entreprise_signal,
+            "dernier_lead": dernier_lead,
+            "message": dernier_lead.message if dernier_lead and dernier_lead.message else "",
+        })
 
     base_url = request.build_absolute_uri("/").rstrip("/")
 
@@ -961,6 +1253,8 @@ def dashboard(request):
         "profils": profils,
         "dernieres_predictions": dernieres_predictions,
         "leads_chauds": leads_chauds,
+        "messages_visiteurs": messages_visiteurs,
+        "sessions_visiteurs_detaillees": sessions_visiteurs_detaillees,
         "scripts_installation": scripts_installation,
         "sites_onboarding": sites_onboarding,
         "a_un_site": a_un_site,
@@ -1309,25 +1603,7 @@ def track_event(request):
         site=site,
         session_id=session_id
     )
-    session_visiteur.user_agent = data.get("user_agent", session_visiteur.user_agent)
-    session_visiteur.referer = data.get("referer", session_visiteur.referer)
-
-    session_visiteur.appareil = data.get("appareil", session_visiteur.appareil)
-    session_visiteur.navigateur = data.get("navigateur", session_visiteur.navigateur)
-    session_visiteur.systeme_exploitation = data.get(
-        "systeme_exploitation",
-        session_visiteur.systeme_exploitation
-    )
-
-    session_visiteur.source_visite = data.get("source_visite", session_visiteur.source_visite)
-
-    session_visiteur.utm_source = data.get("utm_source", session_visiteur.utm_source)
-    session_visiteur.utm_medium = data.get("utm_medium", session_visiteur.utm_medium)
-    session_visiteur.utm_campaign = data.get("utm_campaign", session_visiteur.utm_campaign)
-
-    session_visiteur.est_mobile = data.get("est_mobile", session_visiteur.est_mobile)
-    session_visiteur.est_tablette = data.get("est_tablette", session_visiteur.est_tablette)
-    session_visiteur.est_desktop = data.get("est_desktop", session_visiteur.est_desktop)
+    _update_session_client_info(session_visiteur, data)
 
     session_visiteur.save()
 
@@ -1397,16 +1673,14 @@ def track_event(request):
 def simulateur(request):
     resultat = None
 
-    if not request.session.session_key:
-        request.session.create()
-
-    session_id = request.session.session_key
-
-    session_visiteur, created = SessionVisiteur.objects.get_or_create(
-        session_id=session_id
-    )
-
     if request.method == "POST":
+        if not request.session.session_key:
+            request.session.create()
+
+        session_visiteur, created = SessionVisiteur.objects.get_or_create(
+            session_id=request.session.session_key
+        )
+
         page_visitee = request.POST.get("page_visitee")
         temps = request.POST.get("temps")
         clics = request.POST.get("clics")
@@ -1446,8 +1720,9 @@ def connexion(request):
     erreur = None
 
     if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
+        username = (request.POST.get("username") or "").strip()
+        password = (request.POST.get("password") or "").strip()
+        User = get_user_model()
 
         user = authenticate(
             request,
@@ -1455,11 +1730,31 @@ def connexion(request):
             password=password
         )
 
+        if user is None:
+            user_by_username = User.objects.filter(username__iexact=username).first()
+
+            if user_by_username:
+                user = authenticate(
+                    request,
+                    username=user_by_username.username,
+                    password=password
+                )
+
+        if user is None and "@" in username:
+            user_by_email = User.objects.filter(email__iexact=username).first()
+
+            if user_by_email:
+                user = authenticate(
+                    request,
+                    username=user_by_email.username,
+                    password=password
+                )
+
         if user is not None:
             login(request, user)
             return redirect("dashboard")
         else:
-            erreur = "Nom d'utilisateur ou mot de passe incorrect."
+            erreur = "Les identifiants saisis ne correspondent à aucun compte PredictNeed IA actif."
 
     return render(
         request,
@@ -1607,6 +1902,8 @@ def capture_lead(request):
         site=site,
         session_id=session_id
     )
+    _update_session_client_info(session_visiteur, data)
+    session_visiteur.save()
 
     resultat_auto = analyser_session_automatique(session_visiteur)
 
@@ -2562,6 +2859,29 @@ def module_connecteurs(request):
     </script>'''
         })
 
+    fournisseurs = statut_configuration_fournisseurs()
+
+    for fournisseur in fournisseurs:
+        fournisseur["callback_url"] = (
+            f"{base_url}"
+            f"{reverse('connecteur_oauth_callback', args=[fournisseur['plateforme']])}"
+        )
+        fournisseur["connexion_url"] = reverse(
+            "demarrer_oauth_connecteur",
+            args=[fournisseur["plateforme"]],
+        )
+        if scope["selected_site_id"] and scope["selected_site_id"] != "all":
+            fournisseur["connexion_url"] = (
+                f"{fournisseur['connexion_url']}?site={scope['selected_site_id']}"
+            )
+
+    configuration_paiement = {
+        "configure": stripe_is_configured(),
+        "variables_requises": ["STRIPE_SECRET_KEY"],
+        "variables_recommandees": ["STRIPE_WEBHOOK_SECRET", "STRIPE_PRICE_ID"],
+        "webhook_url": f"{base_url}{reverse('stripe_webhook')}",
+    }
+
     connecteurs = [
         {
             "nom": "Tracker JavaScript",
@@ -2594,7 +2914,8 @@ def module_connecteurs(request):
         "sites": scope["sites_actifs"],
         "selected_site_id": scope["selected_site_id"],
         "connecteurs": connecteurs,
-        "fournisseurs_connecteurs": statut_configuration_fournisseurs(),
+        "fournisseurs_connecteurs": fournisseurs,
+        "configuration_paiement": configuration_paiement,
         "comptes_externes": comptes_externes,
         "scripts_installation": scripts_installation,
     })

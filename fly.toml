@@ -1,0 +1,36 @@
+# fly.toml app configuration file generated for predictneed-ia on 2026-07-13T01:33:58+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'predictneed-ia'
+primary_region = 'fra'
+console_command = '/code/manage.py shell'
+
+[build]
+[deploy]
+  release_command = 'python manage.py migrate --noinput'
+
+[env]
+  DJANGO_ALLOWED_HOSTS = 'predictneed-ia.fly.dev'
+  DJANGO_CSRF_TRUSTED_ORIGINS = 'https://predictneed-ia.fly.dev'
+  DJANGO_DEBUG = 'False'
+  PORT = '8000'
+  PREDICTNEED_SITE_URL = 'https://predictneed-ia.fly.dev'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpus = 1
+  memory_mb = 1024
+
+[[statics]]
+  guest_path = '/code/staticfiles'
+  url_prefix = '/static/'

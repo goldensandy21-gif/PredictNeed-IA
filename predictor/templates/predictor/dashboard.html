@@ -6,13 +6,42 @@
     <meta charset="UTF-8">
     <title>Dashboard - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=103">
 </head>
 <body class="dashboard-page">
 
 {% include "predictor/includes/dashboard_header.html" %}
 
-    <section class="dashboard">
+    <div class="dashboard-shell">
+        <aside class="dashboard-sidebar" aria-label="Navigation du dashboard">
+            <p class="dashboard-sidebar-title">Dashboard</p>
+            <nav class="dashboard-sidebar-nav">
+                <a href="#vue-ensemble">Vue d'ensemble</a>
+                <a href="#modules-intelligents">Modules actifs</a>
+                <a href="#analyse-visiteurs">Analyse visiteurs</a>
+                <a href="#parcours-visiteurs">Pages regardées</a>
+                <a href="#messages-visiteurs">Messages visiteurs</a>
+                <a href="#opportunites">Opportunités</a>
+                <a href="#leads">Leads</a>
+                <a href="#automatisations">Automatisations</a>
+                <a href="#installation">Installation</a>
+            </nav>
+
+            <p class="dashboard-sidebar-title">Modules</p>
+            <nav class="dashboard-sidebar-nav module-links">
+                <a href="{% url 'module_prediction_avancee' %}" class="{% if not a_module_prediction_avancee %}muted{% endif %}">Prédiction avancée</a>
+                <a href="{% url 'module_segmentation' %}" class="{% if not a_module_segmentation %}muted{% endif %}">Segmentation</a>
+                <a href="{% url 'module_ecommerce' %}" class="{% if not a_module_ecommerce %}muted{% endif %}">E-commerce</a>
+                <a href="{% url 'module_visualisations' %}" class="{% if not a_module_visualisations %}muted{% endif %}">Visualisations</a>
+                <a href="{% url 'module_historique' %}" class="{% if not a_module_historique %}muted{% endif %}">Historique</a>
+                <a href="{% url 'module_multicanal' %}" class="{% if not a_module_multicanal %}muted{% endif %}">Multi-canal</a>
+                <a href="{% url 'module_connecteurs' %}" class="{% if not a_module_connecteurs %}muted{% endif %}">Connecteurs</a>
+                <a href="{% url 'module_publicite' %}" class="{% if not a_module_publicite %}muted{% endif %}">Publicité</a>
+                <a href="{% url 'module_securite' %}" class="{% if not a_module_securite_entreprise %}muted{% endif %}">Sécurité</a>
+            </nav>
+        </aside>
+
+    <main class="dashboard" id="vue-ensemble">
         <h1>Dashboard PredictNeed IA</h1>
         <p class="dashboard-intro">Espace : {{ nom_client }}</p>
 
@@ -88,7 +117,7 @@
         </div>
 
         {% if a_module_ecommerce or a_module_prediction_avancee or a_module_segmentation or a_module_visualisations or a_module_historique or a_module_multicanal or a_module_connecteurs or a_module_publicite or a_module_securite_entreprise %}
-        <div class="dashboard-section">
+        <div class="dashboard-section" id="modules-intelligents">
             <h2>Modules intelligents activés</h2>
 
             <div class="stats-grid">
@@ -158,7 +187,7 @@
         </div>
     {% endif %}
 
-        <div class="dashboard-section">
+        <div class="dashboard-section" id="analyse-visiteurs">
             <h2>Analyse des visiteurs</h2>
 
             <div class="stats-grid">
@@ -199,7 +228,7 @@
             </div>
         </div>
 
-        <div class="dashboard-section">
+        <div class="dashboard-section" id="sources-trafic">
             <h2>Sources de trafic</h2>
 
             <div class="traffic-grid">
@@ -231,7 +260,7 @@
             </div>
         </div>
 
-        <div class="dashboard-section">
+        <div class="dashboard-section" id="pages-visiteurs">
             <h2>Pages les plus consultées</h2>
 
             <div class="traffic-card">
@@ -242,6 +271,111 @@
                     </div>
                 {% empty %}
                     <p>Aucune page consultée pour le moment.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="dashboard-section" id="parcours-visiteurs">
+            <h2>Parcours visiteurs récents</h2>
+
+            <p class="section-description">
+                Visualisez les pages regardées par chaque visiteur, le site concerné, le message laissé et l’entreprise détectée quand un signal fiable existe.
+            </p>
+
+            <div class="module-table-wrapper">
+                <table class="module-table visitor-paths-table">
+                    <thead>
+                        <tr>
+                            <th>Dernière activité</th>
+                            <th>Site</th>
+                            <th>Entreprise visiteuse</th>
+                            <th>Pages regardées</th>
+                            <th>Source</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in sessions_visiteurs_detaillees %}
+                            <tr>
+                                <td>{{ item.session.derniere_activite|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if item.site %}
+                                        {{ item.site.nom_site }}
+                                    {% else %}
+                                        Site non lié
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ item.entreprise_detectee }}</strong>
+                                    <span class="table-muted">{{ item.entreprise_signal }}</span>
+                                </td>
+                                <td>
+                                    <div class="page-chip-list">
+                                        {% for page in item.pages %}
+                                            <span>{{ page }}</span>
+                                        {% empty %}
+                                            <span>Aucune page enregistrée</span>
+                                        {% endfor %}
+
+                                        {% if item.pages_supplementaires %}
+                                            <span>+ {{ item.pages_supplementaires }} autre(s)</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {{ item.session.source_visite|default:"Accès direct" }}
+                                    <span class="table-muted">{{ item.session.appareil|default:"Appareil inconnu" }}</span>
+                                </td>
+                                <td>
+                                    {% if item.message %}
+                                        <span class="visitor-message-preview">{{ item.message }}</span>
+                                    {% else %}
+                                        <span class="table-muted">Aucun message</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6">Aucun parcours visiteur enregistré pour le moment.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="dashboard-section" id="messages-visiteurs">
+            <h2>Messages visiteurs</h2>
+
+            <p class="section-description">
+                Les messages envoyés depuis le widget visiteur apparaissent ici pour permettre une réponse rapide.
+            </p>
+
+            <div class="visitor-messages-grid">
+                {% for lead in messages_visiteurs %}
+                    <article class="visitor-message-card">
+                        <div class="visitor-message-card-header">
+                            <div>
+                                <h3>{{ lead.nom|default:"Visiteur sans nom" }}</h3>
+                                <p>{{ lead.site.nom_site }} · {{ lead.date_creation|date:"d/m/Y H:i" }}</p>
+                            </div>
+                            <span class="lead-score">Score {{ lead.score }}</span>
+                        </div>
+
+                        <p class="visitor-message-text">{{ lead.message }}</p>
+
+                        <div class="lead-actions">
+                            {% if lead.email %}
+                                <a href="mailto:{{ lead.email }}">Répondre par email</a>
+                            {% endif %}
+
+                            {% if lead.telephone %}
+                                <a href="tel:{{ lead.telephone }}">Appeler</a>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% empty %}
+                    <p>Aucun message visiteur reçu pour le moment.</p>
                 {% endfor %}
             </div>
         </div>
@@ -288,7 +422,7 @@
         </div>
     {% endif %}
 
-        <div class="dashboard-section">
+        <div class="dashboard-section" id="statut-sites">
             <h2>Statut de vos sites</h2>
 
             <div class="site-status-grid">
@@ -326,7 +460,7 @@
             </div>
         </div>
 
-        <div class="dashboard-section">
+        <div class="dashboard-section" id="nettoyage">
             <h2>Nettoyage des données techniques</h2>
 
             <p class="section-description">
@@ -347,7 +481,7 @@
             </form>
         </div>
 
-        <div class="dashboard-section">
+        <div class="dashboard-section" id="profils">
             <h2>Profils détectés</h2>
 
             {% for profil in profils %}
@@ -360,7 +494,7 @@
             {% endfor %}
         </div>
 
-        <div class="dashboard-section">
+        <div class="dashboard-section" id="predictions">
             <h2>Dernières prédictions</h2>
 
             {% for prediction in dernieres_predictions %}
@@ -376,7 +510,7 @@
             {% endfor %}
         </div>
 
-        <div class="dashboard-section">
+        <div class="dashboard-section" id="installation">
             <h2>Installer PredictNeed IA sur votre site</h2>
 
             <p class="section-description">
@@ -675,7 +809,7 @@
             </div>
         </div>
 
-        <div class="dashboard-section">
+        <div class="dashboard-section" id="leads">
             {% if a_module_ecommerce %}
                 <h2>Clients à relancer</h2>
             {% else %}
@@ -777,7 +911,8 @@
                 </div>
 
                 <a href="/" class="hero-button">Retour au site</a>
-    </section>
+    </main>
+    </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {

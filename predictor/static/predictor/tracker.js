@@ -1,4 +1,11 @@
 (function () {
+    if (window.PredictNeedIA && window.PredictNeedIA.__trackerLoaded) {
+        return;
+    }
+
+    window.PredictNeedIA = window.PredictNeedIA || {};
+    window.PredictNeedIA.__trackerLoaded = true;
+
     const script = document.currentScript;
 
     const apiKey = script.getAttribute("data-api-key");
@@ -9,7 +16,7 @@
     const privacyUrl = script.getAttribute("data-privacy-url") || "";
     const cookiesUrl = script.getAttribute("data-cookies-url") || "";
 
-    const consentStorageKey = "predictneed_consent_v1";
+    const consentStorageKey = "predictneed_consent_v3";
     const sessionStorageKey = "predictneed_session_id";
     const leadSentStorageKey = "predictneed_lead_sent";
     const consentValidityMs = 180 * 24 * 60 * 60 * 1000;
@@ -17,7 +24,15 @@
     let sessionId = null;
     let hasStartedTracking = false;
     let elapsedSecondsSent = 0;
+    let offerTriggerInitialized = false;
+    let offerDelayPassed = false;
+    let hasScrolledForOffer = false;
+    let offerReopenTimer = null;
+    let latestPredictionResult = null;
+    let mobileOfferDismissed = false;
     const startTime = Date.now();
+    const offerPopupInitialDelayMs = 5000;
+    const offerPopupReopenDelayMs = 10000;
 
     if (!apiKey) {
         console.warn("PredictNeed IA : clé API manquante.");
@@ -265,6 +280,7 @@
     function removeConsentUi() {
         const banner = document.getElementById("predictneed-consent-banner");
         const panel = document.getElementById("predictneed-consent-panel");
+        const settingsButton = document.getElementById("predictneed-cookie-settings");
 
         if (banner) {
             banner.remove();
@@ -272,6 +288,10 @@
 
         if (panel) {
             panel.remove();
+        }
+
+        if (settingsButton) {
+            settingsButton.remove();
         }
     }
 
@@ -296,8 +316,12 @@
     }
 
     function renderConsentBanner() {
-        if (!requireConsent || readStoredConsent() || document.getElementById("predictneed-consent-banner")) {
-            renderSettingsButton();
+        if (!requireConsent) {
+            removeConsentUi();
+            return;
+        }
+
+        if (document.getElementById("predictneed-consent-banner") || document.getElementById("predictneed-consent-panel")) {
             return;
         }
 
@@ -422,14 +446,14 @@
         }
 
         removeConsentUi();
-        renderSettingsButton();
 
         if (normalizedConsent.analytics) {
             startTracking();
+            initializeOfferTrigger();
+            tryShowOfferAfterEngagement();
         }
     }
 
-    window.PredictNeedIA = window.PredictNeedIA || {};
     window.PredictNeedIA.openConsentPreferences = renderConsentPanel;
     window.PredictNeedIA.acceptAll = function () {
         applyConsent({ analytics: true, offers: true });
@@ -438,11 +462,9 @@
         applyConsent({ analytics: false, offers: false });
     };
 
-    function shouldShowOffer(resultat) {
-        if (!resultat) return false;
-
+    function canShowOfferPopup() {
         if (debugMode) {
-            return true;
+            return !document.getElementById("predictneed-popup");
         }
 
         if (!debugMode && !hasOfferConsent()) {
@@ -450,13 +472,94 @@
         }
 
         const leadAlreadySent = localStorage.getItem(leadSentStorageKey);
-        const popupAlreadyShown = sessionStorage.getItem("predictneed_popup_shown");
 
-        if (leadAlreadySent || popupAlreadyShown) {
+        if (leadAlreadySent) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function shouldShowOffer(resultat) {
+        if (!resultat) return false;
+
+        if (!canShowOfferPopup()) {
             return false;
         }
 
         return resultat.intention === "Forte" || Number(resultat.score) >= 6;
+    }
+
+    function tryShowOfferAfterEngagement() {
+        if (!offerDelayPassed || !canShowOfferPopup()) {
+            return;
+        }
+
+        showOfferPopup(latestPredictionResult || {
+            intention: "Moyenne",
+            score: 3,
+        });
+    }
+
+    function initializeOfferTrigger() {
+        if (offerTriggerInitialized) {
+            tryShowOfferAfterEngagement();
+            return;
+        }
+
+        offerTriggerInitialized = true;
+
+        if (window.scrollY > 40) {
+            hasScrolledForOffer = true;
+        }
+
+        const markScrolled = function () {
+            hasScrolledForOffer = true;
+            tryShowOfferAfterEngagement();
+        };
+
+        window.addEventListener("scroll", markScrolled, { passive: true, once: true });
+        window.addEventListener("touchmove", markScrolled, { passive: true, once: true });
+        window.addEventListener("wheel", markScrolled, { passive: true, once: true });
+
+        setTimeout(function () {
+            offerDelayPassed = true;
+            tryShowOfferAfterEngagement();
+        }, offerPopupInitialDelayMs);
+    }
+
+    function clearOfferReopenTimer() {
+        if (offerReopenTimer) {
+            clearTimeout(offerReopenTimer);
+            offerReopenTimer = null;
+        }
+    }
+
+    function scheduleOfferPopupReopen() {
+        clearOfferReopenTimer();
+
+        if (isMobileOfferExperience() || !canShowOfferPopup()) {
+            return;
+        }
+
+        offerReopenTimer = setTimeout(function () {
+            offerReopenTimer = null;
+
+            if (canShowOfferPopup()) {
+                showOfferPopup(latestPredictionResult || {
+                    intention: "Moyenne",
+                    score: 3,
+                });
+            }
+        }, offerPopupReopenDelayMs);
+    }
+
+    function isMobileOfferExperience() {
+        if (window.matchMedia && window.matchMedia("(max-width: 767px)").matches) {
+            return true;
+        }
+
+        return detecterAppareil().est_mobile === true;
     }
 
     function showOfferPopup(resultat) {
@@ -464,15 +567,21 @@
             return;
         }
 
+        clearOfferReopenTimer();
+
         const existingPopup = document.getElementById("predictneed-popup");
 
         if (existingPopup) {
+            if (isMobileOfferExperience() && (mobileOfferDismissed || existingPopup.classList.contains("minimized"))) {
+                return;
+            }
+
             existingPopup.classList.remove("minimized");
             return;
         }
 
-        if (!debugMode) {
-            sessionStorage.setItem("predictneed_popup_shown", "true");
+        if (isMobileOfferExperience() && mobileOfferDismissed) {
+            return;
         }
 
         const popup = document.createElement("div");
@@ -481,17 +590,17 @@
         popup.innerHTML = `
             <button class="predictneed-launcher" type="button">
                 <span class="predictneed-launcher-icon">i</span>
-                <span>Offre personnalisée</span>
+                <span>Écrire un message</span>
             </button>
 
             <div class="predictneed-popup-box">
                 <button class="predictneed-close" type="button">×</button>
 
-                <h3>Une offre peut vous intéresser</h3>
+                <h3>Bonjour, besoin d'aide ?</h3>
 
                 <p>
-                    Vous semblez intéressé par nos services.
-                    Laissez vos coordonnées pour recevoir une proposition personnalisée.
+                    Écrivez un message ou laissez vos coordonnées.
+                    L’équipe pourra vous répondre rapidement.
                 </p>
 
                 <form id="predictneed-lead-form">
@@ -501,14 +610,14 @@
 
                     <input type="text" name="telephone" placeholder="Votre téléphone">
 
-                    <textarea name="message" placeholder="Votre message">Je souhaite recevoir une offre personnalisée.</textarea>
+                    <textarea name="message" placeholder="Votre message">Bonjour, je souhaite être recontacté.</textarea>
 
                     <label class="predictneed-consent">
                         <input type="checkbox" name="consentement" required>
                         <span>J'accepte d'être contacté au sujet de ma demande.</span>
                     </label>
 
-                    <button type="submit">Recevoir l'offre</button>
+                    <button type="submit">Envoyer le message</button>
                 </form>
 
             </div>
@@ -666,11 +775,21 @@
             event.preventDefault();
             event.stopPropagation();
             popup.classList.add("minimized");
+
+            if (isMobileOfferExperience()) {
+                mobileOfferDismissed = true;
+                clearOfferReopenTimer();
+                return;
+            }
+
+            scheduleOfferPopupReopen();
         });
 
         launcherButton.addEventListener("click", function (event) {
             event.preventDefault();
             event.stopPropagation();
+            clearOfferReopenTimer();
+            mobileOfferDismissed = false;
             popup.classList.remove("minimized");
         });
 
@@ -685,6 +804,8 @@
             const telephone = formData.get("telephone");
             const message = formData.get("message");
             const consentement = formData.get("consentement") === "on";
+            const infosAppareil = detecterAppareil();
+            const infosSource = detecterSource();
 
             if (!currentSessionId) {
                 alert("Veuillez accepter l'analyse PredictNeed IA pour envoyer cette demande.");
@@ -710,6 +831,18 @@
                     message: message,
                     consentement: consentement,
                     page: window.location.pathname,
+                    user_agent: navigator.userAgent,
+                    referer: document.referrer,
+                    appareil: infosAppareil.appareil,
+                    navigateur: infosAppareil.navigateur,
+                    systeme_exploitation: infosAppareil.systeme_exploitation,
+                    source_visite: infosSource.source_visite,
+                    utm_source: infosSource.utm_source,
+                    utm_medium: infosSource.utm_medium,
+                    utm_campaign: infosSource.utm_campaign,
+                    est_mobile: infosAppareil.est_mobile,
+                    est_tablette: infosAppareil.est_tablette,
+                    est_desktop: infosAppareil.est_desktop,
                 }),
             })
                 .then(function (response) {
@@ -729,7 +862,7 @@
                             </p>
                         `;
 
-                        popup.querySelector(".predictneed-launcher span:last-child").textContent = "Demande envoyée";
+                        popup.querySelector(".predictneed-launcher span:last-child").textContent = "Message envoyé";
 
                         setTimeout(function () {
                             popup.classList.add("minimized");
@@ -747,47 +880,73 @@
 
     function detecterAppareil() {
         const largeur = window.innerWidth;
-        const userAgent = navigator.userAgent.toLowerCase();
+        const userAgentOriginal = navigator.userAgent || "";
+        const userAgent = userAgentOriginal.toLowerCase();
+        const platform = (navigator.platform || "").toLowerCase();
+        const maxTouchPoints = navigator.maxTouchPoints || 0;
 
         let appareil = "Desktop";
+        const isIpadOS = platform === "macintel" && maxTouchPoints > 1;
+        const isIphone = /iphone|ipod/.test(userAgent);
+        const isIpad = /ipad/.test(userAgent) || isIpadOS;
+        const isAndroid = /android/.test(userAgent);
+        const isAndroidMobile = isAndroid && /mobile/.test(userAgent);
+        const isAndroidTablet = isAndroid && !/mobile/.test(userAgent);
 
-        if (/tablet|ipad/.test(userAgent)) {
-            appareil = "Tablette";
-        } else if (/mobile|iphone|android/.test(userAgent) || largeur < 768) {
-            appareil = "Mobile";
+        if (isIpad) {
+            appareil = "Tablette iPad";
+        } else if (isIphone) {
+            appareil = "Mobile iPhone";
+        } else if (isAndroidTablet || /tablet/.test(userAgent)) {
+            appareil = "Tablette Android";
+        } else if (isAndroidMobile || /mobile/.test(userAgent) || largeur < 768) {
+            appareil = isAndroid ? "Mobile Android" : "Mobile";
         }
 
         let navigateur = "Inconnu";
 
-        if (userAgent.includes("edge")) {
-            navigateur = "Edge";
-        } else if (userAgent.includes("chrome")) {
+        if (/edgios|edg\//.test(userAgent)) {
+            navigateur = isIphone || isIpad ? "Edge iOS" : "Edge";
+        } else if (/crios/.test(userAgent)) {
+            navigateur = "Chrome iOS";
+        } else if (/fxios/.test(userAgent)) {
+            navigateur = "Firefox iOS";
+        } else if (/samsungbrowser/.test(userAgent)) {
+            navigateur = "Samsung Internet";
+        } else if (/opr\//.test(userAgent)) {
+            navigateur = "Opera";
+        } else if (/chrome|chromium/.test(userAgent)) {
             navigateur = "Chrome";
         } else if (userAgent.includes("safari")) {
-            navigateur = "Safari";
+            navigateur = isIphone || isIpad ? "Safari iOS" : "Safari";
         } else if (userAgent.includes("firefox")) {
             navigateur = "Firefox";
         }
 
         let systeme = "Inconnu";
 
-        if (userAgent.includes("mac")) {
-            systeme = "macOS";
+        if (isIpad) {
+            systeme = "iPadOS";
+        } else if (isIphone) {
+            systeme = "iOS";
+        } else if (isAndroid) {
+            systeme = "Android";
         } else if (userAgent.includes("windows")) {
             systeme = "Windows";
-        } else if (userAgent.includes("iphone") || userAgent.includes("ipad")) {
-            systeme = "iOS";
-        } else if (userAgent.includes("android")) {
-            systeme = "Android";
+        } else if (userAgent.includes("mac")) {
+            systeme = "macOS";
         }
+
+        const estTablette = appareil.toLowerCase().includes("tablette");
+        const estMobile = appareil.toLowerCase().includes("mobile");
 
         return {
             appareil: appareil,
             navigateur: navigateur,
             systeme_exploitation: systeme,
-            est_mobile: appareil === "Mobile",
-            est_tablette: appareil === "Tablette",
-            est_desktop: appareil === "Desktop"
+            est_mobile: estMobile,
+            est_tablette: estTablette,
+            est_desktop: !estMobile && !estTablette
         };
     }
 
@@ -871,6 +1030,11 @@
                 return response.json();
             })
             .then(function (data) {
+                if (data.success) {
+                    latestPredictionResult = data;
+                    tryShowOfferAfterEngagement();
+                }
+
                 if (data.success && shouldShowOffer(data)) {
                     showOfferPopup(data);
                 }
@@ -905,6 +1069,7 @@
         }
 
         hasStartedTracking = true;
+        initializeOfferTrigger();
 
         sendEvent(
             "page_vue",
@@ -945,6 +1110,8 @@
         }
 
         const elapsed = Math.round((Date.now() - startTime) / 1000);
+        const infosAppareil = detecterAppareil();
+        const infosSource = detecterSource();
 
         const data = {
             api_key: apiKey,
@@ -953,6 +1120,18 @@
             type_evenement: "temps",
             page: window.location.pathname,
             valeur: elapsed + " secondes",
+            user_agent: navigator.userAgent,
+            referer: document.referrer,
+            appareil: infosAppareil.appareil,
+            navigateur: infosAppareil.navigateur,
+            systeme_exploitation: infosAppareil.systeme_exploitation,
+            source_visite: infosSource.source_visite,
+            utm_source: infosSource.utm_source,
+            utm_medium: infosSource.utm_medium,
+            utm_campaign: infosSource.utm_campaign,
+            est_mobile: infosAppareil.est_mobile,
+            est_tablette: infosAppareil.est_tablette,
+            est_desktop: infosAppareil.est_desktop,
         };
 
         const blob = new Blob(
