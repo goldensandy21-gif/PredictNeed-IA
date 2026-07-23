@@ -102,7 +102,7 @@
 {% with current_route=request.resolver_match.url_name %}
     {% if current_route == "accueil" or current_route == "fonctionnalites" or current_route == "fonctionnalite_detail" or current_route == "simulateur" or current_route == "prix" or current_route == "connexion" or current_route == "inscription" or current_route == "paiement_succes" or current_route == "paiement_annule" %}
         <script
-            src="{% static 'predictor/tracker.js' %}?v=97"
+            src="{% static 'predictor/tracker.js' %}?v=98"
             data-api-key="35fa47f9-7d4f-4e33-ace4-d20316aa1338"
             data-api-url="/api/track/"
             data-lead-url="/api/lead/"

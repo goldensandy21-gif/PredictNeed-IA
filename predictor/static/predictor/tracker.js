@@ -68,8 +68,6 @@
             if (now() - Number(consent.updated_at) > consentValidityMs) {
                 localStorage.removeItem(consentStorageKey);
                 localStorage.removeItem(sessionStorageKey);
-                localStorage.removeItem(leadSentStorageKey);
-                sessionStorage.removeItem("predictneed_popup_shown");
                 return null;
             }
 
@@ -135,14 +133,8 @@
         sessionId = null;
         hasStartedTracking = false;
         elapsedSecondsSent = 0;
+        clearOfferReopenTimer();
         localStorage.removeItem(sessionStorageKey);
-        localStorage.removeItem(leadSentStorageKey);
-        sessionStorage.removeItem("predictneed_popup_shown");
-
-        const popup = document.getElementById("predictneed-popup");
-        if (popup) {
-            popup.remove();
-        }
     }
 
     function injectConsentStyles() {
