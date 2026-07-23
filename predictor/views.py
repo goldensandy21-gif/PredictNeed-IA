@@ -519,6 +519,7 @@ def sitemap_xml(request):
         ("fonctionnalites", None, "0.9", "weekly"),
         ("prix", None, "0.9", "weekly"),
         ("simulateur", None, "0.8", "monthly"),
+        ("guide_utilisation", None, "0.7", "monthly"),
         ("mentions_legales", None, "0.4", "monthly"),
         ("politique_confidentialite", None, "0.4", "monthly"),
         ("conditions_generales_utilisation", None, "0.4", "monthly"),
@@ -677,6 +678,17 @@ def politique_cookies(request):
         _seo_context(
             "Politique de cookies - PredictNeed IA",
             "Politique de cookies de PredictNeed IA : cookies nécessaires, mesure d'audience, choix de confidentialité et gestion du consentement.",
+        ),
+    )
+
+
+def guide_utilisation(request):
+    return render(
+        request,
+        "predictor/guide_utilisation.html",
+        _seo_context(
+            "Guide d'utilisation et glossaire - PredictNeed IA",
+            "Guide complet pour utiliser PredictNeed IA : installation du script, dashboard, modules, leads, connecteurs, pixels, cookies et glossaire.",
         ),
     )
 
@@ -2946,6 +2958,12 @@ def module_connecteurs(request):
                 f"{fournisseur['connexion_url']}?site={scope['selected_site_id']}"
             )
 
+    fournisseurs_visibles = [
+        fournisseur
+        for fournisseur in fournisseurs
+        if request.user.is_superuser or fournisseur["configure"]
+    ]
+
     configuration_paiement = {
         "configure": stripe_is_configured(),
         "variables_requises": ["STRIPE_SECRET_KEY"],
@@ -2965,32 +2983,38 @@ def module_connecteurs(request):
             "description": "Enregistre les coordonnées et le consentement des prospects.",
         },
         {
-            "nom": "Django Admin",
-            "statut": "Actif",
-            "description": "Permet de gérer clients, sites, modules, leads et opportunités.",
-        },
-        {
-            "nom": "Comptes publicitaires externes",
-            "statut": "Actif" if comptes_externes.filter(statut="connecte").exists() else "À connecter",
-            "description": "Relie Google Ads, Meta Ads, LinkedIn Ads ou TikTok Ads via OAuth pour rapprocher campagnes, sources et leads.",
-        },
-        {
             "nom": "Pixels de retargeting",
             "statut": "Actif" if scope["sites_filtres"].filter(retargeting_actif=True).exists() else "À configurer",
             "description": "Déclenche Meta Pixel, Google Ads, TikTok Pixel, LinkedIn Insight et Pinterest après consentement marketing.",
         },
-        {
-            "nom": "Stripe / Paiement",
-            "statut": "Actif" if stripe_is_configured() else "À connecter",
-            "description": "Gère l'abonnement mensuel PredictNeed IA Pro et l'activation du compte après paiement.",
-        },
     ]
+
+    if request.user.is_superuser or fournisseurs_visibles or comptes_externes.exists():
+        connecteurs.append({
+            "nom": "Comptes publicitaires externes",
+            "statut": "Actif" if comptes_externes.filter(statut="connecte").exists() else "À connecter",
+            "description": "Relie Google Ads, Meta Ads, LinkedIn Ads ou TikTok Ads via OAuth pour rapprocher campagnes, sources et leads.",
+        })
+
+    if request.user.is_superuser:
+        connecteurs.extend([
+            {
+                "nom": "Django Admin",
+                "statut": "Actif",
+                "description": "Permet de gérer clients, sites, modules, leads et opportunités.",
+            },
+            {
+                "nom": "Stripe / Paiement",
+                "statut": "Actif" if stripe_is_configured() else "À connecter",
+                "description": "Gère l'abonnement mensuel PredictNeed IA Pro et l'activation du compte après paiement.",
+            },
+        ])
 
     return render(request, "predictor/module_connecteurs.html", {
         "sites": scope["sites_actifs"],
         "selected_site_id": scope["selected_site_id"],
         "connecteurs": connecteurs,
-        "fournisseurs_connecteurs": fournisseurs,
+        "fournisseurs_connecteurs": fournisseurs_visibles,
         "configuration_paiement": configuration_paiement,
         "comptes_externes": comptes_externes,
         "scripts_installation": scripts_installation,

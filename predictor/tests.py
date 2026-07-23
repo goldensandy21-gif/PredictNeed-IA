@@ -57,6 +57,21 @@ class RetargetingConnectorsTests(TestCase):
         self.assertIn('data-linkedin-conversion-id="456789"', content)
         self.assertIn('data-pinterest-tag-id="2612345678901"', content)
 
+    def test_module_connecteurs_masque_la_configuration_interne_au_client(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("module_connecteurs"))
+        content = response.content.decode()
+
+        self.assertNotContains(response, "Configuration interne administrateur")
+        self.assertNotContains(response, "Stripe / Paiement")
+        self.assertNotContains(response, "Django Admin")
+        self.assertNotContains(response, "Comptes publicitaires à connecter")
+        self.assertNotContains(response, "Connexion OAuth pour lire les comptes")
+        self.assertNotContains(response, "Connexion bientôt disponible")
+        self.assertIn("Pixels de retargeting", content)
+        self.assertIn("Scripts d’installation", content)
+
     def test_mise_a_jour_retargeting_nettoie_les_identifiants(self):
         self.client.force_login(self.user)
 
@@ -84,3 +99,12 @@ class RetargetingConnectorsTests(TestCase):
         self.assertEqual(self.site.linkedin_partner_id, "987654")
         self.assertEqual(self.site.linkedin_conversion_id, "conv-456")
         self.assertEqual(self.site.pinterest_tag_id, "pin.123")
+
+    def test_guide_utilisation_est_public_et_lie_depuis_le_footer(self):
+        response = self.client.get(reverse("guide_utilisation"))
+
+        self.assertContains(response, "Guide d'utilisation et glossaire PredictNeed IA")
+        self.assertContains(response, "Dashboard")
+        self.assertContains(response, "Retargeting")
+        self.assertContains(response, "Glossaire")
+        self.assertContains(response, reverse("guide_utilisation"))

@@ -7798,13 +7798,82 @@ body.pricing-body {
     background: #f8fbfd;
 }
 
+.guide-page {
+    max-width: 1180px;
+}
+
+.guide-hero {
+    margin-bottom: 1rem;
+}
+
+.guide-quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin: 0 auto 2rem;
+}
+
+.guide-quick-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid #c7d8e8;
+    border-radius: 999px;
+    color: #102033;
+    background: #ffffff;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.guide-section {
+    scroll-margin-top: 90px;
+}
+
+.guide-step-grid,
+.guide-card-grid,
+.glossary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.guide-step-grid article,
+.guide-card-grid article,
+.guide-definition-list > div,
+.glossary-grid > div {
+    padding: clamp(1rem, 2vw, 1.35rem);
+    border: 1px solid #d5e5f2;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.guide-definition-list {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.guide-page h3 {
+    color: #102033;
+}
+
+.guide-page code {
+    color: #102033;
+    background: #eef6fb;
+    border-radius: 6px;
+    padding: 0.1rem 0.35rem;
+}
+
 @media (max-width: 960px) {
     .pricing-single-plan,
     .pricing-metrics,
     .payment-detail-grid,
     .signup-trial-grid,
     .privacy-kit-grid,
-    .retargeting-site-grid {
+    .retargeting-site-grid,
+    .guide-step-grid,
+    .guide-card-grid,
+    .glossary-grid {
         grid-template-columns: 1fr;
     }
 

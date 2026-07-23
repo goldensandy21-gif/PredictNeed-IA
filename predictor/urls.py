@@ -72,6 +72,7 @@ urlpatterns = [
     path('prix/', views.prix, name='prix'),
     path('fonctionnalites/', views.fonctionnalites, name='fonctionnalites'),
     path('fonctionnalites/<slug:slug>/', views.fonctionnalite_detail, name='fonctionnalite_detail'),
+    path('guide-utilisation/', views.guide_utilisation, name='guide_utilisation'),
     path('mentions-legales/', views.mentions_legales, name='mentions_legales'),
     path('politique-de-confidentialite/', views.politique_confidentialite, name='politique_confidentialite'),
     path('conditions-generales-utilisation/', views.conditions_generales_utilisation, name='conditions_generales_utilisation'),

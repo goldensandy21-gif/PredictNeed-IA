@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Connecteurs - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=106">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=107">
 </head>
 <body>
 
@@ -53,98 +53,95 @@
         {% endfor %}
     </div>
 
-    <div class="dashboard-section connector-setup-section">
-        <h2>Comptes publicitaires à connecter</h2>
-        <p class="section-description">
-            Les comptes externes se relient depuis le dashboard : le client clique sur
-            Connecter, se connecte à la plateforme officielle, puis autorise PredictNeed IA
-            à lire les campagnes nécessaires au rapprochement avec ses leads et ses UTM.
-        </p>
+    {% if fournisseurs_connecteurs %}
+        <div class="dashboard-section connector-setup-section">
+            <h2>Comptes publicitaires à connecter</h2>
+            <p class="section-description">
+                Les comptes externes se relient depuis le dashboard : le client clique sur
+                Connecter, se connecte à la plateforme officielle, puis autorise PredictNeed IA
+                à lire les campagnes nécessaires au rapprochement avec ses leads et ses UTM.
+            </p>
 
-        <div class="connector-help-grid">
-            <div class="connector-help-card">
-                <span class="connector-step">1</span>
-                <h3>Choisir le compte à relier</h3>
-                <p>
-                    Le client sélectionne Google Ads, Meta Ads, LinkedIn Ads ou TikTok Ads
-                    selon les campagnes qu'il veut suivre dans PredictNeed IA.
-                </p>
+            <div class="connector-help-grid">
+                <div class="connector-help-card">
+                    <span class="connector-step">1</span>
+                    <h3>Choisir le compte à relier</h3>
+                    <p>
+                        Le client sélectionne Google Ads, Meta Ads, LinkedIn Ads ou TikTok Ads
+                        selon les campagnes qu'il veut suivre dans PredictNeed IA.
+                    </p>
+                </div>
+                <div class="connector-help-card">
+                    <span class="connector-step">2</span>
+                    <h3>Autoriser l'accès</h3>
+                    <p>
+                        Il est redirigé vers la plateforme officielle et valide l'autorisation.
+                        Il ne donne jamais son mot de passe à PredictNeed IA.
+                    </p>
+                </div>
+                <div class="connector-help-card">
+                    <span class="connector-step">3</span>
+                    <h3>Synchroniser les campagnes</h3>
+                    <p>
+                        Une fois le compte relié, PredictNeed IA peut rapprocher les campagnes,
+                        les sources de trafic, les visites et les demandes de contact.
+                    </p>
+                </div>
             </div>
-            <div class="connector-help-card">
-                <span class="connector-step">2</span>
-                <h3>Autoriser l'accès</h3>
-                <p>
-                    Il est redirigé vers la plateforme officielle et valide l'autorisation.
-                    Il ne donne jamais son mot de passe à PredictNeed IA.
-                </p>
-            </div>
-            <div class="connector-help-card">
-                <span class="connector-step">3</span>
-                <h3>Synchroniser les campagnes</h3>
-                <p>
-                    Une fois le compte relié, PredictNeed IA peut rapprocher les campagnes,
-                    les sources de trafic, les visites et les demandes de contact.
-                </p>
-            </div>
-        </div>
 
-        {% if user.is_superuser %}
-            <div class="connector-admin-note">
-                <h3>Configuration interne administrateur</h3>
-                <p>
-                    Les clients n'ont pas accès à Fly. Les clés OAuth ci-dessous se
-                    configurent une seule fois côté PredictNeed IA, puis chaque client
-                    connecte son propre compte depuis son dashboard.
-                </p>
-            </div>
-        {% endif %}
+            {% if user.is_superuser %}
+                <div class="connector-admin-note">
+                    <h3>Configuration interne administrateur</h3>
+                    <p>
+                        Les clients n'ont pas accès à Fly. Les clés OAuth ci-dessous se
+                        configurent une seule fois côté PredictNeed IA, puis chaque client
+                        connecte son propre compte depuis son dashboard.
+                    </p>
+                </div>
+            {% endif %}
 
-        <div class="connector-provider-grid">
-            {% for fournisseur in fournisseurs_connecteurs %}
-                <div class="connector-provider-card">
-                    <div>
-                        <h3>{{ fournisseur.nom }}</h3>
-                        <p>{{ fournisseur.description }}</p>
-                    </div>
+            <div class="connector-provider-grid">
+                {% for fournisseur in fournisseurs_connecteurs %}
+                    <div class="connector-provider-card">
+                        <div>
+                            <h3>{{ fournisseur.nom }}</h3>
+                            <p>{{ fournisseur.description }}</p>
+                        </div>
 
-                    <div class="connector-provider-meta">
-                        {% if fournisseur.configure %}
-                            <span class="module-status active">Configuré</span>
-                            <a
-                                class="module-filter-button connector-button"
-                                href="{{ fournisseur.connexion_url }}"
-                            >
-                                Connecter
-                            </a>
-                        {% else %}
-                            {% if user.is_superuser %}
+                        <div class="connector-provider-meta">
+                            {% if fournisseur.configure %}
+                                <span class="module-status active">Configuré</span>
+                                <a
+                                    class="module-filter-button connector-button"
+                                    href="{{ fournisseur.connexion_url }}"
+                                >
+                                    Connecter
+                                </a>
+                            {% else %}
                                 <span class="module-status muted">Configuration serveur requise</span>
                                 <span class="connector-button-disabled">Bouton activé après configuration</span>
-                            {% else %}
-                                <span class="module-status muted">Connexion bientôt disponible</span>
-                                <span class="connector-button-disabled">Activation en cours par PredictNeed IA</span>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-
-                    {% if fournisseur.scopes %}
-                        <p class="connector-scopes">Autorisations : {{ fournisseur.scopes }}</p>
-                    {% endif %}
-
-                    {% if user.is_superuser %}
-                        <div class="connector-config-box">
-                            <p><strong>Callback OAuth :</strong></p>
-                            <code>{{ fournisseur.callback_url }}</code>
-                            <p><strong>Variables requises :</strong> {{ fournisseur.variables_requises|join:", " }}</p>
-                            {% if fournisseur.variables_optionnelles %}
-                                <p><strong>Variables optionnelles :</strong> {{ fournisseur.variables_optionnelles|join:", " }}</p>
                             {% endif %}
                         </div>
-                    {% endif %}
-                </div>
-            {% endfor %}
+
+                        {% if fournisseur.scopes %}
+                            <p class="connector-scopes">Autorisations : {{ fournisseur.scopes }}</p>
+                        {% endif %}
+
+                        {% if user.is_superuser %}
+                            <div class="connector-config-box">
+                                <p><strong>Callback OAuth :</strong></p>
+                                <code>{{ fournisseur.callback_url }}</code>
+                                <p><strong>Variables requises :</strong> {{ fournisseur.variables_requises|join:", " }}</p>
+                                {% if fournisseur.variables_optionnelles %}
+                                    <p><strong>Variables optionnelles :</strong> {{ fournisseur.variables_optionnelles|join:", " }}</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
         </div>
-    </div>
+    {% endif %}
 
     <div class="dashboard-section retargeting-setup-section">
         <h2>Pixels de retargeting</h2>
