@@ -105,6 +105,35 @@ class RetargetingConnectorsTests(TestCase):
 
         self.assertContains(response, "Guide d'utilisation et glossaire PredictNeed IA")
         self.assertContains(response, "Dashboard")
+        self.assertContains(response, "Paramètres du compte")
+        self.assertContains(response, "Paramètres du profil")
+        self.assertContains(response, "Paramètres de connexion")
         self.assertContains(response, "Retargeting")
         self.assertContains(response, "Glossaire")
         self.assertContains(response, reverse("guide_utilisation"))
+
+    def test_parametres_dashboard_met_a_jour_le_profil_client(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("dashboard_parametres"),
+            {
+                "formulaire": "profil",
+                "first_name": "Ariane",
+                "last_name": "Client",
+                "username": "cliente-pro",
+                "email": "nouveau@example.com",
+                "nom_entreprise": "Nouvelle Entreprise",
+                "secteur_activite": "Conseil B2B",
+            },
+        )
+
+        self.assertRedirects(response, reverse("dashboard_parametres"))
+        self.user.refresh_from_db()
+        self.client_pro.refresh_from_db()
+        self.assertEqual(self.user.first_name, "Ariane")
+        self.assertEqual(self.user.last_name, "Client")
+        self.assertEqual(self.user.username, "cliente-pro")
+        self.assertEqual(self.user.email, "nouveau@example.com")
+        self.assertEqual(self.client_pro.nom_entreprise, "Nouvelle Entreprise")
+        self.assertEqual(self.client_pro.secteur_activite, "Conseil B2B")

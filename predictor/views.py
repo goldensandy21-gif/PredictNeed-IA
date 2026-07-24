@@ -34,7 +34,8 @@ from urllib.parse import urlparse
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.core import signing
@@ -1284,6 +1285,67 @@ def dashboard(request):
         "emails_automatises_erreurs": emails_automatises_erreurs,
         "relances_programmees": relances_programmees,
     })
+
+
+@login_required
+def dashboard_parametres(request):
+    client = getattr(request.user, "client_professionnel", None)
+    sites = client.sites.all() if client is not None else SiteClient.objects.none()
+    User = get_user_model()
+    password_form = PasswordChangeForm(request.user)
+
+    if request.method == "POST":
+        formulaire = request.POST.get("formulaire")
+
+        if formulaire == "profil":
+            username = (request.POST.get("username") or "").strip()
+            email = (request.POST.get("email") or "").strip().lower()
+            first_name = (request.POST.get("first_name") or "").strip()
+            last_name = (request.POST.get("last_name") or "").strip()
+            nom_entreprise = (request.POST.get("nom_entreprise") or "").strip()
+            secteur_activite = (request.POST.get("secteur_activite") or "").strip()
+
+            if not username or not email:
+                messages.error(request, "L'identifiant et l'adresse email sont obligatoires.")
+            elif User.objects.exclude(pk=request.user.pk).filter(username__iexact=username).exists():
+                messages.error(request, "Cet identifiant est déjà utilisé par un autre compte.")
+            elif User.objects.exclude(pk=request.user.pk).filter(email__iexact=email).exists():
+                messages.error(request, "Cette adresse email est déjà utilisée par un autre compte.")
+            else:
+                request.user.username = username
+                request.user.email = email
+                request.user.first_name = first_name
+                request.user.last_name = last_name
+                request.user.save(update_fields=["username", "email", "first_name", "last_name"])
+
+                if client is not None:
+                    if nom_entreprise:
+                        client.nom_entreprise = nom_entreprise
+                    client.secteur_activite = secteur_activite
+                    client.save(update_fields=["nom_entreprise", "secteur_activite"])
+
+                messages.success(request, "Paramètres du profil mis à jour.")
+                return redirect("dashboard_parametres")
+
+        elif formulaire == "connexion":
+            password_form = PasswordChangeForm(request.user, request.POST)
+
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, "Mot de passe mis à jour. Votre session reste ouverte.")
+                return redirect("dashboard_parametres")
+
+            messages.error(request, "Le mot de passe n'a pas pu être modifié. Vérifiez les champs saisis.")
+
+    return render(request, "predictor/dashboard_parametres.html", {
+        "client_professionnel": client,
+        "sites": sites,
+        "total_sites": sites.count(),
+        "sites_actifs": sites.filter(actif=True).count(),
+        "password_form": password_form,
+    })
+
 
 @login_required
 def creer_opportunite_depuis_lead(request, lead_id):

@@ -1,0 +1,164 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Paramètres - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=108">
+</head>
+<body class="dashboard-page">
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<main class="dashboard module-page settings-dashboard">
+    <div class="dashboard-actions">
+        <a href="{% url 'dashboard' %}" class="btn-secondary">Retour au dashboard</a>
+        <a href="{% url 'guide_utilisation' %}#parametres" class="btn-secondary">Lire le guide</a>
+    </div>
+
+    <h1>Paramètres du compte</h1>
+    <p class="dashboard-intro">
+        Gérez les informations visibles dans votre espace PredictNeed IA, votre profil
+        utilisateur et vos paramètres de connexion.
+    </p>
+
+    {% if messages %}
+        <div class="module-messages">
+            {% for message in messages %}
+                <p class="module-message {{ message.tags }}">{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <section class="settings-summary-grid" aria-label="Résumé du compte">
+        <article>
+            <span>Compte</span>
+            <strong>{{ client_professionnel.nom_entreprise|default:user.username }}</strong>
+            <p>{{ client_professionnel.get_statut_abonnement_display|default:"Espace utilisateur" }}</p>
+        </article>
+        <article>
+            <span>Sites suivis</span>
+            <strong>{{ total_sites }}</strong>
+            <p>{{ sites_actifs }} site{{ sites_actifs|pluralize }} actif{{ sites_actifs|pluralize }}</p>
+        </article>
+        <article>
+            <span>Connexion</span>
+            <strong>{{ user.email|default:user.username }}</strong>
+            <p>Identifiant : {{ user.username }}</p>
+        </article>
+    </section>
+
+    <section class="dashboard-section" id="profil">
+        <h2>Paramètres du profil</h2>
+        <p class="section-description">
+            Ces informations servent à identifier le propriétaire de l'espace client, à
+            personnaliser le dashboard et à garder les échanges commerciaux cohérents.
+        </p>
+
+        <form method="post" class="settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="formulaire" value="profil">
+
+            <div class="settings-form-grid">
+                <div class="form-group">
+                    <label for="first_name">Prénom</label>
+                    <input id="first_name" name="first_name" type="text" value="{{ user.first_name }}" autocomplete="given-name">
+                </div>
+                <div class="form-group">
+                    <label for="last_name">Nom</label>
+                    <input id="last_name" name="last_name" type="text" value="{{ user.last_name }}" autocomplete="family-name">
+                </div>
+                <div class="form-group">
+                    <label for="username">Identifiant de connexion</label>
+                    <input id="username" name="username" type="text" value="{{ user.username }}" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email professionnel</label>
+                    <input id="email" name="email" type="email" value="{{ user.email }}" autocomplete="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="nom_entreprise">Entreprise</label>
+                    <input id="nom_entreprise" name="nom_entreprise" type="text" value="{{ client_professionnel.nom_entreprise }}" autocomplete="organization">
+                </div>
+                <div class="form-group">
+                    <label for="secteur_activite">Secteur d'activité</label>
+                    <input id="secteur_activite" name="secteur_activite" type="text" value="{{ client_professionnel.secteur_activite|default:'' }}" placeholder="Ex. conseil, e-commerce, formation">
+                </div>
+            </div>
+
+            <button type="submit" class="hero-button">Enregistrer le profil</button>
+        </form>
+    </section>
+
+    <section class="dashboard-section" id="connexion">
+        <h2>Paramètres de connexion</h2>
+        <p class="section-description">
+            Cette zone sert à sécuriser l'accès au dashboard. Le changement de mot de
+            passe s'applique immédiatement et la session reste ouverte après validation.
+        </p>
+
+        <form method="post" class="settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="formulaire" value="connexion">
+
+            {% if password_form.errors %}
+                <div class="settings-form-errors">
+                    <p>Certains champs doivent être corrigés avant l'enregistrement.</p>
+                    {{ password_form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="settings-form-grid">
+                <div class="form-group">
+                    <label for="{{ password_form.old_password.id_for_label }}">Mot de passe actuel</label>
+                    {{ password_form.old_password }}
+                    {{ password_form.old_password.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ password_form.new_password1.id_for_label }}">Nouveau mot de passe</label>
+                    {{ password_form.new_password1 }}
+                    {{ password_form.new_password1.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ password_form.new_password2.id_for_label }}">Confirmation du nouveau mot de passe</label>
+                    {{ password_form.new_password2 }}
+                    {{ password_form.new_password2.errors }}
+                </div>
+            </div>
+
+            <button type="submit" class="hero-button">Modifier le mot de passe</button>
+        </form>
+    </section>
+
+    <section class="dashboard-section" id="compte">
+        <h2>Paramètres de compte</h2>
+        <div class="settings-explainer-grid">
+            <article>
+                <h3>Abonnement</h3>
+                <p>
+                    Le statut d'abonnement permet de savoir si l'espace est en essai,
+                    actif, impayé ou annulé. La facturation reste gérée par PredictNeed IA.
+                </p>
+            </article>
+            <article>
+                <h3>Sites connectés</h3>
+                <p>
+                    Chaque site possède sa propre clé API, ses modules et ses pixels de
+                    retargeting. Les sites se gèrent depuis l'ajout de site et les connecteurs.
+                </p>
+            </article>
+            <article>
+                <h3>Données et confidentialité</h3>
+                <p>
+                    Les données de visiteurs, leads et événements restent rattachées au
+                    compte professionnel et aux sites associés.
+                </p>
+            </article>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>

@@ -7798,6 +7798,87 @@ body.pricing-body {
     background: #f8fbfd;
 }
 
+.settings-dashboard {
+    width: min(100% - 2rem, 1180px);
+    margin: 0 auto;
+}
+
+.settings-summary-grid,
+.settings-form-grid,
+.settings-explainer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.settings-summary-grid {
+    margin: 1.5rem 0 2rem;
+}
+
+.settings-summary-grid article,
+.settings-explainer-grid article {
+    padding: clamp(1rem, 2vw, 1.35rem);
+    border: 1px solid #dbeafe;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.settings-summary-grid span {
+    display: block;
+    color: #64748b;
+    font-weight: 800;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+}
+
+.settings-summary-grid strong {
+    display: block;
+    color: #0f172a;
+    font-size: clamp(1.2rem, 2vw, 1.6rem);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.settings-summary-grid p,
+.settings-explainer-grid p {
+    margin: 0.55rem 0 0;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.settings-form {
+    display: grid;
+    gap: 1.3rem;
+}
+
+.settings-form .hero-button {
+    margin: 0;
+    width: fit-content;
+}
+
+.settings-form-errors {
+    padding: 1rem;
+    border: 1px solid rgba(220, 38, 38, 0.28);
+    border-radius: 14px;
+    background: rgba(254, 226, 226, 0.75);
+}
+
+.settings-form-errors p {
+    margin: 0 0 0.5rem;
+    color: #7f1d1d !important;
+    font-weight: 800;
+}
+
+.settings-form .errorlist {
+    margin: 0.5rem 0 0;
+    padding-left: 1.1rem;
+    color: #b91c1c;
+    line-height: 1.5;
+}
+
 .guide-page {
     max-width: 1180px;
 }
@@ -7832,6 +7913,7 @@ body.pricing-body {
 
 .guide-step-grid,
 .guide-card-grid,
+.guide-scenario-list,
 .glossary-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7840,6 +7922,7 @@ body.pricing-body {
 
 .guide-step-grid article,
 .guide-card-grid article,
+.guide-scenario-list article,
 .guide-definition-list > div,
 .glossary-grid > div {
     padding: clamp(1rem, 2vw, 1.35rem);
@@ -7851,6 +7934,10 @@ body.pricing-body {
 .guide-definition-list {
     display: grid;
     gap: 0.9rem;
+}
+
+.guide-scenario-list {
+    margin-top: 1rem;
 }
 
 .guide-page h3 {
@@ -7871,8 +7958,12 @@ body.pricing-body {
     .signup-trial-grid,
     .privacy-kit-grid,
     .retargeting-site-grid,
+    .settings-summary-grid,
+    .settings-form-grid,
+    .settings-explainer-grid,
     .guide-step-grid,
     .guide-card-grid,
+    .guide-scenario-list,
     .glossary-grid {
         grid-template-columns: 1fr;
     }

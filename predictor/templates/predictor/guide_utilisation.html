@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Guide d'utilisation - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=107">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=108">
 </head>
 <body>
 
@@ -17,21 +17,66 @@
         <p class="hero-kicker">Centre d'aide</p>
         <h1>Guide d'utilisation et glossaire PredictNeed IA</h1>
         <p>
-            Une référence complète pour comprendre la plateforme, installer le script,
-            lire le dashboard, configurer les connecteurs et expliquer les principaux mots
-            utilisés dans PredictNeed IA.
+            Documentation complète pour comprendre la plateforme, présenter PredictNeed IA
+            à un client, installer le script, lire le dashboard, configurer les paramètres
+            du compte et expliquer les mots importants sans langage trop technique.
         </p>
     </section>
 
     <section class="guide-quick-links" aria-label="Sommaire du guide">
+        <a href="#vue-generale">Vue générale</a>
         <a href="#demarrage">Démarrage</a>
+        <a href="#parametres">Paramètres</a>
         <a href="#dashboard">Dashboard</a>
+        <a href="#visiteurs">Visiteurs</a>
         <a href="#modules">Modules</a>
         <a href="#connecteurs">Connecteurs</a>
         <a href="#retargeting">Retargeting</a>
         <a href="#cookies">Cookies</a>
+        <a href="#commercial">Explication client</a>
         <a href="#glossaire">Glossaire</a>
         <a href="#faq">FAQ</a>
+    </section>
+
+    <section id="vue-generale" class="legal-section guide-section">
+        <h2>À quoi sert PredictNeed IA ?</h2>
+        <p>
+            PredictNeed IA est une plateforme qui aide une entreprise à comprendre ce que
+            font les visiteurs sur son site web. Le but n'est pas seulement de compter les
+            visites, mais de transformer le comportement en information commerciale :
+            quelles pages ont été consultées, quelle intention semble apparaître, quel
+            lead mérite une relance, quelles campagnes amènent les meilleurs visiteurs.
+        </p>
+        <div class="guide-card-grid">
+            <article>
+                <h3>Pour le dirigeant</h3>
+                <p>
+                    Le dashboard donne une lecture simple de l'activité commerciale :
+                    visiteurs, leads, intentions fortes, sources de trafic et opportunités.
+                </p>
+            </article>
+            <article>
+                <h3>Pour l'équipe commerciale</h3>
+                <p>
+                    Les leads sont priorisés avec un score, un profil probable, un message
+                    éventuel et le parcours consulté avant la prise de contact.
+                </p>
+            </article>
+            <article>
+                <h3>Pour le marketing</h3>
+                <p>
+                    Les sources, UTM, campagnes et pixels permettent de mieux comprendre
+                    les canaux qui créent de l'intérêt et de préparer le retargeting.
+                </p>
+            </article>
+            <article>
+                <h3>Pour la conformité</h3>
+                <p>
+                    Le consentement cookies, les textes à copier et les réglages de
+                    sécurité aident le client à utiliser la plateforme proprement.
+                </p>
+            </article>
+        </div>
     </section>
 
     <section id="demarrage" class="legal-section guide-section">
@@ -39,70 +84,196 @@
         <div class="guide-step-grid">
             <article>
                 <span class="connector-step">1</span>
-                <h3>Créer le compte</h3>
+                <h3>Créer le compte professionnel</h3>
                 <p>
-                    Le client crée son compte professionnel, renseigne son entreprise,
-                    accepte les conditions et active son accès selon l'abonnement prévu.
+                    Le client crée un compte avec son identifiant, son email professionnel,
+                    son entreprise, son secteur d'activité et son site web principal.
+                </p>
+                <p>
+                    Après connexion, le lien <strong>Dashboard</strong> apparaît dans la
+                    navigation du site public pour revenir facilement à l'espace client.
                 </p>
             </article>
             <article>
                 <span class="connector-step">2</span>
-                <h3>Ajouter le site</h3>
+                <h3>Vérifier les paramètres</h3>
                 <p>
-                    Le site client est enregistré avec son nom, son domaine et les modules
-                    nécessaires. Chaque site reçoit une clé API unique.
+                    Dans <strong>Dashboard &gt; Paramètres</strong>, le client vérifie son
+                    profil, son email, son nom d'entreprise, son secteur et ses paramètres
+                    de connexion.
+                </p>
+                <p>
+                    Cette étape rend l'espace plus professionnel avant l'installation du
+                    script ou la présentation à une équipe.
                 </p>
             </article>
             <article>
                 <span class="connector-step">3</span>
                 <h3>Installer le script</h3>
                 <p>
-                    Le script fourni dans le dashboard doit être placé sur le site client,
-                    idéalement avant la balise de fermeture <code>&lt;/body&gt;</code>.
+                    Le script fourni dans le dashboard ou dans le module Connecteurs doit
+                    être placé sur le site client, idéalement avant la balise
+                    <code>&lt;/body&gt;</code>.
+                </p>
+                <p>
+                    Une fois installé, il affiche le widget visiteur, lit les événements
+                    autorisés et remonte les informations dans PredictNeed IA.
                 </p>
             </article>
             <article>
                 <span class="connector-step">4</span>
-                <h3>Vérifier les données</h3>
+                <h3>Lire les premiers signaux</h3>
                 <p>
-                    Après les premières visites, le dashboard affiche sessions, pages vues,
-                    sources, intentions, leads et opportunités.
+                    Après les premières visites, le dashboard affiche les sessions, pages
+                    consultées, sources, messages visiteurs, leads, intentions et opportunités.
+                </p>
+                <p>
+                    Si aucune donnée ne remonte, il faut vérifier la clé API, le domaine,
+                    le consentement cookies et l'emplacement du script.
                 </p>
             </article>
         </div>
     </section>
 
+    <section id="parametres" class="legal-section guide-section">
+        <h2>Paramètres du compte, du profil et de connexion</h2>
+        <p>
+            Comme dans un espace client professionnel classique, PredictNeed IA possède
+            une page <strong>Paramètres</strong>. Elle est accessible depuis le header du
+            dashboard. Elle ne contient pas les réglages internes administrateur comme
+            Stripe, les clés serveur ou Django Admin.
+        </p>
+        <div class="guide-definition-list">
+            <div>
+                <h3>Paramètres de compte</h3>
+                <p>
+                    Cette partie résume l'entreprise, le statut d'abonnement, les sites
+                    suivis et le rattachement des données au compte professionnel.
+                    Elle aide le client à comprendre quel espace il utilise.
+                </p>
+            </div>
+            <div>
+                <h3>Paramètres du profil</h3>
+                <p>
+                    Le profil regroupe le prénom, le nom, l'identifiant, l'email
+                    professionnel, le nom de l'entreprise et le secteur d'activité.
+                    Ces informations peuvent être mises à jour par le client.
+                </p>
+            </div>
+            <div>
+                <h3>Paramètres de connexion</h3>
+                <p>
+                    Cette zone permet de changer le mot de passe. L'utilisateur doit
+                    saisir son mot de passe actuel, choisir un nouveau mot de passe et le
+                    confirmer. La session reste ouverte après validation.
+                </p>
+            </div>
+            <div>
+                <h3>Ce que le client ne doit pas voir</h3>
+                <p>
+                    Le client ne gère pas Stripe, les clés secrètes OAuth, les variables
+                    serveur, les webhooks ou l'administration Django. Ces éléments restent
+                    internes à PredictNeed IA.
+                </p>
+            </div>
+        </div>
+    </section>
+
     <section id="dashboard" class="legal-section guide-section">
         <h2>Comprendre le dashboard</h2>
+        <p>
+            Le dashboard est la page centrale. Il sert à voir rapidement si le site attire
+            des visiteurs utiles, quelles actions ils réalisent et quels contacts doivent
+            être traités en priorité.
+        </p>
         <div class="guide-card-grid">
             <article>
                 <h3>Vue d'ensemble</h3>
                 <p>
-                    Elle résume l'activité : nombre de sessions, pages vues, clics, temps
-                    passé, leads capturés, intentions fortes et opportunités commerciales.
+                    Elle résume les sites connectés, sessions visiteurs, intentions fortes
+                    et leads capturés. C'est la première lecture à faire chaque jour.
                 </p>
             </article>
             <article>
-                <h3>Sessions visiteurs</h3>
+                <h3>Modules actifs</h3>
                 <p>
-                    Une session correspond à une visite suivie sur le site. Elle regroupe
-                    les pages vues, la source, l'appareil, le navigateur et les événements.
+                    Cette zone indique les modules disponibles pour le site : prédiction,
+                    segmentation, e-commerce, visualisations, historique, multi-canal,
+                    connecteurs, publicité et sécurité.
                 </p>
             </article>
             <article>
-                <h3>Pages consultées</h3>
+                <h3>Analyse visiteurs</h3>
                 <p>
-                    PredictNeed IA indique les pages visitées afin de comprendre le parcours
-                    avant une demande de contact ou une intention forte.
+                    Elle affiche les appareils, le rebond, les pages vues, les clics, le
+                    temps moyen et les sources principales. Elle aide à détecter les
+                    comportements intéressants ou les points faibles.
                 </p>
             </article>
             <article>
-                <h3>Leads et messages</h3>
+                <h3>Messages visiteurs</h3>
                 <p>
-                    Quand un visiteur écrit via le pop-up ou laisse ses coordonnées, le lead
-                    apparaît avec son message, son score et son statut de suivi.
+                    Les messages envoyés depuis le widget apparaissent avec le site, la
+                    date, le contact disponible, le score, l'intention et le parcours.
                 </p>
             </article>
+            <article>
+                <h3>Opportunités</h3>
+                <p>
+                    Une opportunité représente une piste commerciale à suivre. Elle peut
+                    être créée depuis un lead et avancée selon l'étape de vente.
+                </p>
+            </article>
+            <article>
+                <h3>Automatisations</h3>
+                <p>
+                    Les automatisations email préparent des réponses ou relances selon les
+                    leads, le profil détecté, l'entreprise et le besoin probable.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <section id="visiteurs" class="legal-section guide-section">
+        <h2>Lire les visiteurs, pages regardées et messages</h2>
+        <p>
+            Une des valeurs importantes de PredictNeed IA est de montrer les pages que les
+            visiteurs ont consultées. Cela aide à comprendre le besoin réel avant de
+            contacter le prospect.
+        </p>
+        <div class="guide-definition-list">
+            <div>
+                <h3>Session visiteur</h3>
+                <p>
+                    Une session correspond à une visite. Elle peut contenir plusieurs pages
+                    vues, des clics, un temps passé, une source, un appareil et parfois un
+                    message ou un lead.
+                </p>
+            </div>
+            <div>
+                <h3>Pages regardées</h3>
+                <p>
+                    Le parcours montre les dernières pages consultées. Par exemple :
+                    accueil, service, tarifs, contact. Ce chemin donne une indication sur
+                    l'étape mentale du visiteur.
+                </p>
+            </div>
+            <div>
+                <h3>Entreprise détectée</h3>
+                <p>
+                    Lorsque des signaux le permettent, PredictNeed IA peut afficher une
+                    entreprise probable ou un signal associé au visiteur. Cette information
+                    doit être utilisée comme indice commercial, pas comme certitude absolue.
+                </p>
+            </div>
+            <div>
+                <h3>Message visiteur</h3>
+                <p>
+                    Le widget permet au visiteur d'écrire un message. Ce message reste
+                    disponible dans le dashboard pour répondre vite, créer une opportunité
+                    ou lancer une relance.
+                </p>
+            </div>
         </div>
     </section>
 
@@ -111,72 +282,122 @@
         <div class="guide-definition-list">
             <div>
                 <h3>Prédiction avancée</h3>
-                <p>Analyse les signaux de navigation pour estimer le besoin probable, le profil et l'intention du visiteur.</p>
+                <p>
+                    Analyse les signaux de navigation pour estimer le besoin probable, le
+                    profil et l'intention du visiteur. Utile pour prioriser les leads.
+                </p>
             </div>
             <div>
                 <h3>Segmentation</h3>
-                <p>Classe les visiteurs selon leur comportement : chauds, curieux, hésitants, visiteurs prix ou visiteurs récurrents.</p>
+                <p>
+                    Classe les visiteurs selon leur comportement : visiteurs chauds,
+                    curieux, hésitants, visiteurs prix, visiteurs récurrents ou segments
+                    issus de campagnes.
+                </p>
             </div>
             <div>
                 <h3>E-commerce</h3>
-                <p>Met l'accent sur les signaux produits, pages tarifaires, intention d'achat et parcours avant contact.</p>
+                <p>
+                    Met l'accent sur les signaux produits, les pages tarifaires, l'intention
+                    d'achat, les abandons potentiels et les parcours avant contact.
+                </p>
             </div>
             <div>
                 <h3>Visualisations</h3>
-                <p>Présente les données sous forme de graphiques et listes lisibles pour suivre l'évolution des visites et des leads.</p>
+                <p>
+                    Présente les données sous forme de graphiques et listes lisibles pour
+                    suivre l'évolution des visites, leads, intentions et sources.
+                </p>
             </div>
             <div>
                 <h3>Historique</h3>
-                <p>Conserve les événements importants d'une session pour relire le chemin suivi par un visiteur.</p>
+                <p>
+                    Conserve les événements importants d'une session afin de relire le
+                    chemin suivi par un visiteur ou de comparer les périodes.
+                </p>
             </div>
             <div>
                 <h3>Multi-canal</h3>
-                <p>Compare les sources de trafic : Google, réseaux sociaux, e-mail, accès direct, référents et campagnes UTM.</p>
+                <p>
+                    Compare les sources de trafic : Google, réseaux sociaux, e-mail, accès
+                    direct, référents et campagnes UTM.
+                </p>
             </div>
             <div>
                 <h3>Connecteurs</h3>
-                <p>Centralise le script d'installation, les pixels de retargeting, les comptes externes reliés et les mentions légales à copier.</p>
+                <p>
+                    Centralise le script d'installation, les pixels de retargeting, les
+                    comptes externes disponibles et les mentions légales à copier.
+                </p>
             </div>
             <div>
                 <h3>Publicité</h3>
-                <p>Analyse les sessions issues de campagnes publicitaires ou d'UTM afin de rapprocher trafic, intention et leads.</p>
+                <p>
+                    Analyse les sessions issues de campagnes publicitaires ou d'UTM afin
+                    de rapprocher trafic, intention et leads.
+                </p>
             </div>
             <div>
                 <h3>Sécurité</h3>
-                <p>Récapitule les éléments de conformité, consentement, scripts actifs et informations à transmettre au client.</p>
+                <p>
+                    Récapitule les éléments de conformité, consentement, scripts actifs,
+                    accès et informations à transmettre au client.
+                </p>
             </div>
         </div>
     </section>
 
     <section id="connecteurs" class="legal-section guide-section">
         <h2>Connecteurs et installation</h2>
+        <p>
+            Le module Connecteurs répond à une question simple : comment relier le site du
+            client à PredictNeed IA et comment transmettre les bons événements aux outils
+            marketing autorisés.
+        </p>
         <div class="guide-card-grid">
             <article>
                 <h3>Script PredictNeed IA</h3>
                 <p>
-                    C'est le script principal. Il collecte les événements autorisés après
-                    consentement, affiche le pop-up message et transmet les signaux au dashboard.
+                    C'est le script principal. Il collecte les événements autorisés,
+                    affiche le widget message, applique le consentement et transmet les
+                    signaux au dashboard.
+                </p>
+            </article>
+            <article>
+                <h3>Où installer le script ?</h3>
+                <p>
+                    Le script doit être installé sur toutes les pages importantes du site,
+                    idéalement dans le thème global, le gestionnaire de balises ou avant
+                    <code>&lt;/body&gt;</code>.
                 </p>
             </article>
             <article>
                 <h3>Comptes publicitaires OAuth</h3>
                 <p>
-                    Ces connexions permettent de relier des comptes Google Ads, Meta Ads,
-                    LinkedIn Ads ou TikTok Ads quand les clés développeur sont activées côté serveur.
+                    Google Ads, Meta Ads, LinkedIn Ads ou TikTok Ads peuvent apparaître
+                    seulement quand leurs clés développeur sont configurées côté serveur.
                 </p>
             </article>
             <article>
-                <h3>Pourquoi un bouton peut être absent</h3>
+                <h3>Pourquoi un bouton peut être absent ?</h3>
                 <p>
-                    Si une plateforme OAuth n'est pas encore configurée par PredictNeed IA,
-                    elle n'est pas affichée au client. L'administrateur peut voir l'état de configuration.
+                    Si une plateforme OAuth n'est pas configurée par PredictNeed IA, elle
+                    n'est pas affichée au client. Cela évite de lui montrer des réglages
+                    qui ne fonctionnent pas encore.
                 </p>
             </article>
             <article>
-                <h3>Stripe</h3>
+                <h3>Stripe et paiement</h3>
                 <p>
-                    Stripe concerne l'abonnement et le paiement de PredictNeed IA. Cette
-                    configuration est interne et ne doit pas être gérée par le client final.
+                    Stripe concerne l'abonnement à PredictNeed IA. Le client final ne doit
+                    pas configurer Stripe dans son dashboard. Cette partie reste interne.
+                </p>
+            </article>
+            <article>
+                <h3>Textes légaux à copier</h3>
+                <p>
+                    Le module fournit des contenus pour la politique de confidentialité et
+                    la politique cookies du site client afin d'expliquer le suivi utilisé.
                 </p>
             </article>
         </div>
@@ -185,56 +406,131 @@
     <section id="retargeting" class="legal-section guide-section">
         <h2>Pixels de retargeting</h2>
         <p>
-            Le retargeting permet de retrouver, sur une plateforme publicitaire, des visiteurs
-            qui ont consulté une page ou envoyé un formulaire. PredictNeed IA peut déclencher
-            les pixels configurés uniquement après consentement marketing.
+            Le retargeting permet à une entreprise de recibler des visiteurs ayant déjà
+            consulté une page ou montré une intention. PredictNeed IA peut déclencher les
+            pixels configurés uniquement lorsque le consentement marketing le permet.
         </p>
         <div class="guide-definition-list">
             <div>
+                <h3>Principe</h3>
+                <p>
+                    Un visiteur consulte une page produit ou tarif. Si le pixel publicitaire
+                    est configuré et si le visiteur accepte le marketing, un événement est
+                    envoyé à la plateforme publicitaire.
+                </p>
+            </div>
+            <div>
                 <h3>Meta Pixel ID</h3>
-                <p>Identifiant fourni par Meta pour Facebook et Instagram. Il permet les événements PageView, ViewContent et Lead.</p>
+                <p>
+                    Identifiant fourni par Meta pour Facebook et Instagram. Il permet des
+                    événements comme PageView, ViewContent et Lead.
+                </p>
             </div>
             <div>
                 <h3>Google Ads ID</h3>
-                <p>Identifiant de type <code>AW-...</code> utilisé pour envoyer des événements publicitaires à Google Ads.</p>
+                <p>
+                    Identifiant de type <code>AW-...</code> utilisé pour envoyer des
+                    événements publicitaires à Google Ads.
+                </p>
             </div>
             <div>
                 <h3>Label conversion Google</h3>
-                <p>Complément du Google Ads ID pour marquer une conversion précise, par exemple une demande de contact.</p>
+                <p>
+                    Complément du Google Ads ID pour marquer une conversion précise, par
+                    exemple une demande de contact ou un formulaire envoyé.
+                </p>
             </div>
             <div>
-                <h3>TikTok Pixel ID</h3>
-                <p>Identifiant TikTok qui permet de mesurer les visites, contenus consultés et formulaires envoyés.</p>
+                <h3>TikTok, LinkedIn et Pinterest</h3>
+                <p>
+                    Ces IDs servent à transmettre les visites et conversions aux plateformes
+                    concernées pour la mesure, les audiences et les campagnes.
+                </p>
             </div>
             <div>
-                <h3>LinkedIn Partner ID</h3>
-                <p>Identifiant LinkedIn Insight Tag utilisé pour les audiences et la mesure sur LinkedIn.</p>
-            </div>
-            <div>
-                <h3>Pinterest Tag ID</h3>
-                <p>Identifiant Pinterest permettant de transmettre les visites et leads à Pinterest Ads.</p>
+                <h3>À vérifier</h3>
+                <p>
+                    Le pixel doit être correct, le script doit être installé, le site doit
+                    recevoir des visites et le consentement marketing doit être accepté.
+                </p>
             </div>
         </div>
     </section>
 
     <section id="cookies" class="legal-section guide-section">
         <h2>Cookies, consentement et conformité</h2>
+        <p>
+            PredictNeed IA doit respecter le choix du visiteur. Le widget de message peut
+            rester disponible comme outil de contact, mais les événements analytics et les
+            pixels marketing dépendent du consentement configuré.
+        </p>
         <div class="guide-card-grid">
             <article>
-                <h3>Accepter</h3>
-                <p>Active les finalités autorisées, dont le tracking analytics et les pixels marketing si le visiteur accepte ces choix.</p>
+                <h3>Tout accepter</h3>
+                <p>
+                    Active les finalités autorisées, dont l'analytics et les pixels
+                    marketing si le visiteur accepte ces choix.
+                </p>
             </article>
             <article>
-                <h3>Refuser</h3>
-                <p>Bloque les événements analytics et les pixels publicitaires. Le pop-up de message peut rester disponible comme formulaire de contact.</p>
+                <h3>Tout refuser</h3>
+                <p>
+                    Bloque les événements analytics et les pixels publicitaires. Le pop-up
+                    message peut rester accessible comme formulaire de contact.
+                </p>
             </article>
             <article>
                 <h3>Personnaliser</h3>
-                <p>Permet de choisir séparément les finalités. Les pixels marketing ne partent pas sans accord marketing.</p>
+                <p>
+                    Permet de choisir séparément les finalités. Les pixels marketing ne
+                    doivent pas partir sans accord marketing.
+                </p>
             </article>
             <article>
-                <h3>Mentions à copier</h3>
-                <p>Le module Connecteurs fournit des textes à ajouter dans la politique de confidentialité et la politique cookies du client.</p>
+                <h3>Réduire le pop-up</h3>
+                <p>
+                    Le visiteur peut fermer ou réduire le widget s'il ne souhaite plus le
+                    voir. Le choix cookies et le widget message sont deux comportements
+                    distincts.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <section id="commercial" class="legal-section guide-section">
+        <h2>Comment expliquer PredictNeed IA à un client</h2>
+        <div class="guide-scenario-list">
+            <article>
+                <h3>Phrase simple</h3>
+                <p>
+                    PredictNeed IA montre ce que les visiteurs regardent sur votre site,
+                    détecte les signaux d'intérêt et vous aide à transformer ces visites en
+                    contacts commerciaux exploitables.
+                </p>
+            </article>
+            <article>
+                <h3>Exemple concret</h3>
+                <p>
+                    Un visiteur regarde la page d'accueil, la page services, puis la page
+                    tarifs. PredictNeed IA peut afficher ce parcours, donner une intention
+                    probable et recommander une action commerciale.
+                </p>
+            </article>
+            <article>
+                <h3>Argument commercial</h3>
+                <p>
+                    Beaucoup d'entreprises ont du trafic mais ne savent pas quoi en faire.
+                    PredictNeed IA donne une lecture plus claire : qui s'intéresse à quoi,
+                    quelles pages déclenchent l'intérêt et quels leads traiter en premier.
+                </p>
+            </article>
+            <article>
+                <h3>Limite à expliquer</h3>
+                <p>
+                    Les scores et entreprises détectées sont des aides à la décision. Ils
+                    ne remplacent pas le jugement humain, la qualification commerciale ou
+                    la vérification directe avec le prospect.
+                </p>
             </article>
         </div>
     </section>
@@ -242,14 +538,24 @@
     <section id="glossaire" class="legal-section guide-section">
         <h2>Glossaire</h2>
         <div class="glossary-grid">
+            <div><h3>Abonnement</h3><p>Accès payant ou en essai qui permet d'utiliser le dashboard et les modules.</p></div>
             <div><h3>Audience</h3><p>Groupe de visiteurs utilisable pour une analyse ou une campagne publicitaire.</p></div>
             <div><h3>Campagne UTM</h3><p>Paramètre ajouté à une URL pour identifier une campagne marketing.</p></div>
-            <div><h3>Consentement marketing</h3><p>Accord donné par le visiteur pour les contenus personnalisés et pixels publicitaires.</p></div>
+            <div><h3>Clé API</h3><p>Identifiant technique unique qui relie un site client au bon espace PredictNeed IA.</p></div>
+            <div><h3>Consentement analytics</h3><p>Accord donné pour mesurer la navigation et produire des statistiques.</p></div>
+            <div><h3>Consentement marketing</h3><p>Accord donné pour les contenus personnalisés et pixels publicitaires.</p></div>
             <div><h3>Conversion</h3><p>Action importante : formulaire envoyé, contact demandé, inscription ou achat.</p></div>
+            <div><h3>Dashboard</h3><p>Espace client où sont regroupés les visiteurs, leads, sources, modules et scripts.</p></div>
             <div><h3>Événement</h3><p>Action enregistrée : page vue, clic, temps passé, lead ou conversion.</p></div>
+            <div><h3>Identifiant de connexion</h3><p>Nom utilisé avec le mot de passe pour se connecter au dashboard.</p></div>
             <div><h3>Intention forte</h3><p>Signal indiquant qu'un visiteur semble proche d'une action commerciale.</p></div>
             <div><h3>Lead</h3><p>Personne ayant laissé un email, téléphone ou message de contact.</p></div>
+            <div><h3>OAuth</h3><p>Connexion sécurisée à un compte externe sans saisir son mot de passe dans PredictNeed IA.</p></div>
+            <div><h3>Opportunité</h3><p>Piste commerciale créée depuis un lead pour suivre une vente potentielle.</p></div>
+            <div><h3>Page vue</h3><p>Page consultée par un visiteur pendant sa session.</p></div>
+            <div><h3>Paramètres</h3><p>Page du dashboard qui permet de gérer profil, compte et connexion.</p></div>
             <div><h3>Pixel</h3><p>Script publicitaire qui transmet un événement à une plateforme comme Meta ou Google.</p></div>
+            <div><h3>Profil probable</h3><p>Catégorie donnée à un visiteur selon son comportement : curieux, comparateur, prêt à acheter.</p></div>
             <div><h3>Retargeting</h3><p>Publicité adressée à des personnes ayant déjà visité une page ou montré un intérêt.</p></div>
             <div><h3>Score</h3><p>Note qui aide à prioriser les visiteurs ou leads selon les signaux observés.</p></div>
             <div><h3>Session</h3><p>Visite d'un utilisateur sur le site pendant une période donnée.</p></div>
@@ -257,6 +563,7 @@
             <div><h3>Tracker</h3><p>Script PredictNeed IA installé sur le site client pour remonter les signaux autorisés.</p></div>
             <div><h3>UTM source</h3><p>Paramètre indiquant la source d'une campagne, par exemple google, facebook ou newsletter.</p></div>
             <div><h3>ViewContent</h3><p>Événement publicitaire indiquant qu'une page ou un contenu important a été consulté.</p></div>
+            <div><h3>Widget visiteur</h3><p>Pop-up ou zone de contact permettant au visiteur d'envoyer un message.</p></div>
         </div>
     </section>
 
@@ -264,24 +571,47 @@
         <h2>Questions fréquentes</h2>
         <div class="guide-definition-list">
             <div>
+                <h3>Où le client trouve-t-il les paramètres de compte ?</h3>
+                <p>
+                    Dans le dashboard, un lien <strong>Paramètres</strong> donne accès au
+                    profil, à l'entreprise, à l'email et au changement de mot de passe.
+                </p>
+            </div>
+            <div>
                 <h3>Pourquoi je ne vois pas certains boutons Google Ads ou Meta Ads ?</h3>
-                <p>Parce qu'ils apparaissent au client seulement quand la connexion OAuth est configurée côté PredictNeed IA.</p>
+                <p>
+                    Parce qu'ils apparaissent au client seulement quand la connexion OAuth
+                    est configurée côté PredictNeed IA.
+                </p>
             </div>
             <div>
                 <h3>Le client doit-il gérer Stripe ?</h3>
-                <p>Non. Stripe sert à encaisser l'abonnement PredictNeed IA et reste une configuration interne administrateur.</p>
+                <p>
+                    Non. Stripe sert à encaisser l'abonnement PredictNeed IA et reste une
+                    configuration interne administrateur.
+                </p>
             </div>
             <div>
                 <h3>Le pop-up message dépend-il des cookies publicitaires ?</h3>
-                <p>Non. Il peut s'afficher comme outil de contact. Les pixels publicitaires restent bloqués sans consentement marketing.</p>
+                <p>
+                    Non. Il peut s'afficher comme outil de contact. Les pixels publicitaires
+                    restent bloqués sans consentement marketing.
+                </p>
             </div>
             <div>
                 <h3>Quand les réseaux sociaux peuvent-ils recibler un visiteur ?</h3>
-                <p>Quand le client a renseigné ses IDs de pixels, installé le script mis à jour et obtenu le consentement marketing du visiteur.</p>
+                <p>
+                    Quand le client a renseigné ses IDs de pixels, installé le script mis à
+                    jour et obtenu le consentement marketing du visiteur.
+                </p>
             </div>
             <div>
                 <h3>Que faut-il vérifier avant de vendre la plateforme ?</h3>
-                <p>Le domaine, les pages légales, le paiement, l'email SMTP, les scripts d'installation, les consentements et les modules activés par site.</p>
+                <p>
+                    Le domaine, les pages légales, le paiement, l'email SMTP, les scripts
+                    d'installation, les consentements, les paramètres client et les modules
+                    activés par site.
+                </p>
             </div>
         </div>
     </section>
