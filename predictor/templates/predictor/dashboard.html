@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Dashboard - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=108">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=112">
 </head>
 <body class="dashboard-page">
 
@@ -25,7 +25,7 @@
                 <a href="#leads">Leads</a>
                 <a href="#automatisations">Automatisations</a>
                 <a href="#installation">Installation</a>
-                <a href="{% url 'dashboard_parametres' %}">Paramètres</a>
+                <a href="{% url 'dashboard_parametres' %}">Mon profil</a>
             </nav>
 
             <p class="dashboard-sidebar-title">Modules</p>
@@ -42,9 +42,26 @@
             </nav>
         </aside>
 
-    <main class="dashboard" id="vue-ensemble">
-        <h1>Dashboard PredictNeed IA</h1>
-        <p class="dashboard-intro">Espace : {{ nom_client }}</p>
+    <main class="dashboard dashboard-overview" id="vue-ensemble">
+        <div class="dashboard-topbar">
+            <div>
+                <p class="dashboard-eyebrow">Espace client</p>
+                <h1>Dashboard PredictNeed IA</h1>
+                <p class="dashboard-intro">Espace : {{ nom_client }}</p>
+            </div>
+
+            <div class="dashboard-actions">
+                <a href="{% url 'ajouter_site' %}" class="hero-button">
+                    Ajouter un site
+                </a>
+                <a href="{% url 'dashboard_parametres' %}" class="btn-secondary">
+                    Mon profil
+                </a>
+                <a href="{% url 'accueil' %}" class="btn-secondary dashboard-return-site">
+                    Retour au site
+                </a>
+            </div>
+        </div>
 
         <div class="onboarding-card">
             <div class="onboarding-header">
@@ -87,12 +104,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="dashboard-actions">
-            <a href="{% url 'ajouter_site' %}" class="hero-button">
-                Ajouter un autre site
-            </a>
         </div>
 
         <div class="stats-grid">
@@ -188,9 +199,13 @@
         </div>
     {% endif %}
 
-        <div class="dashboard-section" id="analyse-visiteurs">
-            <h2>Analyse des visiteurs</h2>
+        <details class="dashboard-section dashboard-collapsible" id="analyse-visiteurs">
+            <summary>
+                <span>Analyse des visiteurs</span>
+                <small>{{ pages_vues_total }} pages vues · {{ clics_total }} clics · {{ temps_moyen_secondes }}s moyen</small>
+            </summary>
 
+            <div class="dashboard-collapsible-body">
             <div class="stats-grid">
                 <div class="stat-card">
                     <h2>{{ sessions_mobile }}</h2>
@@ -227,11 +242,16 @@
                     <p>Temps moyen</p>
                 </div>
             </div>
-        </div>
+            </div>
+        </details>
 
-        <div class="dashboard-section" id="sources-trafic">
-            <h2>Sources de trafic</h2>
+        <details class="dashboard-section dashboard-collapsible" id="sources-trafic">
+            <summary>
+                <span>Sources de trafic</span>
+                <small>Sources principales et campagnes UTM</small>
+            </summary>
 
+            <div class="dashboard-collapsible-body">
             <div class="traffic-grid">
                 <div class="traffic-card">
                     <h3>Sources principales</h3>
@@ -259,11 +279,16 @@
                     {% endfor %}
                 </div>
             </div>
-        </div>
+            </div>
+        </details>
 
-        <div class="dashboard-section" id="pages-visiteurs">
-            <h2>Pages les plus consultées</h2>
+        <details class="dashboard-section dashboard-collapsible" id="pages-visiteurs">
+            <summary>
+                <span>Pages les plus consultées</span>
+                <small>Classement des pages vues</small>
+            </summary>
 
+            <div class="dashboard-collapsible-body">
             <div class="traffic-card">
                 {% for page in pages_populaires %}
                     <div class="traffic-row">
@@ -274,11 +299,16 @@
                     <p>Aucune page consultée pour le moment.</p>
                 {% endfor %}
             </div>
-        </div>
+            </div>
+        </details>
 
-        <div class="dashboard-section" id="parcours-visiteurs">
-            <h2>Parcours visiteurs récents</h2>
+        <details class="dashboard-section dashboard-collapsible" id="parcours-visiteurs">
+            <summary>
+                <span>Parcours visiteurs récents</span>
+                <small>Pages regardées, sources et entreprises détectées</small>
+            </summary>
 
+            <div class="dashboard-collapsible-body">
             <p class="section-description">
                 Visualisez les pages regardées par chaque visiteur, le site concerné, le message laissé et l’entreprise détectée quand un signal fiable existe.
             </p>
@@ -343,11 +373,16 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+            </div>
+        </details>
 
-        <div class="dashboard-section" id="messages-visiteurs">
-            <h2>Messages visiteurs</h2>
+        <details class="dashboard-section dashboard-collapsible" id="messages-visiteurs">
+            <summary>
+                <span>Messages visiteurs</span>
+                <small>Messages envoyés depuis le widget</small>
+            </summary>
 
+            <div class="dashboard-collapsible-body">
             <p class="section-description">
                 Les messages envoyés depuis le widget visiteur apparaissent ici pour permettre une réponse rapide.
             </p>
@@ -379,7 +414,8 @@
                     <p>Aucun message visiteur reçu pour le moment.</p>
                 {% endfor %}
             </div>
-        </div>
+            </div>
+        </details>
 
             {% if a_module_ecommerce %}
         <div class="dashboard-section" id="ecommerce">
@@ -423,9 +459,13 @@
         </div>
     {% endif %}
 
-        <div class="dashboard-section" id="statut-sites">
-            <h2>Statut de vos sites</h2>
+        <details class="dashboard-section dashboard-collapsible" id="statut-sites">
+            <summary>
+                <span>Statut de vos sites</span>
+                <small>{{ total_sites }} site{{ total_sites|pluralize }} connecté{{ total_sites|pluralize }}</small>
+            </summary>
 
+            <div class="dashboard-collapsible-body">
             <div class="site-status-grid">
                 {% for item in sites_onboarding %}
                     <div class="site-status-card {% if item.est_actif %}active{% else %}pending{% endif %}">
@@ -459,32 +499,42 @@
                     <p>Aucun site enregistré pour le moment.</p>
                 {% endfor %}
             </div>
-        </div>
+            </div>
+        </details>
 
-        <div class="dashboard-section" id="nettoyage">
-            <h2>Nettoyage des données techniques</h2>
+        <details class="dashboard-section dashboard-collapsible" id="nettoyage">
+            <summary>
+                <span>Nettoyage des données techniques</span>
+                <small>Action ponctuelle, à utiliser avec prudence</small>
+            </summary>
 
-            <p class="section-description">
-                Supprime les événements techniques enregistrés par le script PredictNeed IA : pages vues, clics et temps passé.
-                Les leads, les sites et les clés API seront conservés.
-            </p>
+            <div class="dashboard-collapsible-body">
+                <p class="section-description">
+                    Supprime les événements techniques enregistrés par le script PredictNeed IA : pages vues, clics et temps passé.
+                    Les leads, les sites et les clés API seront conservés.
+                </p>
 
-            <form 
-                method="post" 
-                action="{% url 'nettoyer_evenements' %}" 
-                onsubmit="return confirm('Confirmer le nettoyage des événements techniques ? Cette action est irréversible.');"
-            >
-                {% csrf_token %}
+                <form
+                    method="post"
+                    action="{% url 'nettoyer_evenements' %}"
+                    onsubmit="return confirm('Confirmer le nettoyage des événements techniques ? Cette action est irréversible.');"
+                >
+                    {% csrf_token %}
 
-                <button type="submit" class="danger-button">
-                    Nettoyer les événements techniques
-                </button>
-            </form>
-        </div>
+                    <button type="submit" class="danger-button">
+                        Nettoyer les événements techniques
+                    </button>
+                </form>
+            </div>
+        </details>
 
-        <div class="dashboard-section" id="profils">
-            <h2>Profils détectés</h2>
+        <details class="dashboard-section dashboard-collapsible" id="profils">
+            <summary>
+                <span>Profils détectés</span>
+                <small>Répartition des profils visiteurs</small>
+            </summary>
 
+            <div class="dashboard-collapsible-body">
             {% for profil in profils %}
                 <div class="profil-row">
                     <span>{{ profil.profil }}</span>
@@ -493,11 +543,16 @@
             {% empty %}
                 <p>Aucun profil détecté pour le moment.</p>
             {% endfor %}
-        </div>
+            </div>
+        </details>
 
-        <div class="dashboard-section" id="predictions">
-            <h2>Dernières prédictions</h2>
+        <details class="dashboard-section dashboard-collapsible" id="predictions">
+            <summary>
+                <span>Dernières prédictions</span>
+                <small>{{ total_predictions }} prédiction{{ total_predictions|pluralize }} enregistrée{{ total_predictions|pluralize }}</small>
+            </summary>
 
+            <div class="dashboard-collapsible-body">
             {% for prediction in dernieres_predictions %}
                 <div class="prediction-card">
                     <h3>{{ prediction.profil }}</h3>
@@ -509,74 +564,84 @@
             {% empty %}
                 <p>Aucune prédiction enregistrée pour le moment.</p>
             {% endfor %}
-        </div>
-
-        <div class="dashboard-section" id="installation">
-            <h2>Installer PredictNeed IA sur votre site</h2>
-
-            <p class="section-description">
-                Copiez ce code et collez-le avant la balise <code>&lt;/body&gt;</code> de votre site.
-                Le script PredictNeed IA affiche une gestion du consentement et n'envoie pas d'événement
-                comportemental tant que le visiteur n'a pas accepté l'analyse PredictNeed IA.
-            </p>
-
-            {% for item in scripts_installation %}
-                <div class="install-card">
-                    <h3>{{ item.site.nom_site }}</h3>
-                    <p><strong>Domaine :</strong> {{ item.site.domaine }}</p>
-
-                    <textarea readonly onclick="this.select()">{{ item.script }}</textarea>
-
-                    <p class="install-help">
-                        Cette clé API est propre à ce site. Elle permet à PredictNeed IA d’associer les visiteurs au bon espace professionnel.
-                        Le script contient les liens vers la politique de confidentialité et la politique cookies du service.
-                    </p>
-                </div>
-            {% empty %}
-                <p>Aucun site connecté pour le moment.</p>
-            {% endfor %}
-        </div>
-
-        <div class="dashboard-section" id="automatisations">
-            <h2>Automatisations email</h2>
-
-            <p class="section-description">
-                Lorsqu’un visiteur laisse son email dans le formulaire de contact,
-                PredictNeed IA peut envoyer automatiquement un message de confirmation,
-                puis plusieurs relances si le lead n'est pas encore marqué comme traité.
-                Les variables disponibles sont : <code>{nom}</code>, <code>{email}</code>,
-                <code>{telephone}</code>, <code>{message}</code>, <code>{site}</code>,
-                <code>{domaine}</code>, <code>{entreprise}</code>, <code>{profil}</code>,
-                <code>{intention}</code> et <code>{score}</code>.
-            </p>
-
-            <div class="automation-stats">
-                <div class="stat-card">
-                    <h2>{{ total_emails_automatises }}</h2>
-                    <p>Emails traités</p>
-                </div>
-                <div class="stat-card">
-                    <h2>{{ emails_automatises_envoyes }}</h2>
-                    <p>Emails envoyés</p>
-                </div>
-                <div class="stat-card">
-                    <h2>{{ emails_automatises_erreurs }}</h2>
-                    <p>Erreurs d’envoi</p>
-                </div>
-                <div class="stat-card">
-                    <h2>{{ relances_programmees }}</h2>
-                    <p>Étapes actives</p>
-                </div>
             </div>
+        </details>
 
-            <div class="automation-grid">
-                {% for automatisation in automatisations_email %}
-                    <form
-                        method="post"
-                        action="{% url 'modifier_automatisation_email' automatisation.id %}"
-                        class="automation-card"
-                    >
-                        {% csrf_token %}
+        <details class="dashboard-section dashboard-collapsible" id="installation">
+            <summary>
+                <span>Installer PredictNeed IA sur votre site</span>
+                <small>Scripts d'installation par site</small>
+            </summary>
+
+            <div class="dashboard-collapsible-body">
+                <p class="section-description">
+                    Copiez ce code et collez-le avant la balise <code>&lt;/body&gt;</code> de votre site.
+                    Le script PredictNeed IA affiche une gestion du consentement et n'envoie pas d'événement
+                    comportemental tant que le visiteur n'a pas accepté l'analyse PredictNeed IA.
+                </p>
+
+                {% for item in scripts_installation %}
+                    <div class="install-card">
+                        <h3>{{ item.site.nom_site }}</h3>
+                        <p><strong>Domaine :</strong> {{ item.site.domaine }}</p>
+
+                        <textarea readonly onclick="this.select()">{{ item.script }}</textarea>
+
+                        <p class="install-help">
+                            Cette clé API est propre à ce site. Elle permet à PredictNeed IA d’associer les visiteurs au bon espace professionnel.
+                            Le script contient les liens vers la politique de confidentialité et la politique cookies du service.
+                        </p>
+                    </div>
+                {% empty %}
+                    <p>Aucun site connecté pour le moment.</p>
+                {% endfor %}
+            </div>
+        </details>
+
+        <details class="dashboard-section dashboard-collapsible" id="automatisations">
+            <summary>
+                <span>Automatisations email</span>
+                <small>{{ total_emails_automatises }} emails traités · {{ relances_programmees }} étapes actives</small>
+            </summary>
+
+            <div class="dashboard-collapsible-body">
+                <p class="section-description">
+                    Lorsqu’un visiteur laisse son email dans le formulaire de contact,
+                    PredictNeed IA peut envoyer automatiquement un message de confirmation,
+                    puis plusieurs relances si le lead n'est pas encore marqué comme traité.
+                    Les variables disponibles sont : <code>{nom}</code>, <code>{email}</code>,
+                    <code>{telephone}</code>, <code>{message}</code>, <code>{site}</code>,
+                    <code>{domaine}</code>, <code>{entreprise}</code>, <code>{profil}</code>,
+                    <code>{intention}</code> et <code>{score}</code>.
+                </p>
+
+                <div class="automation-stats">
+                    <div class="stat-card">
+                        <h2>{{ total_emails_automatises }}</h2>
+                        <p>Emails traités</p>
+                    </div>
+                    <div class="stat-card">
+                        <h2>{{ emails_automatises_envoyes }}</h2>
+                        <p>Emails envoyés</p>
+                    </div>
+                    <div class="stat-card">
+                        <h2>{{ emails_automatises_erreurs }}</h2>
+                        <p>Erreurs d’envoi</p>
+                    </div>
+                    <div class="stat-card">
+                        <h2>{{ relances_programmees }}</h2>
+                        <p>Étapes actives</p>
+                    </div>
+                </div>
+
+                <div class="automation-grid">
+                    {% for automatisation in automatisations_email %}
+                        <form
+                            method="post"
+                            action="{% url 'modifier_automatisation_email' automatisation.id %}"
+                            class="automation-card"
+                        >
+                            {% csrf_token %}
 
                         <div class="automation-card-header">
                             <div>
@@ -674,57 +739,62 @@
                         <button type="submit" class="opportunity-save-button">
                             Enregistrer l’automatisation
                         </button>
-                    </form>
-                {% empty %}
-                    <p>Aucune automatisation email disponible pour le moment.</p>
-                {% endfor %}
-            </div>
+                        </form>
+                    {% empty %}
+                        <p>Aucune automatisation email disponible pour le moment.</p>
+                    {% endfor %}
+                </div>
 
-            <div class="automation-log">
-                <h3>Derniers emails automatiques</h3>
+                <div class="automation-log">
+                    <h3>Derniers emails automatiques</h3>
 
-                <div class="module-table-wrapper">
-                    <table class="module-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Destinataire</th>
-                                <th>Site</th>
-                                <th>Sujet</th>
-                                <th>Statut</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for email_auto in derniers_emails_automatises %}
+                    <div class="module-table-wrapper">
+                        <table class="module-table">
+                            <thead>
                                 <tr>
-                                    <td>{{ email_auto.date_creation|date:"d/m/Y H:i" }}</td>
-                                    <td>{{ email_auto.destinataire|default:"Non renseigné" }}</td>
-                                    <td>{{ email_auto.site.nom_site }}</td>
-                                    <td>{{ email_auto.sujet }}</td>
-                                    <td>
-                                        <span class="email-status {{ email_auto.statut }}">
-                                            {{ email_auto.get_statut_display }}
-                                        </span>
-                                    </td>
+                                    <th>Date</th>
+                                    <th>Destinataire</th>
+                                    <th>Site</th>
+                                    <th>Sujet</th>
+                                    <th>Statut</th>
                                 </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="5">Aucun email automatique envoyé pour le moment.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for email_auto in derniers_emails_automatises %}
+                                    <tr>
+                                        <td>{{ email_auto.date_creation|date:"d/m/Y H:i" }}</td>
+                                        <td>{{ email_auto.destinataire|default:"Non renseigné" }}</td>
+                                        <td>{{ email_auto.site.nom_site }}</td>
+                                        <td>{{ email_auto.sujet }}</td>
+                                        <td>
+                                            <span class="email-status {{ email_auto.statut }}">
+                                                {{ email_auto.get_statut_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5">Aucun email automatique envoyé pour le moment.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
+        </details>
 
-        <div class="dashboard-section" id="opportunites">
+        <details class="dashboard-section dashboard-collapsible" id="opportunites">
+            <summary>
             {% if a_module_ecommerce %}
-                <h2>Opportunités e-commerce</h2>
+                <span>Opportunités e-commerce</span>
             {% else %}
-                <h2>Opportunités commerciales</h2>
+                <span>Opportunités commerciales</span>
             {% endif %}
+                <small>{{ total_opportunites }} opportunité{{ total_opportunites|pluralize }} suivie{{ total_opportunites|pluralize }}</small>
+            </summary>
 
+            <div class="dashboard-collapsible-body">
             <div class="opportunities-list">
                 {% for opportunite in dernieres_opportunites %}
                     <div class="opportunity-card" id="opportunite-{{ opportunite.id }}">
@@ -808,15 +878,20 @@
                     <p class="no-opportunity-message">Aucune opportunité créée pour le moment.</p>
                 {% endfor %}
             </div>
-        </div>
+            </div>
+        </details>
 
-        <div class="dashboard-section" id="leads">
+        <details class="dashboard-section dashboard-collapsible" id="leads">
+            <summary>
             {% if a_module_ecommerce %}
-                <h2>Clients à relancer</h2>
+                <span>Clients à relancer</span>
             {% else %}
-                <h2>Leads chauds à contacter</h2>
+                <span>Leads chauds à contacter</span>
             {% endif %}
+                <small>{{ total_leads }} lead{{ total_leads|pluralize }} capturé{{ total_leads|pluralize }}</small>
+            </summary>
 
+            <div class="dashboard-collapsible-body">
             {% for lead in leads_chauds %}
                 <div class="lead-card" id="lead-{{ lead.id }}">
                     <div class="lead-card-header">
@@ -909,9 +984,10 @@
             {% empty %}
                 <p>Aucun lead capturé pour le moment.</p>
             {% endfor %}
-                </div>
+            </div>
+        </details>
 
-                <a href="/" class="hero-button">Retour au site</a>
+                <a href="{% url 'accueil' %}" class="btn-secondary dashboard-return-site dashboard-return-site-bottom">Retour au site</a>
     </main>
     </div>
 
@@ -978,6 +1054,10 @@
                 const section = document.getElementById(scrollTarget);
 
                 if (section) {
+                    if (section.tagName.toLowerCase() === "details") {
+                        section.open = true;
+                    }
+
                     setTimeout(function () {
                         section.scrollIntoView({
                             behavior: "smooth",
@@ -986,6 +1066,16 @@
                     }, 250);
                 }
             }
+
+            document.querySelectorAll(".dashboard-sidebar-nav a[href^='#']").forEach(function (link) {
+                link.addEventListener("click", function () {
+                    const target = document.querySelector(link.getAttribute("href"));
+
+                    if (target && target.tagName.toLowerCase() === "details") {
+                        target.open = true;
+                    }
+                });
+            });
 
             const createOpportunityForms = document.querySelectorAll(".opportunity-create-form");
 

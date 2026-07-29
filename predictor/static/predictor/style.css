@@ -6970,6 +6970,213 @@ body.dashboard-page .dashboard-section {
     scroll-margin-top: 96px;
 }
 
+body.dashboard-page .dashboard-overview {
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1.15rem;
+    align-items: start;
+}
+
+body.dashboard-page .dashboard-overview > * {
+    order: 10;
+}
+
+body.dashboard-page .dashboard-topbar {
+    grid-column: 1 / -1;
+    order: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: clamp(1.15rem, 2vw, 1.5rem);
+    border: 1px solid #dbeafe;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+body.dashboard-page .dashboard-topbar h1 {
+    margin: 0.2rem 0 0.35rem !important;
+    color: #0f172a !important;
+    font-size: clamp(1.8rem, 3vw, 2.55rem) !important;
+    line-height: 1.05 !important;
+}
+
+body.dashboard-page .dashboard-eyebrow {
+    margin: 0 !important;
+    color: #0284c7 !important;
+    font-size: 0.78rem !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase;
+}
+
+body.dashboard-page .dashboard-topbar .dashboard-intro {
+    margin: 0 !important;
+    color: #475569 !important;
+    font-weight: 800 !important;
+}
+
+body.dashboard-page .dashboard-topbar .dashboard-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.7rem;
+    margin: 0 !important;
+}
+
+body.dashboard-page .dashboard-topbar .hero-button,
+body.dashboard-page .dashboard-topbar .btn-secondary {
+    min-height: 44px;
+    margin: 0 !important;
+    padding: 0.75rem 1rem;
+    border-radius: 12px !important;
+    white-space: nowrap;
+}
+
+body.dashboard-page .dashboard-overview > .onboarding-card {
+    grid-column: span 5;
+    order: 3;
+    height: 100%;
+    margin: 0 !important;
+    border-radius: 20px !important;
+}
+
+body.dashboard-page .dashboard-overview > .onboarding-card .checklist {
+    grid-template-columns: 1fr !important;
+}
+
+body.dashboard-page .dashboard-overview > .stats-grid {
+    grid-column: 1 / -1;
+    order: 2;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 1rem !important;
+    margin: 0 !important;
+}
+
+body.dashboard-page .dashboard-overview > .stats-grid > .stat-card {
+    min-height: 128px;
+}
+
+body.dashboard-page .dashboard-overview > .stats-grid > .stat-card p {
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    hyphens: none !important;
+}
+
+body.dashboard-page .dashboard-overview > .dashboard-section {
+    margin: 0 !important;
+    padding: clamp(1.15rem, 2vw, 1.55rem) !important;
+    border-radius: 20px !important;
+}
+
+body.dashboard-page .dashboard-overview > .dashboard-section h2 {
+    margin-top: 0 !important;
+    font-size: clamp(1.2rem, 2vw, 1.55rem) !important;
+}
+
+body.dashboard-page #modules-intelligents,
+body.dashboard-page #predictions,
+body.dashboard-page #opportunites {
+    grid-column: span 7;
+}
+
+body.dashboard-page #modules-intelligents {
+    order: 4;
+}
+
+body.dashboard-page #analyse-visiteurs,
+body.dashboard-page #profils,
+body.dashboard-page #leads {
+    grid-column: span 5;
+}
+
+body.dashboard-page #sources-trafic,
+body.dashboard-page #pages-visiteurs,
+body.dashboard-page #messages-visiteurs,
+body.dashboard-page #ecommerce,
+body.dashboard-page #statut-sites {
+    grid-column: span 6;
+}
+
+body.dashboard-page #parcours-visiteurs,
+body.dashboard-page #installation,
+body.dashboard-page #automatisations,
+body.dashboard-page #nettoyage {
+    grid-column: 1 / -1;
+}
+
+body.dashboard-page #analyse-visiteurs .stats-grid,
+body.dashboard-page #modules-intelligents .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)) !important;
+    gap: 0.85rem !important;
+}
+
+body.dashboard-page #analyse-visiteurs .stat-card,
+body.dashboard-page #modules-intelligents .module-card {
+    min-height: 112px;
+    padding: 1rem !important;
+}
+
+body.dashboard-page .dashboard-collapsible {
+    display: block;
+}
+
+body.dashboard-page .dashboard-collapsible > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+body.dashboard-page .dashboard-collapsible > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.dashboard-page .dashboard-collapsible > summary span {
+    color: #0f172a !important;
+    font-size: clamp(1.15rem, 2vw, 1.45rem);
+    font-weight: 950;
+}
+
+body.dashboard-page .dashboard-collapsible > summary small {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    color: #075985 !important;
+    background: #e0f2fe;
+    font-weight: 850;
+    text-align: right;
+}
+
+body.dashboard-page .dashboard-collapsible > summary::after {
+    content: "+";
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    color: #ffffff;
+    background: #0f172a;
+    font-size: 1.2rem;
+    font-weight: 900;
+}
+
+body.dashboard-page .dashboard-collapsible[open] > summary::after {
+    content: "–";
+}
+
+body.dashboard-page .dashboard-collapsible-body {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.2rem;
+}
+
 body.dashboard-page .dashboard-sidebar {
     position: sticky;
     top: 96px;
@@ -7211,6 +7418,34 @@ body.dashboard-page .score-badge.score-low {
         grid-template-columns: 1fr;
     }
 
+    body.dashboard-page .dashboard-overview {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    body.dashboard-page .dashboard-overview > .onboarding-card,
+    body.dashboard-page .dashboard-overview > .stats-grid,
+    body.dashboard-page #modules-intelligents,
+    body.dashboard-page #analyse-visiteurs,
+    body.dashboard-page #sources-trafic,
+    body.dashboard-page #pages-visiteurs,
+    body.dashboard-page #messages-visiteurs,
+    body.dashboard-page #ecommerce,
+    body.dashboard-page #statut-sites,
+    body.dashboard-page #profils,
+    body.dashboard-page #predictions,
+    body.dashboard-page #opportunites,
+    body.dashboard-page #leads,
+    body.dashboard-page #parcours-visiteurs,
+    body.dashboard-page #installation,
+    body.dashboard-page #automatisations,
+    body.dashboard-page #nettoyage {
+        grid-column: 1 / -1;
+    }
+
+    body.dashboard-page .dashboard-overview > .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
     body.dashboard-page .dashboard-sidebar {
         position: static;
         max-height: none;
@@ -7228,6 +7463,40 @@ body.dashboard-page .score-badge.score-low {
 
     body.dashboard-page .dashboard-shell {
         padding: 1rem;
+    }
+
+    body.dashboard-page .dashboard-overview {
+        display: block !important;
+    }
+
+    body.dashboard-page .dashboard-overview > * + * {
+        margin-top: 1rem !important;
+    }
+
+    body.dashboard-page .dashboard-topbar {
+        display: grid;
+    }
+
+    body.dashboard-page .dashboard-topbar .dashboard-actions {
+        justify-content: stretch;
+    }
+
+    body.dashboard-page .dashboard-topbar .hero-button,
+    body.dashboard-page .dashboard-topbar .btn-secondary {
+        width: 100%;
+        white-space: normal;
+    }
+
+    body.dashboard-page .dashboard-overview > .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    body.dashboard-page .dashboard-collapsible > summary {
+        align-items: flex-start;
+    }
+
+    body.dashboard-page .dashboard-collapsible > summary small {
+        display: none;
     }
 
     body.dashboard-page .dashboard-sidebar {
@@ -8020,4 +8289,220 @@ body.pricing-body {
     .retargeting-card-header {
         flex-direction: column;
     }
+}
+
+/* Aperçu dashboard final : ces règles restent en dernier pour éviter les surcharges historiques. */
+body.dashboard-page .dashboard-overview {
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 1.15rem !important;
+    align-items: start !important;
+}
+
+body.dashboard-page .dashboard-overview > * {
+    order: 10 !important;
+}
+
+body.dashboard-page .dashboard-overview .dashboard-topbar {
+    grid-column: 1 / -1 !important;
+    order: 1 !important;
+}
+
+body.dashboard-page .dashboard-overview > .stats-grid {
+    grid-column: 1 / -1 !important;
+    order: 2 !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(170px, 1fr)) !important;
+    gap: 1rem !important;
+    margin: 0 !important;
+}
+
+body.dashboard-page .dashboard-overview > .stats-grid > .stat-card {
+    min-width: 0 !important;
+    min-height: 128px !important;
+}
+
+body.dashboard-page .dashboard-overview > .stats-grid > .stat-card p {
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    hyphens: none !important;
+}
+
+body.dashboard-page .dashboard-overview > .onboarding-card {
+    grid-column: span 5 !important;
+    order: 3 !important;
+    margin: 0 !important;
+}
+
+body.dashboard-page .dashboard-overview > .onboarding-card .checklist {
+    grid-template-columns: 1fr !important;
+}
+
+body.dashboard-page .dashboard-overview > .onboarding-card .check-item {
+    min-width: 0 !important;
+}
+
+body.dashboard-page .dashboard-overview > .onboarding-card .check-item p,
+body.dashboard-page .dashboard-overview > .onboarding-card .check-item strong {
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    hyphens: none !important;
+}
+
+body.dashboard-page #modules-intelligents {
+    grid-column: span 7 !important;
+    order: 4 !important;
+}
+
+body.dashboard-page #analyse-visiteurs,
+body.dashboard-page #profils,
+body.dashboard-page #leads {
+    grid-column: span 5 !important;
+}
+
+body.dashboard-page #sources-trafic,
+body.dashboard-page #pages-visiteurs,
+body.dashboard-page #messages-visiteurs,
+body.dashboard-page #ecommerce,
+body.dashboard-page #statut-sites {
+    grid-column: span 6 !important;
+}
+
+body.dashboard-page #predictions,
+body.dashboard-page #opportunites {
+    grid-column: span 7 !important;
+}
+
+body.dashboard-page #parcours-visiteurs,
+body.dashboard-page #installation,
+body.dashboard-page #automatisations,
+body.dashboard-page #nettoyage {
+    grid-column: 1 / -1 !important;
+}
+
+@media (max-width: 1100px) {
+    body.dashboard-page .dashboard-overview {
+        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    }
+
+    body.dashboard-page .dashboard-overview > .onboarding-card,
+    body.dashboard-page .dashboard-overview > .stats-grid,
+    body.dashboard-page #modules-intelligents,
+    body.dashboard-page #analyse-visiteurs,
+    body.dashboard-page #sources-trafic,
+    body.dashboard-page #pages-visiteurs,
+    body.dashboard-page #messages-visiteurs,
+    body.dashboard-page #ecommerce,
+    body.dashboard-page #statut-sites,
+    body.dashboard-page #profils,
+    body.dashboard-page #predictions,
+    body.dashboard-page #opportunites,
+    body.dashboard-page #leads,
+    body.dashboard-page #parcours-visiteurs,
+    body.dashboard-page #installation,
+    body.dashboard-page #automatisations,
+    body.dashboard-page #nettoyage {
+        grid-column: 1 / -1 !important;
+    }
+
+    body.dashboard-page .dashboard-overview > .stats-grid {
+        grid-template-columns: repeat(2, minmax(170px, 1fr)) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    body.dashboard-page .dashboard-overview {
+        display: block !important;
+    }
+
+    body.dashboard-page .dashboard-overview > * + * {
+        margin-top: 1rem !important;
+    }
+
+    body.dashboard-page .dashboard-overview > .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+body.dashboard-page .dashboard-return-site,
+body.dashboard-page .dashboard-header-links a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    min-width: max-content !important;
+    min-height: 42px !important;
+    padding: 0.72rem 1rem !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06) !important;
+    font-weight: 900 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    writing-mode: horizontal-tb !important;
+}
+
+body.dashboard-page .dashboard-topbar .dashboard-actions {
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    overflow-x: visible !important;
+}
+
+body.dashboard-page .dashboard-topbar .hero-button,
+body.dashboard-page .dashboard-topbar .btn-secondary {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: max-content !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+}
+
+body.dashboard-page .dashboard-topbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) max-content !important;
+    align-items: center !important;
+}
+
+body.dashboard-page .dashboard-topbar > div:first-child {
+    min-width: 0 !important;
+}
+
+body.dashboard-page .dashboard-return-site-bottom {
+    grid-column: 1 / -1 !important;
+    justify-self: start !important;
+    margin: 0 !important;
+}
+
+@media (max-width: 640px) {
+    body.dashboard-page .dashboard-topbar {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.dashboard-page .dashboard-return-site {
+        width: auto !important;
+        max-width: 100% !important;
+    }
+}
+
+body.dashboard-page .dashboard-overview > .dashboard-collapsible {
+    grid-column: 1 / -1 !important;
+}
+
+body.dashboard-page .dashboard-overview > #analyse-visiteurs.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #sources-trafic.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #pages-visiteurs.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #parcours-visiteurs.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #messages-visiteurs.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #statut-sites.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #nettoyage.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #profils.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #predictions.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #installation.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #automatisations.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #opportunites.dashboard-collapsible,
+body.dashboard-page .dashboard-overview > #leads.dashboard-collapsible {
+    grid-column: 1 / -1 !important;
 }
