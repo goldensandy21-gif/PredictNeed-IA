@@ -1,10 +1,33 @@
-<main class="legal-page">
+{% load static %}
 
-    <h1>Accord de traitement des données – PredictNeed IA</h1>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Accord et traitement des données - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=108">
+</head>
+<body class="legal-body">
 
-    <p>
-        Dernière mise à jour : 30 juillet 2026.
-    </p>
+{% include "predictor/includes/navbar.html" %}
+
+<main class="legal-document">
+    <header class="legal-hero">
+        <p class="footer-kicker">Protection des données</p>
+
+        <h1>Accord de traitement des données</h1>
+
+        <p>
+            Le présent accord encadre les traitements de données à caractère
+            personnel réalisés par PredictNeed IA pour le compte de ses clients
+            professionnels.
+        </p>
+
+        <p>
+            <strong>Dernière mise à jour : 30 juillet 2026</strong>
+        </p>
+    </header>
 
     <section class="legal-section">
         <h2>1. Objet de l'accord</h2>
@@ -289,3 +312,8 @@
     </section>
 
 </main>
+
+{% include "predictor/includes/footer.html" %}
+
+</body>
+</html>
