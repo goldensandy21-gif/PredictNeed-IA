@@ -87,3 +87,15 @@ urlpatterns = [
     path('api/track/', views.track_event, name='track_event'),
     path('api/lead/', views.capture_lead, name='capture_lead'),
 ]
+
+
+from django.urls import path as _path
+from . import views as _legal_views
+
+urlpatterns += [
+    _path(
+        "accord-traitement-donnees/",
+        _legal_views.accord_traitement_donnees,
+        name="accord_traitement_donnees",
+    ),
+]

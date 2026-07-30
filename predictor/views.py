@@ -663,7 +663,7 @@ def politique_confidentialite(request):
 def conditions_generales_utilisation(request):
     return render(
         request,
-        "predictor/conditions_generales_utilisation.html",
+        "predictor/cgu_cgv.html",
         _seo_context(
             "Conditions générales d'utilisation - PredictNeed IA",
             "Conditions générales d'utilisation du service PredictNeed IA, abonnement, accès au dashboard, responsabilités et règles d'utilisation.",
@@ -3192,3 +3192,8 @@ def module_securite(request):
         "sessions_totales": sessions.count(),
         "utilisateur_admin": request.user.is_superuser,
     })
+
+
+def accord_traitement_donnees(request):
+    from django.shortcuts import render
+    return render(request, "predictor/accord_traitement_donnees.html")
