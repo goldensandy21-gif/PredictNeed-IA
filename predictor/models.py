@@ -53,6 +53,16 @@ class SiteClient(models.Model):
     actif = models.BooleanField(default=True)
     date_creation = models.DateTimeField(auto_now_add=True)
 
+    # Détection technique du script, indépendante du consentement analytique.
+    script_installe_le = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
+    derniere_detection_script = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
+
     TYPE_SITE_CHOICES = [
         ("vitrine", "Site vitrine"),
         ("formation", "Centre de formation"),

@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Dashboard - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=112">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=113">
 </head>
 <body class="dashboard-page">
 
@@ -30,15 +30,15 @@
 
             <p class="dashboard-sidebar-title">Modules</p>
             <nav class="dashboard-sidebar-nav module-links">
-                <a href="{% url 'module_prediction_avancee' %}" class="{% if not a_module_prediction_avancee %}muted{% endif %}">Prédiction avancée</a>
-                <a href="{% url 'module_segmentation' %}" class="{% if not a_module_segmentation %}muted{% endif %}">Segmentation</a>
-                <a href="{% url 'module_ecommerce' %}" class="{% if not a_module_ecommerce %}muted{% endif %}">E-commerce</a>
-                <a href="{% url 'module_visualisations' %}" class="{% if not a_module_visualisations %}muted{% endif %}">Visualisations</a>
-                <a href="{% url 'module_historique' %}" class="{% if not a_module_historique %}muted{% endif %}">Historique</a>
-                <a href="{% url 'module_multicanal' %}" class="{% if not a_module_multicanal %}muted{% endif %}">Multi-canal</a>
-                <a href="{% url 'module_connecteurs' %}" class="{% if not a_module_connecteurs %}muted{% endif %}">Connecteurs</a>
-                <a href="{% url 'module_publicite' %}" class="{% if not a_module_publicite %}muted{% endif %}">Publicité</a>
-                <a href="{% url 'module_securite' %}" class="{% if not a_module_securite_entreprise %}muted{% endif %}">Sécurité</a>
+                <a href="{% url 'module_prediction_avancee' %}?site={{ selected_site_id }}" class="{% if not a_module_prediction_avancee %}muted{% endif %}">Prédiction avancée</a>
+                <a href="{% url 'module_segmentation' %}?site={{ selected_site_id }}" class="{% if not a_module_segmentation %}muted{% endif %}">Segmentation</a>
+                <a href="{% url 'module_ecommerce' %}?site={{ selected_site_id }}" class="{% if not a_module_ecommerce %}muted{% endif %}">E-commerce</a>
+                <a href="{% url 'module_visualisations' %}?site={{ selected_site_id }}" class="{% if not a_module_visualisations %}muted{% endif %}">Visualisations</a>
+                <a href="{% url 'module_historique' %}?site={{ selected_site_id }}" class="{% if not a_module_historique %}muted{% endif %}">Historique</a>
+                <a href="{% url 'module_multicanal' %}?site={{ selected_site_id }}" class="{% if not a_module_multicanal %}muted{% endif %}">Multi-canal</a>
+                <a href="{% url 'module_connecteurs' %}?site={{ selected_site_id }}" class="{% if not a_module_connecteurs %}muted{% endif %}">Connecteurs</a>
+                <a href="{% url 'module_publicite' %}?site={{ selected_site_id }}" class="{% if not a_module_publicite %}muted{% endif %}">Publicité</a>
+                <a href="{% url 'module_securite' %}?site={{ selected_site_id }}" class="{% if not a_module_securite_entreprise %}muted{% endif %}">Sécurité</a>
             </nav>
         </aside>
 
@@ -62,6 +62,37 @@
                 </a>
             </div>
         </div>
+
+        {% if sites_disponibles %}
+            <form class="dashboard-site-selector" method="get">
+                <label for="dashboard-site">
+                    Site actuellement analysé
+                </label>
+
+                <select
+                    id="dashboard-site"
+                    name="site"
+                    onchange="this.form.submit()"
+                >
+                    {% for site_option in sites_disponibles %}
+                        <option
+                            value="{{ site_option.id }}"
+                            {% if selected_site and selected_site.id == site_option.id %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ site_option.nom_site }} — {{ site_option.domaine }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <noscript>
+                    <button type="submit" class="btn-secondary">
+                        Afficher
+                    </button>
+                </noscript>
+            </form>
+        {% endif %}
 
         <div class="onboarding-card">
             <div class="onboarding-header">
@@ -134,63 +165,63 @@
 
             <div class="stats-grid">
                 {% if a_module_ecommerce %}
-                   <a href="{% url 'module_ecommerce' %}" class="stat-card module-card">
+                   <a href="{% url 'module_ecommerce' %}?site={{ selected_site_id }}" class="stat-card module-card">
                         <h2>🛒</h2>
                         <p>Module e-commerce</p>
                     </a>
                 {% endif %}
 
                 {% if a_module_prediction_avancee %}
-                    <a href="{% url 'module_prediction_avancee' %}" class="stat-card module-card">
+                    <a href="{% url 'module_prediction_avancee' %}?site={{ selected_site_id }}" class="stat-card module-card">
                         <h2>🤖</h2>
                         <p>Prédiction avancée</p>
                     </a>
                 {% endif %}
 
                 {% if a_module_segmentation %}
-                    <a href="{% url 'module_segmentation' %}" class="stat-card module-card">
+                    <a href="{% url 'module_segmentation' %}?site={{ selected_site_id }}" class="stat-card module-card">
                         <h2>🎯</h2>
                         <p>Segmentation avancée</p>
                     </a>
                 {% endif %}
 
                 {% if a_module_visualisations %}
-                    <a href="{% url 'module_visualisations' %}" class="stat-card module-card">
+                    <a href="{% url 'module_visualisations' %}?site={{ selected_site_id }}" class="stat-card module-card">
                         <h2>📊</h2>
                         <p>Visualisations avancées</p>
                     </a>
                 {% endif %}
 
                 {% if a_module_historique %}
-                    <a href="{% url 'module_historique' %}" class="stat-card module-card">
+                    <a href="{% url 'module_historique' %}?site={{ selected_site_id }}" class="stat-card module-card">
                         <h2>🕒</h2>
                         <p>Historique des données</p>
                     </a>
                 {% endif %}
 
                 {% if a_module_multicanal %}
-                   <a href="{% url 'module_multicanal' %}" class="stat-card module-card">
+                   <a href="{% url 'module_multicanal' %}?site={{ selected_site_id }}" class="stat-card module-card">
                         <h2>🌐</h2>
                         <p>Analyse multi-canal</p>
                     </a>
                 {% endif %}
 
                 {% if a_module_connecteurs %}
-                    <a href="{% url 'module_connecteurs' %}" class="stat-card module-card">
+                    <a href="{% url 'module_connecteurs' %}?site={{ selected_site_id }}" class="stat-card module-card">
                         <h2>🔌</h2>
                         <p>Connecteurs externes</p>
                     </a>
                 {% endif %}
 
                 {% if a_module_publicite %}
-                    <a href="{% url 'module_publicite' %}" class="stat-card module-card">
+                    <a href="{% url 'module_publicite' %}?site={{ selected_site_id }}" class="stat-card module-card">
                         <h2>📣</h2>
                         <p>Intégrations publicitaires</p>
                     </a>
                 {% endif %}
 
                 {% if a_module_securite_entreprise %}
-                    <a href="{% url 'module_securite' %}" class="stat-card module-card">
+                    <a href="{% url 'module_securite' %}?site={{ selected_site_id }}" class="stat-card module-card">
                         <h2>🔐</h2>
                         <p>Sécurité entreprise</p>
                     </a>
@@ -461,21 +492,21 @@
 
         <details class="dashboard-section dashboard-collapsible" id="statut-sites">
             <summary>
-                <span>Statut de vos sites</span>
+                <span>Statut du site sélectionné</span>
                 <small>{{ total_sites }} site{{ total_sites|pluralize }} connecté{{ total_sites|pluralize }}</small>
             </summary>
 
             <div class="dashboard-collapsible-body">
             <div class="site-status-grid">
                 {% for item in sites_onboarding %}
-                    <div class="site-status-card {% if item.est_actif %}active{% else %}pending{% endif %}">
+                    <div class="site-status-card {% if item.est_installe %}active{% else %}pending{% endif %}">
                         <div class="site-status-header">
                             <div>
                                 <h3>{{ item.site.nom_site }}</h3>
                                 <p>{{ item.site.domaine }}</p>
                             </div>
 
-                            <span class="status-badge {% if item.est_actif %}active{% else %}pending{% endif %}">
+                            <span class="status-badge {% if item.est_installe %}active{% else %}pending{% endif %}">
                                 {{ item.statut }}
                             </span>
                         </div>
@@ -487,11 +518,26 @@
 
                         {% if item.est_actif %}
                             <p class="status-help success">
-                                Le script semble fonctionner : des visiteurs ont déjà été détectés.
+                                Le script fonctionne et des données visiteurs ont été reçues.
                             </p>
+
+                        {% elif item.est_installe %}
+                            <p class="status-help success">
+                                Le script a bien été détecté sur ce domaine.
+                                Aucune session analytique n'a encore été reçue,
+                                notamment si aucun visiteur n'a accepté l'analyse.
+                            </p>
+
+                            {% if item.derniere_detection %}
+                                <p class="status-help">
+                                    Dernière détection :
+                                    {{ item.derniere_detection|date:"d/m/Y à H:i" }}
+                                </p>
+                            {% endif %}
+
                         {% else %}
                             <p class="status-help warning">
-                                Collez le code d’installation sur ce site pour activer la détection.
+                                Le script n'a pas encore été détecté sur ce domaine.
                             </p>
                         {% endif %}
                     </div>
@@ -570,7 +616,7 @@
         <details class="dashboard-section dashboard-collapsible" id="installation">
             <summary>
                 <span>Installer PredictNeed IA sur votre site</span>
-                <small>Scripts d'installation par site</small>
+                <small>Script du site sélectionné</small>
             </summary>
 
             <div class="dashboard-collapsible-body">

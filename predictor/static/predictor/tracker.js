@@ -11,6 +11,9 @@
     const apiKey = script.getAttribute("data-api-key");
     const apiUrl = script.getAttribute("data-api-url") || "/api/track/";
     const leadUrl = script.getAttribute("data-lead-url") || "/api/lead/";
+    const installUrl =
+        script.getAttribute("data-install-url")
+        || apiUrl.replace(/\/api\/track\/?$/, "/api/install/");
     const debugMode = script.getAttribute("data-debug") === "true";
     const requireConsent = script.getAttribute("data-require-consent") !== "false";
     const privacyUrl = script.getAttribute("data-privacy-url") || "";
@@ -57,6 +60,32 @@
         console.warn("PredictNeed IA : clé API manquante.");
         return;
     }
+
+    function signalInstallation() {
+        if (!installUrl) {
+            return;
+        }
+
+        const separator = installUrl.includes("?") ? "&" : "?";
+        const url =
+            installUrl
+            + separator
+            + "api_key="
+            + encodeURIComponent(apiKey)
+            + "&origin="
+            + encodeURIComponent(window.location.origin);
+
+        fetch(url, {
+            method: "GET",
+            mode: "no-cors",
+            cache: "no-store",
+            keepalive: true,
+        }).catch(function () {
+            // La détection technique ne doit jamais bloquer le site client.
+        });
+    }
+
+    signalInstallation();
 
     function now() {
         return Date.now();

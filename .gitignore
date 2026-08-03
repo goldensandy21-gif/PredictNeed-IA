@@ -24,3 +24,5 @@ env/
 
 # Fichiers temporaires
 *.sqlite3-journal
+# Sauvegardes locales
+*.bak-*

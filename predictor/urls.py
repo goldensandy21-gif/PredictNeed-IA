@@ -84,6 +84,11 @@ urlpatterns = [
     path('connexion/', views.connexion, name='connexion'),
     path('inscription/', views.inscription, name='inscription'),
     path('deconnexion/', views.deconnexion, name='deconnexion'),
+    path(
+        'api/install/',
+        views.tracker_installation_ping,
+        name='tracker_installation_ping',
+    ),
     path('api/track/', views.track_event, name='track_event'),
     path('api/lead/', views.capture_lead, name='capture_lead'),
 ]

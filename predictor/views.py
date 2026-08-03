@@ -41,8 +41,41 @@ from django.urls import reverse
 from django.core import signing
 from decimal import Decimal, InvalidOperation
 from datetime import timedelta
+from functools import wraps
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+
+
+def _add_tracker_cors_headers(response):
+    """
+    Autorise uniquement les appels publics du tracker.
+    Aucun cookie d'authentification n'est utilisé par ces API.
+    """
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    response["Access-Control-Allow-Headers"] = "Content-Type"
+    response["Access-Control-Max-Age"] = "86400"
+    return response
+
+
+def tracker_cors(view_function):
+    """
+    Répond au préflight OPTIONS envoyé par les navigateurs
+    avant un POST JSON provenant d'un site client.
+    """
+    @wraps(view_function)
+    def wrapped_view(request, *args, **kwargs):
+        if request.method == "OPTIONS":
+            return _add_tracker_cors_headers(
+                HttpResponse(status=204)
+            )
+
+        response = view_function(request, *args, **kwargs)
+        return _add_tracker_cors_headers(response)
+
+    return wrapped_view
+
+
 
 
 PUBLIC_MODULES = [
@@ -1023,35 +1056,56 @@ def dashboard(request):
     client = getattr(request.user, "client_professionnel", None)
 
     if request.user.is_superuser and client is None:
-        sites = SiteClient.objects.all()
-        sessions = SessionVisiteur.objects.filter(site__isnull=False)
-        predictions = PredictionBesoin.objects.filter(session__site__isnull=False)
-        leads = LeadCapture.objects.all()
-        opportunites = OpportuniteCRM.objects.all()
-        automatisations_email = AutomatisationEmail.objects.all()
-        emails_automatises = EmailAutomatise.objects.all()
+        sites_disponibles = SiteClient.objects.all()
         nom_client = "Administration globale"
 
     elif client is not None:
-        sites = client.sites.all()
-        sessions = SessionVisiteur.objects.filter(site__in=sites)
-        predictions = PredictionBesoin.objects.filter(session__in=sessions)
-        leads = LeadCapture.objects.filter(site__in=sites)
-        opportunites = OpportuniteCRM.objects.filter(site__in=sites)
-        automatisations_email = AutomatisationEmail.objects.filter(client=client)
-        emails_automatises = EmailAutomatise.objects.filter(site__in=sites)
+        sites_disponibles = client.sites.all()
         nom_client = client.nom_entreprise
 
     else:
-        sites = SiteClient.objects.none()
-        sessions = SessionVisiteur.objects.none()
-        predictions = PredictionBesoin.objects.none()
-        leads = LeadCapture.objects.none()
-        opportunites = OpportuniteCRM.objects.none()
-        automatisations_email = AutomatisationEmail.objects.none()
-        emails_automatises = EmailAutomatise.objects.none()
+        sites_disponibles = SiteClient.objects.none()
         nom_client = "Aucun espace professionnel associé"
 
+    selected_site_id = (request.GET.get("site") or "").strip()
+    selected_site = None
+
+    if selected_site_id:
+        selected_site = sites_disponibles.filter(
+            id=selected_site_id
+        ).first()
+
+    if selected_site is None:
+        selected_site = sites_disponibles.order_by(
+            "date_creation"
+        ).first()
+
+    if selected_site is not None:
+        sites = sites_disponibles.filter(pk=selected_site.pk)
+        selected_site_id = str(selected_site.pk)
+    else:
+        sites = SiteClient.objects.none()
+        selected_site_id = ""
+
+    # Toutes les données du dashboard sont limitées
+    # au site actuellement sélectionné.
+    sessions = SessionVisiteur.objects.filter(site__in=sites)
+    predictions = PredictionBesoin.objects.filter(session__in=sessions)
+    leads = LeadCapture.objects.filter(site__in=sites)
+    opportunites = OpportuniteCRM.objects.filter(site__in=sites)
+    emails_automatises = EmailAutomatise.objects.filter(site__in=sites)
+
+    if client is not None:
+        automatisations_email = AutomatisationEmail.objects.filter(
+            client=client,
+            site__in=sites,
+        )
+    elif request.user.is_superuser:
+        automatisations_email = AutomatisationEmail.objects.filter(
+            site__in=sites
+        )
+    else:
+        automatisations_email = AutomatisationEmail.objects.none()
     sites_ecommerce = sites.filter(module_ecommerce_actif=True)
     a_module_ecommerce = sites_ecommerce.exists()
     a_module_prediction_avancee = sites.filter(module_prediction_avancee_actif=True).exists()
@@ -1063,7 +1117,7 @@ def dashboard(request):
     a_module_publicite = sites.filter(module_publicite_actif=True).exists()
     a_module_securite_entreprise = sites.filter(module_securite_entreprise_actif=True).exists()
 
-    total_sites = sites.count()
+    total_sites = sites_disponibles.count()
     total_predictions = predictions.count()
     total_sessions = sessions.count()
     total_leads = leads.count()
@@ -1191,9 +1245,14 @@ def dashboard(request):
         nb_leads_site = leads.filter(site=site).count()
 
         site_est_actif = nb_sessions_site > 0
+        site_est_installe = bool(
+            site.script_installe_le
+        ) or site_est_actif
 
         if site_est_actif:
             statut_site = "Site actif"
+        elif site_est_installe:
+            statut_site = "Script installé"
         else:
             statut_site = "En attente d’installation"
 
@@ -1208,12 +1267,17 @@ def dashboard(request):
             "site": site,
             "statut": statut_site,
             "est_actif": site_est_actif,
+            "est_installe": site_est_installe,
+            "derniere_detection": site.derniere_detection_script,
             "nb_sessions": nb_sessions_site,
             "nb_leads": nb_leads_site,
         })
 
     a_un_site = total_sites > 0
-    a_installation_active = total_sessions > 0
+    a_installation_active = (
+        sites.filter(script_installe_le__isnull=False).exists()
+        or total_sessions > 0
+    )
     a_lead_capture = total_leads > 0
 
     automatisations_email = automatisations_email.select_related("site", "client").order_by(
@@ -1241,6 +1305,9 @@ def dashboard(request):
 
     return render(request, "predictor/dashboard.html", {
         "nom_client": nom_client,
+        "sites_disponibles": sites_disponibles,
+        "selected_site": selected_site,
+        "selected_site_id": selected_site_id,
         "total_sites": total_sites,
         "total_predictions": total_predictions,
         "total_sessions": total_sessions,
@@ -1617,7 +1684,70 @@ def ajouter_site(request):
         "erreur": erreur,
     })
 
+
 @csrf_exempt
+def tracker_installation_ping(request):
+    """
+    Confirme uniquement la présence technique du script.
+
+    Cette requête ne crée ni visite, ni session, ni événement
+    analytique et ne dépend pas du consentement du visiteur.
+    """
+    if request.method != "GET":
+        return JsonResponse(
+            {"success": False, "error": "Méthode non autorisée"},
+            status=405,
+        )
+
+    api_key = (request.GET.get("api_key") or "").strip()
+    page_origin = (request.GET.get("origin") or "").strip()
+
+    if not api_key:
+        return JsonResponse(
+            {"success": False, "error": "Clé API manquante"},
+            status=400,
+        )
+
+    try:
+        site = SiteClient.objects.get(
+            cle_api=api_key,
+            actif=True,
+        )
+    except SiteClient.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "error": "Clé API invalide"},
+            status=403,
+        )
+
+    if page_origin and not _host_matches_domain(
+        page_origin,
+        site.domaine,
+    ):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Le domaine ne correspond pas au site enregistré",
+            },
+            status=403,
+        )
+
+    maintenant = timezone.now()
+    champs_modifies = ["derniere_detection_script"]
+
+    site.derniere_detection_script = maintenant
+
+    if site.script_installe_le is None:
+        site.script_installe_le = maintenant
+        champs_modifies.append("script_installe_le")
+
+    site.save(update_fields=champs_modifies)
+
+    return HttpResponse(status=204)
+
+
+
+@csrf_exempt
+@tracker_cors
 def track_event(request):
     if request.method != "POST":
         return JsonResponse(
@@ -1664,6 +1794,20 @@ def track_event(request):
         return JsonResponse(
             {"success": False, "error": "Clé API invalide"},
             status=403
+        )
+
+    request_origin = request.headers.get("Origin") or ""
+
+    if request_origin and not _host_matches_domain(
+        request_origin,
+        site.domaine,
+    ):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Le domaine ne correspond pas à cette clé API",
+            },
+            status=403,
         )
 
     session_visiteur, created = SessionVisiteur.objects.get_or_create(
@@ -1908,6 +2052,7 @@ def inscription(request):
     )
 
 @csrf_exempt
+@tracker_cors
 def capture_lead(request):
     if request.method != "POST":
         return JsonResponse(
@@ -1965,6 +2110,20 @@ def capture_lead(request):
             status=403
         )
 
+    request_origin = request.headers.get("Origin") or ""
+
+    if request_origin and not _host_matches_domain(
+        request_origin,
+        site.domaine,
+    ):
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Le domaine ne correspond pas à cette clé API",
+            },
+            status=403,
+        )
+
     session_visiteur, created = SessionVisiteur.objects.get_or_create(
         site=site,
         session_id=session_id
@@ -2007,14 +2166,21 @@ def capture_lead(request):
     })
 
 def get_sites_utilisateur(request):
+    """
+    Un utilisateur possédant un espace client ne voit que ses propres sites,
+    même si son compte possède aussi les droits superutilisateur.
+
+    Un administrateur sans espace client conserve la vue globale.
+    """
+    client = getattr(request.user, "client_professionnel", None)
+
+    if client is not None:
+        return client.sites.all()
+
     if request.user.is_superuser:
         return SiteClient.objects.all()
 
-    try:
-        client = request.user.client_professionnel
-        return client.sites.all()
-    except ClientProfessionnel.DoesNotExist:
-        return SiteClient.objects.none()
+    return SiteClient.objects.none()
 
 
 def get_client_professionnel_utilisateur(request):
@@ -2840,6 +3006,7 @@ def generer_script_installation_site(base_url, site):
         data-api-key="{site.cle_api}"
         data-api-url="{base_url}/api/track/"
         data-lead-url="{base_url}/api/lead/"
+        data-install-url="{base_url}/api/install/"
         data-require-consent="true"
         data-retargeting-enabled="{retargeting_enabled}"
         data-meta-pixel-id="{meta_pixel_id}"
