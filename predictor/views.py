@@ -566,7 +566,8 @@ def accueil(request):
             request.session.create()
 
         session_visiteur, created = SessionVisiteur.objects.get_or_create(
-            session_id=request.session.session_key
+            site=None,
+            session_id=request.session.session_key,
         )
 
         page_visitee = request.POST.get("page_visitee")
@@ -1021,6 +1022,13 @@ def activer_abonnement(request):
             "Aucun espace professionnel n'est associé à ce compte.",
         )
         return redirect("dashboard")
+
+    if client.email_verifie_le is None:
+        messages.error(
+            request,
+            "Confirmez votre adresse email avant d'activer un abonnement.",
+        )
+        return redirect("dashboard_parametres")
 
     if client.statut_abonnement == "actif":
         messages.info(request, "Votre abonnement est déjà actif.")
@@ -1489,17 +1497,12 @@ def dashboard_parametres(request):
         or ""
     ).strip()
 
-    if selected_site_id and not sites.filter(
-        id=selected_site_id
-    ).exists():
+    if selected_site_id and not sites.filter(id=selected_site_id).exists():
         selected_site_id = ""
 
     parametres_url = reverse("dashboard_parametres")
-
     if selected_site_id:
-        parametres_url = (
-            f"{parametres_url}?site={selected_site_id}"
-        )
+        parametres_url = f"{parametres_url}?site={selected_site_id}"
 
     User = get_user_model()
     password_form = PasswordChangeForm(request.user)
@@ -1522,40 +1525,75 @@ def dashboard_parametres(request):
             elif User.objects.exclude(pk=request.user.pk).filter(email__iexact=email).exists():
                 messages.error(request, "Cette adresse email est déjà utilisée par un autre compte.")
             else:
+                email_change = request.user.email.lower() != email
                 request.user.username = username
                 request.user.email = email
                 request.user.first_name = first_name
                 request.user.last_name = last_name
-                request.user.save(update_fields=["username", "email", "first_name", "last_name"])
+                request.user.save(
+                    update_fields=[
+                        "username",
+                        "email",
+                        "first_name",
+                        "last_name",
+                    ]
+                )
 
                 if client is not None:
                     if nom_entreprise:
                         client.nom_entreprise = nom_entreprise
                     client.secteur_activite = secteur_activite
-                    client.save(update_fields=["nom_entreprise", "secteur_activite"])
+                    fields = ["nom_entreprise", "secteur_activite"]
+                    if email_change:
+                        client.email_verifie_le = None
+                        fields.append("email_verifie_le")
+                    client.save(update_fields=fields)
+
+                    if email_change:
+                        try:
+                            from .accounts import send_verification_email
+                            send_verification_email(client)
+                            messages.info(
+                                request,
+                                "Votre adresse email a changé. Un nouveau lien de confirmation a été envoyé.",
+                            )
+                        except Exception:
+                            messages.warning(
+                                request,
+                                "L'adresse a été modifiée, mais l'email de confirmation n'a pas pu être envoyé.",
+                            )
 
                 messages.success(request, "Paramètres du profil mis à jour.")
                 return redirect(parametres_url)
 
         elif formulaire == "connexion":
             password_form = PasswordChangeForm(request.user, request.POST)
-
             if password_form.is_valid():
                 user = password_form.save()
                 update_session_auth_hash(request, user)
-                messages.success(request, "Mot de passe mis à jour. Votre session reste ouverte.")
+                messages.success(
+                    request,
+                    "Mot de passe mis à jour. Votre session reste ouverte.",
+                )
                 return redirect(parametres_url)
+            messages.error(
+                request,
+                "Le mot de passe n'a pas pu être modifié. Vérifiez les champs saisis.",
+            )
 
-            messages.error(request, "Le mot de passe n'a pas pu être modifié. Vérifiez les champs saisis.")
+    return render(
+        request,
+        "predictor/dashboard_parametres.html",
+        {
+            "client_professionnel": client,
+            "sites": sites,
+            "total_sites": sites.count(),
+            "sites_actifs": sites.filter(actif=True).count(),
+            "selected_site_id": selected_site_id,
+            "password_form": password_form,
+        },
+    )
 
-    return render(request, "predictor/dashboard_parametres.html", {
-        "client_professionnel": client,
-        "sites": sites,
-        "total_sites": sites.count(),
-        "sites_actifs": sites.filter(actif=True).count(),
-        "selected_site_id": selected_site_id,
-        "password_form": password_form,
-    })
 
 
 @login_required
@@ -1740,22 +1778,40 @@ def modifier_automatisation_email(request, automatisation_id):
 
 
 @login_required
+@require_POST
 def nettoyer_evenements(request):
-    if request.method != "POST":
+    client = getattr(request.user, "client_professionnel", None)
+    selected_site_id = (
+        request.POST.get("site")
+        or request.GET.get("site")
+        or ""
+    ).strip()
+
+    if not selected_site_id:
+        messages.error(
+            request,
+            "Sélectionnez un site avant de supprimer ses événements.",
+        )
         return redirect("dashboard")
 
-    client = getattr(request.user, "client_professionnel", None)
-
     if request.user.is_superuser and client is None:
-        EvenementUtilisateur.objects.all().delete()
-
+        site = SiteClient.objects.filter(pk=selected_site_id).first()
     elif client is not None:
-        sites = client.sites.all()
-        sessions = SessionVisiteur.objects.filter(site__in=sites)
+        site = client.sites.filter(pk=selected_site_id).first()
+    else:
+        site = None
 
-        EvenementUtilisateur.objects.filter(session__in=sessions).delete()
+    if site is None:
+        messages.error(request, "Ce site n'est pas accessible depuis votre compte.")
+        return redirect("dashboard")
 
-    return redirect("dashboard")
+    deleted, _ = EvenementUtilisateur.objects.filter(session__site=site).delete()
+    messages.success(
+        request,
+        f"{deleted} élément(s) lié(s) aux événements de {site.nom_site} ont été supprimés.",
+    )
+    return redirect(f"{reverse('dashboard')}?site={site.pk}")
+
 
 @login_required
 def changer_statut_lead(request, lead_id, nouveau_statut):
@@ -1803,18 +1859,27 @@ def changer_statut_lead(request, lead_id, nouveau_statut):
 @login_required
 def ajouter_site(request):
     client = getattr(request.user, "client_professionnel", None)
-
     if client is None:
         return redirect("dashboard")
 
-    erreur = None
+    if client.email_verifie_le is None:
+        messages.error(
+            request,
+            "Confirmez votre adresse email avant d'ajouter un autre site.",
+        )
+        return redirect("dashboard_parametres")
 
+    from .security import normalize_domain
+
+    erreur = None
     if request.method == "POST":
         nom_site = (request.POST.get("nom_site") or "").strip()
-        domaine = (request.POST.get("domaine") or "").strip()
+        domaine = normalize_domain(request.POST.get("domaine"))
 
         if not nom_site or not domaine:
-            erreur = "Le nom du site et le domaine sont obligatoires."
+            erreur = "Le nom du site et un domaine valide sont obligatoires."
+        elif client.sites.filter(domaine__iexact=domaine).exists():
+            erreur = "Ce domaine est déjà enregistré dans votre compte."
         else:
             champs_modules = [
                 "module_ecommerce_actif",
@@ -1827,13 +1892,8 @@ def ajouter_site(request):
                 "module_publicite_actif",
                 "module_securite_entreprise_actif",
             ]
-
-            site_reference = client.sites.order_by(
-                "date_creation"
-            ).first()
-
+            site_reference = client.sites.order_by("date_creation").first()
             configuration_modules = {}
-
             if site_reference is not None:
                 configuration_modules = {
                     champ: getattr(site_reference, champ)
@@ -1846,14 +1906,14 @@ def ajouter_site(request):
                 domaine=domaine,
                 **configuration_modules,
             )
+            return redirect(f"{reverse('dashboard')}?site={nouveau_site.id}")
 
-            return redirect(
-                f"{reverse('dashboard')}?site={nouveau_site.id}"
-            )
+    return render(
+        request,
+        "predictor/ajouter_site.html",
+        {"erreur": erreur},
+    )
 
-    return render(request, "predictor/ajouter_site.html", {
-        "erreur": erreur,
-    })
 
 @csrf_exempt
 def tracker_installation_ping(request):
@@ -1922,134 +1982,139 @@ def track_event(request):
     if request.method != "POST":
         return JsonResponse(
             {"success": False, "error": "Méthode non autorisée"},
-            status=405
+            status=405,
+        )
+    if len(request.body) > 32768:
+        return JsonResponse(
+            {"success": False, "error": "Requête trop volumineuse"},
+            status=413,
         )
 
     try:
         data = json.loads(request.body)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, UnicodeDecodeError):
         return JsonResponse(
             {"success": False, "error": "Données JSON invalides"},
-            status=400
+            status=400,
         )
 
-    api_key = data.get("api_key")
-    session_id = data.get("session_id")
-    type_evenement = data.get("type_evenement", "page_vue")
-    page = data.get("page", "")
-    valeur = data.get("valeur", "")
+    from .security import valid_session_id
+
+    api_key = str(data.get("api_key") or "").strip()
+    session_id = str(data.get("session_id") or "").strip()
+    type_evenement = str(data.get("type_evenement") or "page_vue").strip()
+    page = str(data.get("page") or "").strip()[:255]
+    valeur = str(data.get("valeur") or "").strip()[:255]
     consentement_tracking = data.get("consentement_tracking")
+    allowed_event_types = {"page_vue", "clic", "temps", "formulaire"}
 
     if not api_key:
-        return JsonResponse(
-            {"success": False, "error": "Clé API manquante"},
-            status=400
-        )
-
-    if not session_id:
-        return JsonResponse(
-            {"success": False, "error": "Session visiteur manquante"},
-            status=400
-        )
-
+        return JsonResponse({"success": False, "error": "Clé API manquante"}, status=400)
+    if not valid_session_id(session_id):
+        return JsonResponse({"success": False, "error": "Session visiteur invalide"}, status=400)
+    if type_evenement not in allowed_event_types:
+        return JsonResponse({"success": False, "error": "Type d'événement invalide"}, status=400)
+    if not page:
+        return JsonResponse({"success": False, "error": "Page manquante"}, status=400)
     if consentement_tracking not in [True, "true", "1", 1, "on"]:
-        return JsonResponse(
-            {"success": False, "error": "Consentement tracking obligatoire"},
-            status=400
-        )
+        return JsonResponse({"success": False, "error": "Consentement tracking obligatoire"}, status=400)
 
     try:
         site = SiteClient.objects.get(cle_api=api_key, actif=True)
     except SiteClient.DoesNotExist:
-        return JsonResponse(
-            {"success": False, "error": "Clé API invalide"},
-            status=403
-        )
+        return JsonResponse({"success": False, "error": "Clé API invalide"}, status=403)
 
     request_origin = request.headers.get("Origin") or ""
-
-    if request_origin and not _host_matches_domain(
-        request_origin,
-        site.domaine,
-    ):
+    if request_origin and not _host_matches_domain(request_origin, site.domaine):
         return JsonResponse(
-            {
-                "success": False,
-                "error": "Le domaine ne correspond pas à cette clé API",
-            },
+            {"success": False, "error": "Le domaine ne correspond pas à cette clé API"},
             status=403,
         )
 
-    session_visiteur, created = SessionVisiteur.objects.get_or_create(
+    session_visiteur, _ = SessionVisiteur.objects.get_or_create(
         site=site,
-        session_id=session_id
+        session_id=session_id,
     )
-    _update_session_client_info(session_visiteur, data)
 
+    recent_count = EvenementUtilisateur.objects.filter(
+        session=session_visiteur,
+        date_creation__gte=timezone.now() - timedelta(minutes=1),
+    ).count()
+    if recent_count >= 120:
+        return JsonResponse(
+            {"success": False, "error": "Trop d'événements pour cette session"},
+            status=429,
+        )
+
+    _update_session_client_info(session_visiteur, data)
     session_visiteur.save()
 
     EvenementUtilisateur.objects.create(
         session=session_visiteur,
         type_evenement=type_evenement,
         page=page,
-        valeur=valeur
+        valeur=valeur,
     )
 
     session_visiteur.nombre_pages_vues = EvenementUtilisateur.objects.filter(
-    session=session_visiteur,
-    type_evenement="page_vue"
+        session=session_visiteur,
+        type_evenement="page_vue",
     ).count()
-
     session_visiteur.nombre_clics = EvenementUtilisateur.objects.filter(
         session=session_visiteur,
-        type_evenement="clic"
+        type_evenement="clic",
     ).count()
 
-    evenements_temps = EvenementUtilisateur.objects.filter(
-        session=session_visiteur,
-        type_evenement="temps"
-    )
-
     temps_total = 0
-
-    for event in evenements_temps:
+    for event in EvenementUtilisateur.objects.filter(
+        session=session_visiteur,
+        type_evenement="temps",
+    ):
         if event.valeur:
-            chiffres = "".join([c for c in event.valeur if c.isdigit()])
+            chiffres = "".join(c for c in event.valeur if c.isdigit())
             if chiffres:
-                temps_total += int(chiffres)
+                temps_total += min(int(chiffres), 86400)
 
-    session_visiteur.temps_total_secondes = temps_total
-
+    session_visiteur.temps_total_secondes = min(temps_total, 86400)
     session_visiteur.est_rebond = (
-    session_visiteur.nombre_pages_vues <= 1
-    and session_visiteur.nombre_clics == 0
-    and session_visiteur.temps_total_secondes < 10
-)
-
+        session_visiteur.nombre_pages_vues <= 1
+        and session_visiteur.nombre_clics == 0
+        and session_visiteur.temps_total_secondes < 10
+    )
     session_visiteur.save()
 
     resultat_auto = analyser_session_automatique(session_visiteur)
-
     if resultat_auto["score"] >= 2:
-        PredictionBesoin.objects.create(
-            session=session_visiteur,
-            profil=resultat_auto["profil"],
-            besoin_probable=resultat_auto["prediction"],
-            intention=resultat_auto["intention"],
-            score=resultat_auto["score"],
-            recommandation=resultat_auto["recommandation"]
+        derniere = session_visiteur.predictions.order_by("-date_creation").first()
+        duplicate_recent = bool(
+            derniere
+            and derniere.score == resultat_auto["score"]
+            and derniere.intention == resultat_auto["intention"]
+            and derniere.date_creation >= timezone.now() - timedelta(seconds=60)
         )
+        if not duplicate_recent:
+            PredictionBesoin.objects.create(
+                session=session_visiteur,
+                profil=resultat_auto["profil"],
+                besoin_probable=resultat_auto["prediction"],
+                intention=resultat_auto["intention"],
+                score=resultat_auto["score"],
+                recommandation=resultat_auto["recommandation"],
+            )
 
-    return JsonResponse({
-    "success": True,
-    "message": "Événement enregistré",
-    "site": site.nom_site,
-    "session": session_visiteur.session_id,
-    "prediction": resultat_auto["prediction"],
-    "profil": resultat_auto["profil"],
-    "intention": resultat_auto["intention"],
-    "score": resultat_auto["score"],
-})
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "Événement enregistré",
+            "site": site.nom_site,
+            "session": session_visiteur.session_id,
+            "prediction": resultat_auto["prediction"],
+            "profil": resultat_auto["profil"],
+            "intention": resultat_auto["intention"],
+            "score": resultat_auto["score"],
+        }
+    )
+
 
 def simulateur(request):
     resultat = None
@@ -2059,7 +2124,8 @@ def simulateur(request):
             request.session.create()
 
         session_visiteur, created = SessionVisiteur.objects.get_or_create(
-            session_id=request.session.session_key
+            site=None,
+            session_id=request.session.session_key,
         )
 
         page_visitee = request.POST.get("page_visitee")
@@ -2160,25 +2226,28 @@ def inscription(request):
     User = get_user_model()
 
     if request.method == "POST":
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+        from django.db import transaction
+
+        from .accounts import send_verification_email
+        from .security import normalize_domain
+
         username = (request.POST.get("username") or "").strip()
         email = (request.POST.get("email") or "").strip().lower()
         password = request.POST.get("password") or ""
-        nom_entreprise = (
-            request.POST.get("nom_entreprise") or ""
-        ).strip()
-        secteur_activite = (
-            request.POST.get("secteur_activite") or ""
-        ).strip()
+        password_confirm = request.POST.get("password_confirm") or password
+        nom_entreprise = (request.POST.get("nom_entreprise") or "").strip()
+        secteur_activite = (request.POST.get("secteur_activite") or "").strip()
         nom_site = (request.POST.get("nom_site") or "").strip()
-        domaine = (request.POST.get("domaine") or "").strip()
-        conditions_acceptees = (
-            request.POST.get("accept_conditions") == "on"
-        )
+        domaine = normalize_domain(request.POST.get("domaine"))
+        conditions_acceptees = request.POST.get("accept_conditions") == "on"
 
         champs_requis = [
             username,
             email,
             password,
+            password_confirm,
             nom_entreprise,
             secteur_activite,
             nom_site,
@@ -2186,12 +2255,11 @@ def inscription(request):
         ]
 
         if not all(champs_requis):
-            erreur = "Merci de remplir tous les champs obligatoires."
+            erreur = "Merci de remplir tous les champs obligatoires et de saisir un domaine valide."
+        elif password != password_confirm:
+            erreur = "Les deux mots de passe ne correspondent pas."
         elif not conditions_acceptees:
-            erreur = (
-                "Vous devez accepter les conditions "
-                "d'utilisation pour créer un compte."
-            )
+            erreur = "Vous devez accepter les conditions d'utilisation pour créer un compte."
         else:
             existing_user, erreur = _find_existing_user_for_signup(
                 User,
@@ -2200,8 +2268,13 @@ def inscription(request):
             )
 
             if erreur is None:
-                from django.db import transaction
+                candidate = existing_user or User(username=username, email=email)
+                try:
+                    validate_password(password, user=candidate)
+                except ValidationError as exc:
+                    erreur = " ".join(exc.messages)
 
+            if erreur is None:
                 with transaction.atomic():
                     client = _prepare_pending_client(
                         User=User,
@@ -2214,15 +2287,31 @@ def inscription(request):
                         nom_site=nom_site,
                         domaine=domaine,
                     )
+                    client.version_cgu_acceptee = settings.PREDICTNEED_CGU_VERSION
+                    client.version_confidentialite_acceptee = settings.PREDICTNEED_PRIVACY_VERSION
+                    client.email_verifie_le = None
+                    client.save(
+                        update_fields=[
+                            "version_cgu_acceptee",
+                            "version_confidentialite_acceptee",
+                            "email_verifie_le",
+                        ]
+                    )
 
                 login(request, client.utilisateur)
+                try:
+                    send_verification_email(client)
+                    verification_message = " Un email de confirmation vient de vous être envoyé."
+                except Exception:
+                    verification_message = " Vous pourrez renvoyer l'email depuis vos paramètres."
+
                 messages.success(
                     request,
                     (
                         "Votre essai gratuit de "
-                        f"{settings.PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS} "
-                        "jours est actif. Aucune carte bancaire "
-                        "n'a été demandée."
+                        f"{settings.PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS} jours est actif. "
+                        "Aucune carte bancaire n'a été demandée."
+                        + verification_message
                     ),
                 )
                 return redirect("dashboard")
@@ -2232,15 +2321,12 @@ def inscription(request):
         "predictor/inscription.html",
         _seo_context(
             "Créer un compte - PredictNeed IA",
-            (
-                "Créez gratuitement votre compte PredictNeed IA "
-                "sans carte bancaire et accédez immédiatement "
-                "au dashboard."
-            ),
+            "Créez gratuitement votre compte PredictNeed IA sans carte bancaire et accédez immédiatement au dashboard.",
             erreur=erreur,
             **_subscription_context(),
         ),
     )
+
 
 
 def a_propos(request):
@@ -2313,119 +2399,175 @@ def health_check(request):
         return JsonResponse({"status": "error"}, status=503)
     return JsonResponse({"status": "ok"})
 
+def confirmer_email_compte(request, token):
+    from .accounts import confirm_email
+
+    client = confirm_email(token)
+    return render(
+        request,
+        "predictor/confirmation_email.html",
+        _seo_context(
+            "Confirmation email - PredictNeed IA",
+            "Confirmation de l'adresse email du compte PredictNeed IA.",
+            client_confirme=client,
+        ),
+    )
+
+
+@login_required
+@require_POST
+def renvoyer_confirmation_email(request):
+    client = getattr(request.user, "client_professionnel", None)
+    if client is None:
+        return redirect("dashboard")
+    if client.email_verifie_le is not None:
+        messages.info(request, "Votre adresse email est déjà confirmée.")
+        return redirect("dashboard_parametres")
+
+    try:
+        from .accounts import send_verification_email
+        send_verification_email(client)
+        messages.success(request, "Un nouvel email de confirmation a été envoyé.")
+    except Exception:
+        messages.error(request, "L'email de confirmation n'a pas pu être envoyé.")
+    return redirect("dashboard_parametres")
+
+def erreur_404(request, exception):
+    return render(request, "predictor/404.html", status=404)
+
+
+def erreur_500(request):
+    return render(request, "predictor/500.html", status=500)
+
 @csrf_exempt
 @tracker_cors
 def capture_lead(request):
     if request.method != "POST":
         return JsonResponse(
             {"success": False, "error": "Méthode non autorisée"},
-            status=405
+            status=405,
+        )
+    if len(request.body) > 32768:
+        return JsonResponse(
+            {"success": False, "error": "Requête trop volumineuse"},
+            status=413,
         )
 
     try:
         data = json.loads(request.body)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, UnicodeDecodeError):
         return JsonResponse(
             {"success": False, "error": "Données JSON invalides"},
-            status=400
+            status=400,
         )
 
-    api_key = data.get("api_key")
-    session_id = data.get("session_id")
-    nom = data.get("nom", "")
-    email = data.get("email", "")
-    telephone = data.get("telephone", "")
-    message = data.get("message", "")
-    page = data.get("page", "")
+    from django.core.exceptions import ValidationError
+    from django.core.validators import validate_email
+    from .security import valid_phone, valid_session_id
 
+    api_key = str(data.get("api_key") or "").strip()
+    session_id = str(data.get("session_id") or "").strip()
+    nom = str(data.get("nom") or "").strip()[:150]
+    email = str(data.get("email") or "").strip().lower()[:254]
+    telephone = str(data.get("telephone") or "").strip()[:30]
+    message_lead = str(data.get("message") or "").strip()[:2000]
+    page = str(data.get("page") or "").strip()[:255]
     consentement = data.get("consentement")
 
     if not api_key:
-        return JsonResponse(
-            {"success": False, "error": "Clé API manquante"},
-            status=400
-        )
-
-    if not session_id:
-        return JsonResponse(
-            {"success": False, "error": "Session visiteur manquante"},
-            status=400
-        )
-
+        return JsonResponse({"success": False, "error": "Clé API manquante"}, status=400)
+    if not valid_session_id(session_id):
+        return JsonResponse({"success": False, "error": "Session visiteur invalide"}, status=400)
     if not email and not telephone:
-        return JsonResponse(
-            {"success": False, "error": "Email ou téléphone obligatoire"},
-            status=400
-        )
-
+        return JsonResponse({"success": False, "error": "Email ou téléphone obligatoire"}, status=400)
+    if email:
+        try:
+            validate_email(email)
+        except ValidationError:
+            return JsonResponse({"success": False, "error": "Adresse email invalide"}, status=400)
+    if not valid_phone(telephone):
+        return JsonResponse({"success": False, "error": "Numéro de téléphone invalide"}, status=400)
     if consentement not in [True, "true", "1", 1, "on"]:
-        return JsonResponse(
-            {"success": False, "error": "Consentement obligatoire"},
-            status=400
-        )
+        return JsonResponse({"success": False, "error": "Consentement obligatoire"}, status=400)
 
     try:
         site = SiteClient.objects.get(cle_api=api_key, actif=True)
     except SiteClient.DoesNotExist:
-        return JsonResponse(
-            {"success": False, "error": "Clé API invalide"},
-            status=403
-        )
+        return JsonResponse({"success": False, "error": "Clé API invalide"}, status=403)
 
     request_origin = request.headers.get("Origin") or ""
-
-    if request_origin and not _host_matches_domain(
-        request_origin,
-        site.domaine,
-    ):
+    if request_origin and not _host_matches_domain(request_origin, site.domaine):
         return JsonResponse(
-            {
-                "success": False,
-                "error": "Le domaine ne correspond pas à cette clé API",
-            },
+            {"success": False, "error": "Le domaine ne correspond pas à cette clé API"},
             status=403,
         )
 
-    session_visiteur, created = SessionVisiteur.objects.get_or_create(
+    session_visiteur, _ = SessionVisiteur.objects.get_or_create(
         site=site,
-        session_id=session_id
+        session_id=session_id,
     )
     _update_session_client_info(session_visiteur, data)
     session_visiteur.save()
 
-    resultat_auto = analyser_session_automatique(session_visiteur)
+    duplicate_query = LeadCapture.objects.filter(
+        site=site,
+        session=session_visiteur,
+        date_creation__gte=timezone.now() - timedelta(minutes=15),
+    )
+    if email:
+        duplicate_query = duplicate_query.filter(email__iexact=email)
+    else:
+        duplicate_query = duplicate_query.filter(telephone=telephone)
+    existing = duplicate_query.order_by("-date_creation").first()
+    if existing:
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Contact déjà enregistré",
+                "lead_id": existing.pk,
+                "profil": existing.profil,
+                "intention": existing.intention,
+                "score": existing.score,
+                "email_automatique": "ignore",
+            }
+        )
 
+    resultat_auto = analyser_session_automatique(session_visiteur)
     lead = LeadCapture.objects.create(
         site=site,
         session=session_visiteur,
         nom=nom,
-        email=email,
-        telephone=telephone,
-        message=message,
+        email=email or None,
+        telephone=telephone or None,
+        message=message_lead,
         profil=resultat_auto["profil"],
         intention=resultat_auto["intention"],
         score=resultat_auto["score"],
-        consentement=True
+        consentement=True,
     )
 
     EvenementUtilisateur.objects.create(
         session=session_visiteur,
         type_evenement="lead",
-        page=page,
-        valeur=f"Contact laissé : {email or telephone}"
+        page=page or "/",
+        valeur=f"Contact laissé : {email or telephone}"[:255],
     )
 
     email_automatique = envoyer_confirmation_lead(lead)
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "Contact enregistré",
+            "lead_id": lead.id,
+            "profil": lead.profil,
+            "intention": lead.intention,
+            "score": lead.score,
+            "email_automatique": (
+                email_automatique.statut if email_automatique else "ignore"
+            ),
+        }
+    )
 
-    return JsonResponse({
-        "success": True,
-        "message": "Contact enregistré",
-        "lead_id": lead.id,
-        "profil": lead.profil,
-        "intention": lead.intention,
-        "score": lead.score,
-        "email_automatique": email_automatique.statut if email_automatique else "ignore",
-    })
 
 def get_sites_utilisateur(request):
     """
@@ -2454,18 +2596,6 @@ def get_client_professionnel_utilisateur(request):
 
 def get_module_scope(request, module_field=None, ecommerce=False):
     sites = get_sites_utilisateur(request)
-
-    if ecommerce:
-        module_disponible = sites.filter(
-            Q(module_ecommerce_actif=True) | Q(type_site="ecommerce")
-        ).exists()
-    elif module_field:
-        module_disponible = sites.filter(
-            **{module_field: True}
-        ).exists()
-    else:
-        module_disponible = sites.exists()
-
     selected_site_id = (
         request.GET.get("site")
         or request.POST.get("site")
@@ -2473,20 +2603,34 @@ def get_module_scope(request, module_field=None, ecommerce=False):
     ).strip()
 
     selected_site = None
-
     if selected_site_id and selected_site_id != "all":
-        selected_site = sites.filter(
-            id=selected_site_id
-        ).first()
-
+        selected_site = sites.filter(id=selected_site_id).first()
     if selected_site is None:
-        selected_site = sites.order_by(
-            "date_creation"
-        ).first()
+        selected_site = sites.order_by("date_creation").first()
+
+    module_disponible = False
+    if selected_site is not None:
+        if ecommerce:
+            module_disponible = bool(
+                selected_site.module_ecommerce_actif
+                or selected_site.type_site == "ecommerce"
+            )
+        elif module_field:
+            module_disponible = bool(getattr(selected_site, module_field, False))
+        else:
+            module_disponible = True
+
+    if ecommerce:
+        sites_actifs = sites.filter(
+            Q(module_ecommerce_actif=True) | Q(type_site="ecommerce")
+        )
+    elif module_field:
+        sites_actifs = sites.filter(**{module_field: True})
+    else:
+        sites_actifs = sites
 
     if selected_site is not None:
-        selected_site_id = str(selected_site.id)
-
+        selected_site_id = str(selected_site.pk)
         sites_filtres = (
             sites.filter(pk=selected_site.pk)
             if module_disponible
@@ -2496,12 +2640,6 @@ def get_module_scope(request, module_field=None, ecommerce=False):
         selected_site_id = ""
         sites_filtres = SiteClient.objects.none()
 
-    sites_actifs = (
-        sites
-        if module_disponible
-        else SiteClient.objects.none()
-    )
-
     return {
         "sites": sites,
         "sites_actifs": sites_actifs,
@@ -2509,10 +2647,10 @@ def get_module_scope(request, module_field=None, ecommerce=False):
         "selected_site": selected_site,
         "selected_site_id": selected_site_id,
         "site_selectionne_inactif": (
-            selected_site is not None
-            and not module_disponible
+            selected_site is not None and not module_disponible
         ),
     }
+
 
 def render_module_non_actif(request, nom_module):
     return render(request, "predictor/module_non_actif.html", {

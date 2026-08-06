@@ -8617,3 +8617,14 @@ body.dashboard-page .dashboard-overview > #leads.dashboard-collapsible {
 }
 
 .demo-data-label{margin:0;padding:.55rem .75rem;border-radius:.6rem;background:rgba(103,232,249,.12);color:#cffafe;font-size:.75rem;font-weight:800}.success-message{padding:.8rem;background:#dcfce7;color:#166534;border-radius:.6rem}
+
+/* Phase 2A : sécurité des comptes */
+.form-help {
+    margin: -0.25rem 0 0.75rem;
+    color: #64748b;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+.account-verification-card {
+    border: 1px solid rgba(14, 165, 233, 0.3);
+}

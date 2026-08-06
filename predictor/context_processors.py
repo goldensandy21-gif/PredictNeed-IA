@@ -3,7 +3,22 @@ import json
 from django.conf import settings
 from django.templatetags.static import static
 
-NOINDEX = {"connexion", "inscription", "deconnexion", "paiement_succes", "paiement_annule", "dashboard", "dashboard_parametres", "newsletter_confirmer", "newsletter_desinscription"}
+NOINDEX = {
+    "connexion",
+    "inscription",
+    "deconnexion",
+    "paiement_succes",
+    "paiement_annule",
+    "dashboard",
+    "dashboard_parametres",
+    "newsletter_confirmer",
+    "newsletter_desinscription",
+    "confirmer_email_compte",
+    "password_reset",
+    "password_reset_done",
+    "password_reset_confirm",
+    "password_reset_complete",
+}
 
 
 def global_site_context(request):

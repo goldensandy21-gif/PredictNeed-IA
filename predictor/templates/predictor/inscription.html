@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <title>Inscription professionnelle - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
 </head>
 <body>
 
@@ -61,14 +61,21 @@
         <form method="POST">
             {% csrf_token %}
 
-            <label>Nom d'utilisateur</label>
-            <input type="text" name="username" required>
+            <label for="signup-username">Nom d'utilisateur</label>
+            <input id="signup-username" type="text" name="username" autocomplete="username" required>
 
-            <label>Email professionnel</label>
-            <input type="email" name="email" required>
+            <label for="signup-email">Email professionnel</label>
+            <input id="signup-email" type="email" name="email" autocomplete="email" required>
 
-            <label>Mot de passe</label>
-            <input type="password" name="password" required>
+            <label for="signup-password">Mot de passe</label>
+            <input id="signup-password" type="password" name="password" autocomplete="new-password" required>
+            <p class="form-help">
+                Utilisez au moins 8 caractères et évitez un mot de passe courant,
+                entièrement numérique ou trop proche de vos informations.
+            </p>
+
+            <label for="signup-password-confirm">Confirmer le mot de passe</label>
+            <input id="signup-password-confirm" type="password" name="password_confirm" autocomplete="new-password" required>
 
             <label>Nom de l'entreprise</label>
             <input type="text" name="nom_entreprise" required>

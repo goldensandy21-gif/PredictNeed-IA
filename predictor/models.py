@@ -38,6 +38,9 @@ class ClientProfessionnel(models.Model):
     rappel_7_jours_envoye_le = models.DateTimeField(blank=True, null=True)
     rappel_2_jours_envoye_le = models.DateTimeField(blank=True, null=True)
     email_expiration_envoye_le = models.DateTimeField(blank=True, null=True)
+    version_cgu_acceptee = models.CharField(max_length=30, blank=True, default="")
+    version_confidentialite_acceptee = models.CharField(max_length=30, blank=True, default="")
+    email_verifie_le = models.DateTimeField(blank=True, null=True)
     date_creation = models.DateTimeField(auto_now_add=True)
 
     def abonnement_est_actif(self):
@@ -211,7 +214,7 @@ class SessionVisiteur(models.Model):
         null=True
     )
 
-    session_id = models.CharField(max_length=100, unique=True)
+    session_id = models.CharField(max_length=100)
     date_creation = models.DateTimeField(auto_now_add=True)
     derniere_activite = models.DateTimeField(auto_now=True)
 
@@ -237,6 +240,19 @@ class SessionVisiteur(models.Model):
     nombre_clics = models.PositiveIntegerField(default=0)
     temps_total_secondes = models.PositiveIntegerField(default=0)
     est_rebond = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["site", "session_id"],
+                name="session_unique_par_site",
+            ),
+            models.UniqueConstraint(
+                fields=["session_id"],
+                condition=models.Q(site__isnull=True),
+                name="session_publique_unique_sans_site",
+            ),
+        ]
 
     def __str__(self):
         return f"Session {self.session_id}"
@@ -330,10 +346,6 @@ class LeadCapture(models.Model):
         contact = self.email or self.telephone or "Lead sans contact"
         return f"{contact} - {self.intention}"
 
-    def __str__(self):
-        contact = self.email or self.telephone or "Lead sans contact"
-        return f"{contact} - {self.intention}"
-
 class OpportuniteCRM(models.Model):
     ETAPE_CHOICES = [
         ("qualification", "Qualification"),
@@ -371,6 +383,31 @@ class OpportuniteCRM(models.Model):
 
     def __str__(self):
         return f"{self.titre} - {self.get_etape_display()}"
+
+
+class LimitationSecurite(models.Model):
+    action = models.CharField(max_length=80)
+    cle_hachee = models.CharField(max_length=64)
+    debut_fenetre = models.DateTimeField()
+    compteur = models.PositiveIntegerField(default=0)
+    derniere_tentative = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["action", "cle_hachee"],
+                name="limitation_unique_action_cle",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["action", "debut_fenetre"],
+                name="limite_action_fenetre_idx",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.action} - {self.compteur}"
 
 
 class NewsletterInscription(models.Model):

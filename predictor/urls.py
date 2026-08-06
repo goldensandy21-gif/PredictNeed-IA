@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
@@ -11,6 +12,46 @@ urlpatterns = [
     path('newsletter/inscription/', views.newsletter_inscription, name='newsletter_inscription'),
     path('newsletter/confirmer/<uuid:token>/', views.newsletter_confirmer, name='newsletter_confirmer'),
     path('newsletter/desinscription/<uuid:token>/', views.newsletter_desinscription, name='newsletter_desinscription'),
+    path(
+        'compte/confirmer-email/<str:token>/',
+        views.confirmer_email_compte,
+        name='confirmer_email_compte',
+    ),
+    path(
+        'compte/renvoyer-confirmation-email/',
+        views.renvoyer_confirmation_email,
+        name='renvoyer_confirmation_email',
+    ),
+    path(
+        'mot-de-passe-oublie/',
+        auth_views.PasswordResetView.as_view(
+            template_name='registration/password_reset_form.html',
+            email_template_name='registration/password_reset_email.txt',
+            subject_template_name='registration/password_reset_subject.txt',
+        ),
+        name='password_reset',
+    ),
+    path(
+        'mot-de-passe-oublie/envoye/',
+        auth_views.PasswordResetDoneView.as_view(
+            template_name='registration/password_reset_done.html',
+        ),
+        name='password_reset_done',
+    ),
+    path(
+        'reinitialiser-mot-de-passe/<uidb64>/<token>/',
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name='registration/password_reset_confirm.html',
+        ),
+        name='password_reset_confirm',
+    ),
+    path(
+        'reinitialiser-mot-de-passe/termine/',
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name='registration/password_reset_complete.html',
+        ),
+        name='password_reset_complete',
+    ),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard/parametres/', views.dashboard_parametres, name='dashboard_parametres'),
     path('dashboard/nettoyer-evenements/', views.nettoyer_evenements, name='nettoyer_evenements'),

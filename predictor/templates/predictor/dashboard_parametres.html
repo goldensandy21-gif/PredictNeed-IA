@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Paramètres - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
 </head>
 <body class="dashboard-page">
 
@@ -49,6 +49,30 @@
             <p>Identifiant : {{ user.username }}</p>
         </article>
     </section>
+
+    {% if client_professionnel %}
+        <section class="dashboard-section account-verification-card" id="verification-email">
+            <h2>Vérification de l'adresse email</h2>
+            {% if client_professionnel.email_verifie_le %}
+                <p>
+                    Adresse confirmée le
+                    <strong>{{ client_professionnel.email_verifie_le|date:"d/m/Y à H:i" }}</strong>.
+                </p>
+            {% else %}
+                <p>
+                    Votre adresse n'est pas encore confirmée. L'essai reste accessible,
+                    mais la confirmation est nécessaire avant d'ajouter un autre site
+                    ou d'activer un abonnement.
+                </p>
+                <form method="post" action="{% url 'renvoyer_confirmation_email' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="hero-button">
+                        Renvoyer l'email de confirmation
+                    </button>
+                </form>
+            {% endif %}
+        </section>
+    {% endif %}
 
     <section class="dashboard-section" id="profil">
         <h2>Paramètres du profil</h2>

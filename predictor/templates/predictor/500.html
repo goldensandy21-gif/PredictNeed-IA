@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Erreur temporaire - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
+</head>
+<body>
+{% include "predictor/includes/navbar.html" %}
+<main class="payment-status-page">
+    <section class="payment-status-card">
+        <h1>Une erreur temporaire est survenue</h1>
+        <p>Le service n'a pas pu traiter la demande. Aucun détail technique sensible n'est affiché.</p>
+        <a href="{% url 'accueil' %}" class="hero-button">Retour à l'accueil</a>
+    </section>
+</main>
+{% include "predictor/includes/footer.html" %}
+</body>
+</html>

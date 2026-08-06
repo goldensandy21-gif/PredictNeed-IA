@@ -71,6 +71,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'predictor.security_middleware.PublicRateLimitMiddleware',
     'predictor.trial_middleware.TrialAccessMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -361,7 +362,10 @@ for _local_host in ("127.0.0.1", "localhost"):
 
 
 GOOGLE_SITE_VERIFICATION = os.environ.get("GOOGLE_SITE_VERIFICATION", "")
+PREDICTNEED_CGU_VERSION = os.environ.get("PREDICTNEED_CGU_VERSION", "2026-08-06")
 PREDICTNEED_PRIVACY_VERSION = os.environ.get("PREDICTNEED_PRIVACY_VERSION", "2026-08-06")
+PASSWORD_RESET_TIMEOUT = int(os.environ.get("PASSWORD_RESET_TIMEOUT", "3600"))
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "15"))
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"

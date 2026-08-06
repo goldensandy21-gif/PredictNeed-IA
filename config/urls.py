@@ -21,3 +21,6 @@ urlpatterns = [
     path('', include('predictor.urls')),
     path('admin/', admin.site.urls),
 ]
+
+handler404 = 'predictor.views.erreur_404'
+handler500 = 'predictor.views.erreur_500'

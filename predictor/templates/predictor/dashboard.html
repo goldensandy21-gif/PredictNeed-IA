@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Dashboard - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
 </head>
 <body class="dashboard-page">
 
@@ -589,6 +589,7 @@
                     onsubmit="return confirm('Confirmer le nettoyage des événements techniques ? Cette action est irréversible.');"
                 >
                     {% csrf_token %}
+                    <input type="hidden" name="site" value="{{ selected_site_id }}">
 
                     <button type="submit" class="danger-button">
                         Nettoyer les événements techniques

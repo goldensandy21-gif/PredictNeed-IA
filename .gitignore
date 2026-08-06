@@ -36,3 +36,4 @@ predictor/views.py.broken-trial-*
 db.sqlite3.backup-*
 
 .public-seo-backup-*/
+.phase2a-backup-*/

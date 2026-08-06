@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Page introuvable - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
+</head>
+<body>
+{% include "predictor/includes/navbar.html" %}
+<main class="payment-status-page">
+    <section class="payment-status-card">
+        <h1>Page introuvable</h1>
+        <p>La page demandée n'existe pas ou a été déplacée.</p>
+        <a href="{% url 'accueil' %}" class="hero-button">Retour à l'accueil</a>
+    </section>
+</main>
+{% include "predictor/includes/footer.html" %}
+</body>
+</html>

@@ -1,0 +1,28 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmation email - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
+</head>
+<body>
+{% include "predictor/includes/navbar.html" %}
+<main class="payment-status-page">
+    <section class="payment-status-card">
+        {% if client_confirme %}
+            <h1>Adresse email confirmée</h1>
+            <p>Votre adresse est maintenant vérifiée.</p>
+            <a href="{% url 'dashboard' %}" class="hero-button">Accéder au dashboard</a>
+        {% else %}
+            <h1>Lien invalide ou expiré</h1>
+            <p>Le lien n'est plus valide. Connectez-vous pour en demander un nouveau.</p>
+            <a href="{% url 'connexion' %}" class="hero-button">Se connecter</a>
+        {% endif %}
+    </section>
+</main>
+{% include "predictor/includes/footer.html" %}
+</body>
+</html>

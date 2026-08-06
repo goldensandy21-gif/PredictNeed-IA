@@ -17,6 +17,7 @@ from .models import (
     CampagneExterne,
     JournalSynchronisationConnecteur,
     NewsletterInscription,
+    LimitationSecurite,
 )
 
 
@@ -45,6 +46,9 @@ class ClientProfessionnelAdmin(admin.ModelAdmin):
         "stripe_checkout_session_id",
         "date_acceptation_cgu",
         "date_activation_abonnement",
+        "version_cgu_acceptee",
+        "version_confidentialite_acceptee",
+        "email_verifie_le",
         "date_creation",
     )
 
@@ -392,6 +396,30 @@ class NewsletterInscriptionAdmin(admin.ModelAdmin):
     list_filter = ("statut", "consentement", "date_creation")
     search_fields = ("email", "prenom")
     readonly_fields = ("token", "date_consentement", "date_confirmation", "date_desinscription", "date_creation", "date_mise_a_jour")
+
+
+@admin.register(LimitationSecurite)
+class LimitationSecuriteAdmin(admin.ModelAdmin):
+    list_display = (
+        "action",
+        "cle_hachee_courte",
+        "compteur",
+        "debut_fenetre",
+        "derniere_tentative",
+    )
+    list_filter = ("action", "debut_fenetre")
+    search_fields = ("action", "cle_hachee")
+    readonly_fields = (
+        "action",
+        "cle_hachee",
+        "debut_fenetre",
+        "compteur",
+        "derniere_tentative",
+    )
+
+    @admin.display(description="Clé hachée")
+    def cle_hachee_courte(self, obj):
+        return f"{obj.cle_hachee[:12]}…"
 
 
 # Accès Django Admin réservé aux superutilisateurs
