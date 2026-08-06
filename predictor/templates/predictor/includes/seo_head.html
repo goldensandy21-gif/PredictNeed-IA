@@ -1,17 +1,12 @@
+
+{% load static %}
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta
-    name="description"
-    content="{{ page_description|default:'PredictNeed IA aide les professionnels à comprendre les visiteurs de leur site, qualifier les intentions et transformer les visites en opportunités commerciales.' }}"
->
+<meta name="description" content="{{ page_description|default:'PredictNeed IA aide les professionnels à comprendre leurs visiteurs et qualifier les intentions.' }}">
 <meta name="robots" content="{{ robots_meta|default:'index,follow' }}">
-{% if request %}
-    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
-    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
-{% endif %}
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="PredictNeed IA">
-<meta property="og:title" content="{{ page_title|default:'PredictNeed IA - Prédiction des besoins visiteurs' }}">
-<meta
-    property="og:description"
-    content="{{ page_description|default:'PredictNeed IA aide les professionnels à comprendre les visiteurs de leur site, qualifier les intentions et transformer les visites en opportunités commerciales.' }}"
->
+<link rel="canonical" href="{{ canonical_url }}">
+<link rel="icon" type="image/svg+xml" href="{% static 'predictor/favicon.svg' %}">
+<meta name="theme-color" content="#0f172a">
+{% if google_site_verification %}<meta name="google-site-verification" content="{{ google_site_verification }}">{% endif %}
+<meta property="og:type" content="website"><meta property="og:locale" content="fr_FR"><meta property="og:site_name" content="PredictNeed IA"><meta property="og:url" content="{{ canonical_url }}"><meta property="og:title" content="{{ page_title|default:'PredictNeed IA' }}"><meta property="og:description" content="{{ page_description|default:'PredictNeed IA aide les professionnels à comprendre leurs visiteurs.' }}"><meta property="og:image" content="{{ social_image_url }}">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{{ page_title|default:'PredictNeed IA' }}"><meta name="twitter:description" content="{{ page_description|default:'PredictNeed IA aide les professionnels à comprendre leurs visiteurs.' }}"><meta name="twitter:image" content="{{ social_image_url }}">
+{% if structured_data_json %}<script type="application/ld+json">{{ structured_data_json|safe }}</script>{% endif %}

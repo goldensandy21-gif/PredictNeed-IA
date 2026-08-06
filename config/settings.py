@@ -91,6 +91,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'predictor.context_processors.global_site_context',
             ],
         },
     },
@@ -357,3 +358,12 @@ else:
 for _local_host in ("127.0.0.1", "localhost"):
     if _local_host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(_local_host)
+
+
+GOOGLE_SITE_VERIFICATION = os.environ.get("GOOGLE_SITE_VERIFICATION", "")
+PREDICTNEED_PRIVACY_VERSION = os.environ.get("PREDICTNEED_PRIVACY_VERSION", "2026-08-06")
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+SESSION_COOKIE_HTTPONLY = True
+X_FRAME_OPTIONS = "DENY"

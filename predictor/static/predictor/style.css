@@ -8615,3 +8615,5 @@ body.dashboard-page .dashboard-overview > #leads.dashboard-collapsible {
         min-width: 0;
     }
 }
+
+.demo-data-label{margin:0;padding:.55rem .75rem;border-radius:.6rem;background:rgba(103,232,249,.12);color:#cffafe;font-size:.75rem;font-weight:800}.success-message{padding:.8rem;background:#dcfce7;color:#166534;border-radius:.6rem}

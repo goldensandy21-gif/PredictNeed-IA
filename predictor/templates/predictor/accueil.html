@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>PredictNeed IA - Prédiction des besoins visiteurs</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=114">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
 </head>
 <body class="home-page">
 
@@ -38,6 +38,7 @@
         </div>
 
         <aside class="hero-dashboard-preview" aria-label="Aperçu du dashboard PredictNeed IA">
+            <p class="demo-data-label">Démonstration fictive — chiffres illustratifs</p>
             <div class="hero-preview-toolbar">
                 <span></span>
                 <span></span>
@@ -383,8 +384,8 @@
             <span>PredictNeed IA Pro</span>
             <strong>{{ prix_abonnement }} / mois</strong>
             <p>
-                Paiement sécurisé à l'inscription. Le compte est activé après validation
-                pour accéder au dashboard, aux modules et au script d'installation.
+                Essai gratuit de 60 jours sans carte bancaire. Aucun paiement automatique :
+                l'abonnement est activé uniquement si le client choisit de continuer.
             </p>
             <a href="{% url 'prix' %}" class="secondary-button">Voir l'offre</a>
         </div>

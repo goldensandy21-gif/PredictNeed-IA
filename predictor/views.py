@@ -545,55 +545,17 @@ def robots_txt(request):
 
 
 def sitemap_xml(request):
+    from xml.sax.saxutils import escape
     base_url = _public_site_base_url(request)
-    lastmod = timezone.now().date().isoformat()
-
-    public_pages = [
-        ("accueil", None, "1.0", "weekly"),
-        ("fonctionnalites", None, "0.9", "weekly"),
-        ("prix", None, "0.9", "weekly"),
-        ("simulateur", None, "0.8", "monthly"),
-        ("guide_utilisation", None, "0.7", "monthly"),
-        ("mentions_legales", None, "0.4", "monthly"),
-        ("politique_confidentialite", None, "0.4", "monthly"),
-        ("conditions_generales_utilisation", None, "0.4", "monthly"),
-        ("politique_cookies", None, "0.4", "monthly"),
-    ]
-
-    sitemap_urls = []
-
-    for name, args, priority, changefreq in public_pages:
-        sitemap_urls.append({
-            "loc": f"{base_url}{reverse(name, args=args)}",
-            "priority": priority,
-            "changefreq": changefreq,
-        })
-
-    for module in PUBLIC_MODULES:
-        sitemap_urls.append({
-            "loc": f"{base_url}{reverse('fonctionnalite_detail', args=[module['slug']])}",
-            "priority": "0.8",
-            "changefreq": "monthly",
-        })
-
-    lines = [
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ]
-
-    for item in sitemap_urls:
-        lines.extend([
-            "  <url>",
-            f"    <loc>{item['loc']}</loc>",
-            f"    <lastmod>{lastmod}</lastmod>",
-            f"    <changefreq>{item['changefreq']}</changefreq>",
-            f"    <priority>{item['priority']}</priority>",
-            "  </url>",
-        ])
-
+    names = ["accueil", "fonctionnalites", "prix", "simulateur", "guide_utilisation", "a_propos", "contact"]
+    urls = [f"{base_url}{reverse(name)}" for name in names]
+    urls += [f"{base_url}{reverse('fonctionnalite_detail', args=[module['slug']])}" for module in PUBLIC_MODULES]
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for url in urls:
+        lines += ["  <url>", f"    <loc>{escape(url)}</loc>", "  </url>"]
     lines.append("</urlset>")
-
     return HttpResponse("\n".join(lines), content_type="application/xml; charset=utf-8")
+
 
 
 def accueil(request):
@@ -2280,6 +2242,76 @@ def inscription(request):
         ),
     )
 
+
+def a_propos(request):
+    return render(request, "predictor/a_propos.html", _seo_context("À propos - PredictNeed IA", "Fonctionnement transparent du scoring PredictNeed IA."))
+
+
+def contact(request):
+    erreur = None
+    succes = False
+    if request.method == "POST":
+        from django.core.mail import EmailMessage
+        from django.core.validators import validate_email
+        from django.core.exceptions import ValidationError
+        nom = (request.POST.get("nom") or "").strip()
+        email = (request.POST.get("email") or "").strip().lower()
+        sujet = (request.POST.get("sujet") or "").strip()
+        message = (request.POST.get("message") or "").strip()
+        if not all([nom, email, sujet, message]) or request.POST.get("consentement") != "on":
+            erreur = "Merci de remplir tous les champs et d'accepter le traitement de la demande."
+        else:
+            try:
+                validate_email(email)
+                EmailMessage(subject=f"[PredictNeed IA] {sujet}", body=f"Nom: {nom}\nEmail: {email}\n\n{message}", from_email=settings.DEFAULT_FROM_EMAIL, to=[settings.PREDICTNEED_CONTACT_EMAIL], reply_to=[email]).send(fail_silently=False)
+                succes = True
+            except ValidationError:
+                erreur = "L'adresse email n'est pas valide."
+            except Exception:
+                erreur = "Le message n'a pas pu être envoyé."
+    return render(request, "predictor/contact.html", _seo_context("Contact - PredictNeed IA", "Contactez PredictNeed IA.", erreur=erreur, succes=succes))
+
+
+def newsletter_inscription(request):
+    if request.method != "POST":
+        return redirect("accueil")
+    from django.core.exceptions import ValidationError
+    from django.utils.http import url_has_allowed_host_and_scheme
+    from .newsletter import inscrire
+    target = request.POST.get("next") or reverse("accueil")
+    if not url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        target = reverse("accueil")
+    try:
+        _, sent = inscrire(prenom=request.POST.get("prenom"), email=request.POST.get("email"), consentement=request.POST.get("guides_consent") == "on", source=request.path)
+        messages.success(request, "Un email de confirmation vient de vous être envoyé." if sent else "Cette adresse est déjà inscrite.")
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages))
+    except Exception:
+        messages.error(request, "L'inscription aux guides n'a pas pu être enregistrée.")
+    return redirect(target)
+
+
+def newsletter_confirmer(request, token):
+    from .newsletter import confirmer
+    item = confirmer(token)
+    return render(request, "predictor/newsletter_statut.html", _seo_context("Confirmation newsletter", "Confirmation des guides.", titre="Inscription confirmée" if item else "Lien invalide", message="Votre adresse est confirmée." if item else "Ce lien n'est pas valide."))
+
+
+def newsletter_desinscription(request, token):
+    from .newsletter import desinscrire
+    item = desinscrire(token)
+    return render(request, "predictor/newsletter_statut.html", _seo_context("Désinscription newsletter", "Désinscription des guides.", titre="Désinscription enregistrée" if item else "Lien invalide", message="Vous ne recevrez plus les guides." if item else "Ce lien n'est pas valide."))
+
+
+def health_check(request):
+    from django.db import connection
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except Exception:
+        return JsonResponse({"status": "error"}, status=503)
+    return JsonResponse({"status": "ok"})
 
 @csrf_exempt
 @tracker_cors

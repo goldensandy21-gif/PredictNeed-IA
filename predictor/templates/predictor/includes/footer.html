@@ -13,7 +13,7 @@
                     <h2>Essayez PredictNeed IA pendant {{ periode_essai_jours|default:60 }} jours.</h2>
                     <p>
                         Configurez votre compte, installez le script sur votre site et vérifiez
-                        les premières intentions visiteurs avant la première facturation.
+                        les premières intentions visiteurs sans carte bancaire ni facturation automatique.
                     </p>
                     {% if user.is_authenticated %}
                         <a href="{% url 'dashboard' %}" class="hero-button footer-trial-button">Retourner au dashboard</a>
@@ -35,27 +35,12 @@
             </p>
         </div>
 
-        <form class="footer-guides-form" action="#" method="post">
-            {% csrf_token %}
-            <input
-                type="text"
-                id="footer-guides-name"
-                name="prenom"
-                placeholder="Votre prénom"
-                autocomplete="given-name"
-            >
-            <input
-                type="email"
-                id="footer-guides-email"
-                name="email"
-                placeholder="votre@email.fr"
-                autocomplete="email"
-            >
-            <label class="footer-guides-consent">
-                <input type="checkbox" name="guides_consent">
-                <span>J'accepte de recevoir les guides par e-mail et je peux me désinscrire à tout moment.</span>
-            </label>
-            <button type="button">S'inscrire</button>
+        <form class="footer-guides-form" action="{% url 'newsletter_inscription' %}" method="post">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <input type="text" id="footer-guides-name" name="prenom" placeholder="Votre prénom" autocomplete="given-name" maxlength="100">
+            <input type="email" id="footer-guides-email" name="email" placeholder="votre@email.fr" autocomplete="email" required>
+            <label class="footer-guides-consent"><input type="checkbox" name="guides_consent" required><span>J'accepte de recevoir les guides par email après confirmation. Je peux me désinscrire à tout moment.</span></label>
+            <button type="submit">S'inscrire</button>
         </form>
     </div>
 

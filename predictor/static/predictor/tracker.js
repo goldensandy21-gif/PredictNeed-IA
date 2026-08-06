@@ -401,7 +401,7 @@
             <div class="predictneed-consent-actions">
                 <button type="button" data-choice="reject">Tout refuser</button>
                 <button type="button" data-choice="customize">Personnaliser</button>
-                <button type="button" class="primary" data-choice="accept">Tout accepter</button>
+                <button type="button" data-choice="accept">Tout accepter</button>
             </div>
             <div class="predictneed-consent-links">
                 ${privacyUrl ? `<a href="${privacyUrl}" target="_blank" rel="noopener">Politique de confidentialité</a>` : ""}
@@ -468,7 +468,7 @@
             <div class="predictneed-consent-actions">
                 <button type="button" data-choice="reject">Tout refuser</button>
                 <button type="button" data-choice="save">Enregistrer mes choix</button>
-                <button type="button" class="primary" data-choice="accept">Tout accepter</button>
+                <button type="button" data-choice="accept">Tout accepter</button>
             </div>
         `;
 

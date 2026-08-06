@@ -373,6 +373,32 @@ class OpportuniteCRM(models.Model):
         return f"{self.titre} - {self.get_etape_display()}"
 
 
+class NewsletterInscription(models.Model):
+    STATUT_CHOICES = [
+        ("en_attente", "En attente de confirmation"),
+        ("confirmee", "Confirmée"),
+        ("desinscrite", "Désinscrite"),
+    ]
+    prenom = models.CharField(max_length=100, blank=True, default="")
+    email = models.EmailField(unique=True)
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default="en_attente")
+    consentement = models.BooleanField(default=False)
+    version_confidentialite = models.CharField(max_length=30, blank=True, default="")
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    source = models.CharField(max_length=255, blank=True, default="")
+    date_consentement = models.DateTimeField(blank=True, null=True)
+    date_confirmation = models.DateTimeField(blank=True, null=True)
+    date_desinscription = models.DateTimeField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_mise_a_jour = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date_creation"]
+
+    def __str__(self):
+        return f"{self.email} - {self.get_statut_display()}"
+
+
 class AutomatisationEmail(models.Model):
     TYPE_DECLENCHEUR_CHOICES = [
         ("lead_confirmation", "Confirmation automatique de demande"),

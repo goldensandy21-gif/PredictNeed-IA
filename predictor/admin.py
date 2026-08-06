@@ -16,6 +16,7 @@ from .models import (
     CompteConnecteExterne,
     CampagneExterne,
     JournalSynchronisationConnecteur,
+    NewsletterInscription,
 )
 
 
@@ -383,6 +384,14 @@ class JournalSynchronisationConnecteurAdmin(admin.ModelAdmin):
     list_filter = ("statut", "compte__plateforme")
     search_fields = ("compte__nom_compte", "message")
     readonly_fields = ("compte", "statut", "message", "details", "date_creation")
+
+
+@admin.register(NewsletterInscription)
+class NewsletterInscriptionAdmin(admin.ModelAdmin):
+    list_display = ("email", "prenom", "statut", "consentement", "date_confirmation", "date_desinscription", "date_creation")
+    list_filter = ("statut", "consentement", "date_creation")
+    search_fields = ("email", "prenom")
+    readonly_fields = ("token", "date_consentement", "date_confirmation", "date_desinscription", "date_creation", "date_mise_a_jour")
 
 
 # Accès Django Admin réservé aux superutilisateurs

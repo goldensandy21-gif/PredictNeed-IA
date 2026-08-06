@@ -34,3 +34,5 @@ head
 .trial-v2-backup-*/
 predictor/views.py.broken-trial-*
 db.sqlite3.backup-*
+
+.public-seo-backup-*/

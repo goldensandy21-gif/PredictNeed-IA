@@ -27,6 +27,7 @@ EMAIL_USE_SSL = 'True'
 EMAIL_USE_TLS = 'False'
 DEFAULT_FROM_EMAIL = 'PredictNeed IA <webprojectsby.ariane@newfelstudio.fr>'
 PREDICTNEED_CONTACT_EMAIL = 'webprojectsby.ariane@newfelstudio.fr'
+PREDICTNEED_PRIVACY_VERSION = '2026-08-06'
 
 [http_service]
   internal_port = 8000
@@ -35,6 +36,16 @@ PREDICTNEED_CONTACT_EMAIL = 'webprojectsby.ariane@newfelstudio.fr'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
+
+[[http_service.checks]]
+  grace_period = "15s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/healthz/"
+  [http_service.checks.headers]
+    X-Forwarded-Proto = "https"
+    Host = "predictneed-ia.com"
 
 [[vm]]
   memory = '1gb'
