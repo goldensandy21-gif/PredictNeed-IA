@@ -18,6 +18,8 @@ from .models import (
     JournalSynchronisationConnecteur,
     NewsletterInscription,
     LimitationSecurite,
+    ModeleMachineLearning,
+    JournalMaintenance,
 )
 
 
@@ -388,6 +390,91 @@ class JournalSynchronisationConnecteurAdmin(admin.ModelAdmin):
     list_filter = ("statut", "compte__plateforme")
     search_fields = ("compte__nom_compte", "message")
     readonly_fields = ("compte", "statut", "message", "details", "date_creation")
+
+
+@admin.register(PredictionBesoin)
+class PredictionBesoinAdmin(admin.ModelAdmin):
+    list_display = (
+        "session",
+        "profil",
+        "intention",
+        "score",
+        "moteur",
+        "probabilite_conversion",
+        "version_modele",
+        "date_creation",
+    )
+    list_filter = ("moteur", "intention", "date_creation")
+    search_fields = (
+        "session__session_id",
+        "session__site__nom_site",
+        "profil",
+        "besoin_probable",
+        "version_modele",
+    )
+    readonly_fields = (
+        "session",
+        "profil",
+        "besoin_probable",
+        "intention",
+        "score",
+        "recommandation",
+        "moteur",
+        "probabilite_conversion",
+        "version_modele",
+        "date_creation",
+    )
+
+
+@admin.register(ModeleMachineLearning)
+class ModeleMachineLearningAdmin(admin.ModelAdmin):
+    list_display = (
+        "site",
+        "version",
+        "actif",
+        "nombre_echantillons",
+        "nombre_positifs",
+        "nombre_negatifs",
+        "date_entrainement",
+    )
+    list_filter = ("actif", "site", "date_entrainement")
+    search_fields = ("site__nom_site", "site__domaine", "version")
+    readonly_fields = (
+        "site",
+        "version",
+        "actif",
+        "noms_caracteristiques",
+        "coefficients",
+        "moyennes_caracteristiques",
+        "echelles_caracteristiques",
+        "intercept",
+        "seuil_intention_forte",
+        "metriques",
+        "nombre_echantillons",
+        "nombre_positifs",
+        "nombre_negatifs",
+        "date_entrainement",
+    )
+
+
+@admin.register(JournalMaintenance)
+class JournalMaintenanceAdmin(admin.ModelAdmin):
+    list_display = (
+        "type_operation",
+        "statut",
+        "date_debut",
+        "date_fin",
+    )
+    list_filter = ("type_operation", "statut", "date_debut")
+    search_fields = ("message_erreur",)
+    readonly_fields = (
+        "type_operation",
+        "statut",
+        "details",
+        "message_erreur",
+        "date_debut",
+        "date_fin",
+    )
 
 
 @admin.register(NewsletterInscription)

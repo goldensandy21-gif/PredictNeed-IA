@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Prédiction avancée - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
 </head>
 <body>
 
@@ -24,6 +24,42 @@
     <p class="dashboard-intro">
         Détection des intentions commerciales, priorisation des leads et recommandations d’action.
     </p>
+
+    <section class="dashboard-section ml-status-card" aria-label="État du moteur de prédiction">
+        <h2>État du moteur</h2>
+        {% if modele_ml %}
+            <p>
+                <strong>Machine learning actif</strong> pour le site sélectionné.
+                Modèle : {{ modele_ml.version }}.
+            </p>
+            <p>
+                Entraîné sur {{ modele_ml.nombre_echantillons }} sessions résolues :
+                {{ modele_ml.nombre_positifs }} conversion{{ modele_ml.nombre_positifs|pluralize }}
+                et {{ modele_ml.nombre_negatifs }} perte{{ modele_ml.nombre_negatifs|pluralize }}.
+            </p>
+            {% if modele_ml.metriques.balanced_accuracy != None %}
+                <p>
+                    Balanced accuracy d’évaluation :
+                    {{ modele_ml.metriques.balanced_accuracy|floatformat:2 }}.
+                    Cette métrique ne constitue pas une garantie de conversion.
+                </p>
+            {% endif %}
+        {% else %}
+            <p>
+                <strong>Scoring à règles actif.</strong>
+                Le modèle supervisé reste inactif tant que le site ne dispose pas
+                d’au moins {{ minimum_ml }} sessions résolues, dont
+                {{ minimum_ml_par_classe }} conversions et
+                {{ minimum_ml_par_classe }} pertes.
+            </p>
+            <p>
+                Données actuellement disponibles :
+                {{ labels_ml }} session{{ labels_ml|pluralize }} résolue{{ labels_ml|pluralize }},
+                dont {{ labels_ml_positifs }} conversion{{ labels_ml_positifs|pluralize }}
+                et {{ labels_ml_negatifs }} perte{{ labels_ml_negatifs|pluralize }}.
+            </p>
+        {% endif %}
+    </section>
 
     <form method="get" class="module-filters">
         <div class="filter-group">
@@ -117,6 +153,8 @@
                         <th>Date</th>
                         <th>Site</th>
                         <th>Score</th>
+                        <th>Moteur</th>
+                        <th>Probabilité</th>
                         <th>Profil</th>
                         <th>Intention</th>
                         <th>Raison de la prédiction</th>
@@ -139,6 +177,23 @@
                                     {{ prediction.score }}
                                 </span>
                             </td>
+                            <td>
+                                {% if prediction.moteur == "machine_learning" %}
+                                    Machine learning
+                                    {% if prediction.version_modele %}
+                                        <small>{{ prediction.version_modele }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    Règles de scoring
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if prediction.probabilite_conversion != None %}
+                                    {{ prediction.probabilite_conversion|floatformat:2 }}
+                                {% else %}
+                                    Non calculée
+                                {% endif %}
+                            </td>
                             <td>{{ prediction.profil|default:"Non défini" }}</td>
                             <td>{{ prediction.intention|default:"Non précisée" }}</td>
                             <td>{{ prediction.besoin_probable|default:"Comportement encore insuffisant" }}</td>
@@ -146,7 +201,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="7">Aucune prédiction disponible pour ces filtres.</td>
+                            <td colspan="9">Aucune prédiction disponible pour ces filtres.</td>
                         </tr>
                     {% endfor %}
                 </tbody>

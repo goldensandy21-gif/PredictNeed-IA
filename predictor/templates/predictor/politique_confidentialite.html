@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Politique de confidentialité RGPD - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
 </head>
 <body class="legal-body">
 
@@ -122,7 +122,7 @@ PredictNeed IA agit comme outil technique d'analyse et de suivi pour le compte d
                     </tr>
                     <tr>
                         <td>Newsletter</td>
-                        <td>Email, uniquement lorsque la fonctionnalité sera activée et que la personne s'inscrira volontairement.</td>
+                        <td>Prénom facultatif, email, preuve de consentement, confirmation et désinscription lorsque la personne s'inscrit volontairement.</td>
                     </tr>
                     <tr>
                         <td>Journaux techniques</td>
@@ -265,10 +265,11 @@ PredictNeed IA agit comme outil technique d'analyse et de suivi pour le compte d
             </table>
         </div>
         <p>
-            Le projet inclut une commande de purge RGPD en simulation par défaut :
-            <code>python3 -B manage.py purge_donnees_rgpd</code>. En production, elle doit
-            être planifiée régulièrement avec l'option <code>--execute</code> lorsque les
-            durées de conservation définitives ont été validées.
+            La commande <code>maintenance_quotidienne</code> exécute la purge réelle
+            des données arrivées à échéance, avec une conservation de 395 jours pour
+            les données analytiques détaillées et de 1 095 jours pour les leads.
+            Chaque exécution est journalisée. L'ordonnanceur de production est
+            vérifié lors du déploiement de chaque nouvelle version.
         </p>
     </section>
 
@@ -276,34 +277,32 @@ PredictNeed IA agit comme outil technique d'analyse et de suivi pour le compte d
         <h2>Prédiction, scoring et décision automatisée</h2>
 
         <p>
-        PredictNeed IA utilise des traitements automatisés afin d'analyser certaines
-        données et interactions enregistrées sur les sites suivis par ses utilisateurs.
-        Ces traitements peuvent permettre de générer des scores, indicateurs,
-        recommandations ou prédictions, notamment afin d'identifier des signaux
-        d'intérêt et d'aider les utilisateurs professionnels à prioriser leurs actions
-        commerciales.
+            PredictNeed IA applique d'abord des règles de scoring explicables à
+            partir des pages consultées, clics, durées, rebond, appareil et
+            paramètres de campagne autorisés.
         </p>
 
         <p>
-        Ces résultats constituent une aide à la décision. PredictNeed IA ne prend pas,
-        à lui seul, de décision produisant un effet juridique ou affectant de manière
-        similaire et significative une personne physique. Les décisions commerciales
-        prises à partir des analyses, scores ou prédictions générés par le service
-        restent sous la responsabilité de l'utilisateur professionnel.
+            Pour un site disposant d'au moins 40 sessions résolues, dont au moins
+            10 conversions et 10 pertes, un modèle de régression logistique peut
+            être entraîné uniquement avec les données de ce site. Le modèle est
+            activé seulement si l'évaluation atteint le seuil de qualité configuré.
+            Sa version, son volume d'entraînement et ses métriques sont conservés.
         </p>
 
         <p>
-        Lorsqu'un traitement repose sur des données à caractère personnel, les personnes
-        concernées peuvent exercer les droits prévus par la réglementation applicable,
-        notamment leurs droits d'accès, de rectification, d'opposition et, lorsque les
-        conditions prévues par le RGPD sont réunies, les droits spécifiques relatifs
-        aux décisions individuelles automatisées.
+            Le résultat peut inclure un score et une probabilité de conversion.
+            Il s'agit d'une estimation et non d'une certitude. PredictNeed IA ne
+            prend pas, à lui seul, de décision produisant un effet juridique ou
+            affectant de manière similaire et significative une personne. Toute
+            action commerciale reste sous la responsabilité du professionnel et
+            doit faire l'objet d'une vérification humaine.
         </p>
 
         <p>
-        Pour toute question concernant le fonctionnement des analyses ou l'utilisation
-        des données personnelles, vous pouvez contacter :
-        <strong>webprojectsby.ariane@newfelstudio.fr</strong>.
+            Pour toute question concernant le fonctionnement du scoring ou
+            l'utilisation des données :
+            <strong>webprojectsby.ariane@newfelstudio.fr</strong>.
         </p>
     </section>
 
@@ -368,7 +367,7 @@ PredictNeed IA agit comme outil technique d'analyse et de suivi pour le compte d
             PredictNeed IA met en place des mesures destinées à protéger les données :
             authentification des comptes, clés API propres à chaque site, accès réservé
             aux utilisateurs autorisés, séparation logique des espaces clients et usage
-            de mots de passe chiffrés par Django.
+            de mots de passe hachés par Django.
         </p>
         <p>
             PredictNeed IA met en œuvre des mesures techniques et organisationnelles

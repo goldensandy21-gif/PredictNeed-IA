@@ -1,1 +1,68 @@
-{% load static %}<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>À propos - PredictNeed IA</title>{% include "predictor/includes/seo_head.html" %}<link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116"></head><body>{% include "predictor/includes/navbar.html" %}<main class="pro-home"><section class="pro-hero"><div class="pro-hero-content"><h1>Comment fonctionne PredictNeed IA</h1><p>La version actuelle utilise un scoring comportemental explicable. La partie machine learning sera activée seulement après un volume suffisant de résultats réels.</p></div></section></main>{% include "predictor/includes/footer.html" %}</body></html>
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>À propos - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
+</head>
+<body>
+{% include "predictor/includes/navbar.html" %}
+
+<main class="pro-home" id="main-content">
+    <section class="pro-hero">
+        <div class="pro-hero-content">
+            <span class="pro-badge">Transparence du moteur</span>
+            <h1>Comment fonctionne PredictNeed IA</h1>
+            <p>
+                PredictNeed IA transforme des signaux de navigation autorisés en
+                scores, profils probables et recommandations commerciales.
+            </p>
+        </div>
+    </section>
+
+    <section class="pro-section">
+        <span class="section-kicker">Moteur initial</span>
+        <h2>Un scoring comportemental explicable</h2>
+        <p>
+            Au démarrage d’un site, l’application applique des règles lisibles :
+            pages consultées, clics, durée, rebond et signaux de contact. Cette
+            méthode reste active tant que les résultats réels ne sont pas assez
+            nombreux pour entraîner un modèle fiable.
+        </p>
+    </section>
+
+    <section class="pro-section">
+        <span class="section-kicker">Machine learning supervisé</span>
+        <h2>Un modèle distinct pour chaque site</h2>
+        <p>
+            Lorsqu’un site possède suffisamment de sessions associées à des leads
+            marqués comme convertis ou perdus, PredictNeed IA entraîne une
+            régression logistique avec ses propres données. Les données de
+            plusieurs clients ne sont pas mélangées pour entraîner un modèle.
+        </p>
+        <p>
+            Le modèle n’est activé que si les deux classes sont suffisamment
+            représentées et si l’évaluation atteint le seuil de qualité configuré.
+            Sa version, ses coefficients, ses métriques et son volume
+            d’entraînement sont conservés pour assurer la traçabilité.
+        </p>
+    </section>
+
+    <section class="pro-section">
+        <span class="section-kicker">Limites</span>
+        <h2>Une probabilité n’est pas une certitude</h2>
+        <p>
+            Les résultats constituent une aide à la décision. Ils ne remplacent
+            pas l’analyse humaine, ne garantissent aucune conversion et ne doivent
+            pas être utilisés seuls pour prendre une décision produisant un effet
+            juridique ou significatif sur une personne.
+        </p>
+    </section>
+</main>
+
+{% include "predictor/includes/footer.html" %}
+</body>
+</html>

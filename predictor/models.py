@@ -298,6 +298,16 @@ class PredictionBesoin(models.Model):
     intention = models.CharField(max_length=50)
     score = models.IntegerField(default=0)
     recommandation = models.TextField()
+    moteur = models.CharField(
+        max_length=30,
+        choices=[
+            ("regles", "Règles de scoring"),
+            ("machine_learning", "Machine learning"),
+        ],
+        default="regles",
+    )
+    probabilite_conversion = models.FloatField(blank=True, null=True)
+    version_modele = models.CharField(max_length=80, blank=True, default="")
     date_creation = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -434,6 +444,92 @@ class NewsletterInscription(models.Model):
 
     def __str__(self):
         return f"{self.email} - {self.get_statut_display()}"
+
+
+class ModeleMachineLearning(models.Model):
+    site = models.ForeignKey(
+        SiteClient,
+        on_delete=models.CASCADE,
+        related_name="modeles_machine_learning",
+    )
+    version = models.CharField(max_length=80)
+    actif = models.BooleanField(default=False)
+    noms_caracteristiques = models.JSONField(default=list)
+    coefficients = models.JSONField(default=list)
+    moyennes_caracteristiques = models.JSONField(default=list)
+    echelles_caracteristiques = models.JSONField(default=list)
+    intercept = models.FloatField(default=0.0)
+    seuil_intention_forte = models.FloatField(default=0.70)
+    metriques = models.JSONField(default=dict, blank=True)
+    nombre_echantillons = models.PositiveIntegerField(default=0)
+    nombre_positifs = models.PositiveIntegerField(default=0)
+    nombre_negatifs = models.PositiveIntegerField(default=0)
+    date_entrainement = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date_entrainement"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["site", "version"],
+                name="modele_ml_version_unique_par_site",
+            ),
+            models.UniqueConstraint(
+                fields=["site"],
+                condition=models.Q(actif=True),
+                name="modele_ml_actif_unique_par_site",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["site", "actif", "-date_entrainement"],
+                name="modele_ml_site_actif_idx",
+            )
+        ]
+
+    def __str__(self):
+        statut = "actif" if self.actif else "inactif"
+        return f"{self.site.nom_site} - {self.version} - {statut}"
+
+
+class JournalMaintenance(models.Model):
+    TYPE_OPERATION_CHOICES = [
+        ("maintenance_quotidienne", "Maintenance quotidienne"),
+        ("purge_rgpd", "Purge RGPD"),
+        ("entrainement_ml", "Entraînement machine learning"),
+        ("securite", "Nettoyage sécurité"),
+        ("essais", "Gestion des essais"),
+    ]
+    STATUT_CHOICES = [
+        ("en_cours", "En cours"),
+        ("succes", "Succès"),
+        ("erreur", "Erreur"),
+    ]
+
+    type_operation = models.CharField(
+        max_length=40,
+        choices=TYPE_OPERATION_CHOICES,
+    )
+    statut = models.CharField(
+        max_length=20,
+        choices=STATUT_CHOICES,
+        default="en_cours",
+    )
+    details = models.JSONField(default=dict, blank=True)
+    message_erreur = models.TextField(blank=True, default="")
+    date_debut = models.DateTimeField(auto_now_add=True)
+    date_fin = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-date_debut"]
+        indexes = [
+            models.Index(
+                fields=["type_operation", "-date_debut"],
+                name="maintenance_type_date_idx",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.get_type_operation_display()} - {self.get_statut_display()}"
 
 
 class AutomatisationEmail(models.Model):

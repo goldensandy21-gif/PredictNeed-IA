@@ -37,3 +37,4 @@ db.sqlite3.backup-*
 
 .public-seo-backup-*/
 .phase2a-backup-*/
+.phase2b-backup-*/

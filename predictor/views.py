@@ -84,7 +84,7 @@ PUBLIC_MODULES = [
         "badge": "IA",
         "nom": "Prédiction avancée",
         "accroche": "Identifier les visiteurs les plus susceptibles de passer à l'action.",
-        "resume": "Le module analyse les signaux de navigation pour classer les intentions, repérer les besoins probables et proposer l'action commerciale la plus adaptée.",
+        "resume": "Le module applique un scoring comportemental explicable et utilise, lorsqu'un volume suffisant de résultats réels existe pour le site, un modèle supervisé séparé et traçable.",
         "hero": "Transformez les pages consultées, les clics et le temps passé en recommandations concrètes pour vos équipes.",
         "benefices": [
             "Détection des intentions fortes, moyennes ou faibles.",
@@ -589,7 +589,10 @@ def accueil(request):
             besoin_probable=resultat["prediction"],
             intention=resultat["intention"],
             score=resultat["score"],
-            recommandation=resultat["recommandation"]
+            recommandation=resultat["recommandation"],
+            moteur=resultat.get("moteur", "regles"),
+            probabilite_conversion=resultat.get("probabilite_conversion"),
+            version_modele=resultat.get("version_modele", ""),
         )
 
     context = _seo_context(
@@ -2100,6 +2103,9 @@ def track_event(request):
                 intention=resultat_auto["intention"],
                 score=resultat_auto["score"],
                 recommandation=resultat_auto["recommandation"],
+                moteur=resultat_auto.get("moteur", "regles"),
+                probabilite_conversion=resultat_auto.get("probabilite_conversion"),
+                version_modele=resultat_auto.get("version_modele", ""),
             )
 
     return JsonResponse(
@@ -2112,6 +2118,11 @@ def track_event(request):
             "profil": resultat_auto["profil"],
             "intention": resultat_auto["intention"],
             "score": resultat_auto["score"],
+            "moteur": resultat_auto.get("moteur", "regles"),
+            "probabilite_conversion": resultat_auto.get(
+                "probabilite_conversion"
+            ),
+            "version_modele": resultat_auto.get("version_modele", ""),
         }
     )
 
@@ -2147,7 +2158,10 @@ def simulateur(request):
             besoin_probable=resultat["prediction"],
             intention=resultat["intention"],
             score=resultat["score"],
-            recommandation=resultat["recommandation"]
+            recommandation=resultat["recommandation"],
+            moteur=resultat.get("moteur", "regles"),
+            probabilite_conversion=resultat.get("probabilite_conversion"),
+            version_modele=resultat.get("version_modele", ""),
         )
 
     return render(
@@ -2806,12 +2820,58 @@ def module_prediction_avancee(request):
 
     if total_predictions > 0:
         score_moyen = round(
-            sum(prediction.score for prediction in predictions_filtrees) / total_predictions,
+            sum(
+                prediction.score
+                for prediction in predictions_filtrees
+            ) / total_predictions,
             1
         )
 
     predictions = predictions_filtrees.order_by("-date_creation")[:50]
     leads = leads_filtres.order_by("-score", "-date_creation")[:20]
+
+    from .models import ModeleMachineLearning
+
+    modele_ml = None
+    site_selectionne = scope["selected_site"]
+    if site_selectionne is not None:
+        modele_ml = (
+            ModeleMachineLearning.objects
+            .filter(site=site_selectionne, actif=True)
+            .order_by("-date_entrainement")
+            .first()
+        )
+
+    labels_ml = (
+        LeadCapture.objects
+        .filter(
+            site__in=scope["sites_filtres"],
+            statut_suivi__in=["converti", "perdu"],
+        )
+        .values("session_id")
+        .distinct()
+        .count()
+    )
+    labels_ml_positifs = (
+        LeadCapture.objects
+        .filter(
+            site__in=scope["sites_filtres"],
+            statut_suivi="converti",
+        )
+        .values("session_id")
+        .distinct()
+        .count()
+    )
+    labels_ml_negatifs = (
+        LeadCapture.objects
+        .filter(
+            site__in=scope["sites_filtres"],
+            statut_suivi="perdu",
+        )
+        .values("session_id")
+        .distinct()
+        .count()
+    )
 
     return render(request, "predictor/module_prediction_avancee.html", {
         "sites": scope["sites_actifs"],
@@ -2826,7 +2886,16 @@ def module_prediction_avancee(request):
         "intentions_fortes": intentions_fortes,
         "leads_prioritaires": leads_prioritaires,
         "score_moyen": score_moyen,
+        "modele_ml": modele_ml,
+        "labels_ml": labels_ml,
+        "labels_ml_positifs": labels_ml_positifs,
+        "labels_ml_negatifs": labels_ml_negatifs,
+        "minimum_ml": settings.PREDICTNEED_ML_MIN_SAMPLES,
+        "minimum_ml_par_classe": (
+            settings.PREDICTNEED_ML_MIN_PER_CLASS
+        ),
     })
+
 
 
 @login_required
