@@ -1106,16 +1106,43 @@ def dashboard(request):
         )
     else:
         automatisations_email = AutomatisationEmail.objects.none()
-    sites_ecommerce = sites.filter(module_ecommerce_actif=True)
-    a_module_ecommerce = sites_ecommerce.exists()
-    a_module_prediction_avancee = sites.filter(module_prediction_avancee_actif=True).exists()
-    a_module_segmentation = sites.filter(module_segmentation_actif=True).exists()
-    a_module_visualisations = sites.filter(module_visualisations_actif=True).exists()
-    a_module_historique = sites.filter(module_historique_actif=True).exists()
-    a_module_multicanal = sites.filter(module_multicanal_actif=True).exists()
-    a_module_connecteurs = sites.filter(module_connecteurs_actif=True).exists()
-    a_module_publicite = sites.filter(module_publicite_actif=True).exists()
-    a_module_securite_entreprise = sites.filter(module_securite_entreprise_actif=True).exists()
+    # La disponibilité des modules appartient au compte client.
+    # L’interface reste donc identique quel que soit le site sélectionné.
+    modules_scope = sites_disponibles
+
+    a_module_ecommerce = modules_scope.filter(
+        Q(module_ecommerce_actif=True) | Q(type_site="ecommerce")
+    ).exists()
+    a_module_prediction_avancee = modules_scope.filter(
+        module_prediction_avancee_actif=True
+    ).exists()
+    a_module_segmentation = modules_scope.filter(
+        module_segmentation_actif=True
+    ).exists()
+    a_module_visualisations = modules_scope.filter(
+        module_visualisations_actif=True
+    ).exists()
+    a_module_historique = modules_scope.filter(
+        module_historique_actif=True
+    ).exists()
+    a_module_multicanal = modules_scope.filter(
+        module_multicanal_actif=True
+    ).exists()
+    a_module_connecteurs = modules_scope.filter(
+        module_connecteurs_actif=True
+    ).exists()
+    a_module_publicite = modules_scope.filter(
+        module_publicite_actif=True
+    ).exists()
+    a_module_securite_entreprise = modules_scope.filter(
+        module_securite_entreprise_actif=True
+    ).exists()
+
+    sites_ecommerce = (
+        sites
+        if a_module_ecommerce
+        else SiteClient.objects.none()
+    )
 
     total_sites = sites_disponibles.count()
     total_predictions = predictions.count()
@@ -1358,6 +1385,25 @@ def dashboard(request):
 def dashboard_parametres(request):
     client = getattr(request.user, "client_professionnel", None)
     sites = client.sites.all() if client is not None else SiteClient.objects.none()
+
+    selected_site_id = (
+        request.GET.get("site")
+        or request.POST.get("site")
+        or ""
+    ).strip()
+
+    if selected_site_id and not sites.filter(
+        id=selected_site_id
+    ).exists():
+        selected_site_id = ""
+
+    parametres_url = reverse("dashboard_parametres")
+
+    if selected_site_id:
+        parametres_url = (
+            f"{parametres_url}?site={selected_site_id}"
+        )
+
     User = get_user_model()
     password_form = PasswordChangeForm(request.user)
 
@@ -1392,7 +1438,7 @@ def dashboard_parametres(request):
                     client.save(update_fields=["nom_entreprise", "secteur_activite"])
 
                 messages.success(request, "Paramètres du profil mis à jour.")
-                return redirect("dashboard_parametres")
+                return redirect(parametres_url)
 
         elif formulaire == "connexion":
             password_form = PasswordChangeForm(request.user, request.POST)
@@ -1401,7 +1447,7 @@ def dashboard_parametres(request):
                 user = password_form.save()
                 update_session_auth_hash(request, user)
                 messages.success(request, "Mot de passe mis à jour. Votre session reste ouverte.")
-                return redirect("dashboard_parametres")
+                return redirect(parametres_url)
 
             messages.error(request, "Le mot de passe n'a pas pu être modifié. Vérifiez les champs saisis.")
 
@@ -1410,6 +1456,7 @@ def dashboard_parametres(request):
         "sites": sites,
         "total_sites": sites.count(),
         "sites_actifs": sites.filter(actif=True).count(),
+        "selected_site_id": selected_site_id,
         "password_form": password_form,
     })
 
@@ -1666,24 +1713,50 @@ def ajouter_site(request):
     erreur = None
 
     if request.method == "POST":
-        nom_site = request.POST.get("nom_site")
-        domaine = request.POST.get("domaine")
+        nom_site = (request.POST.get("nom_site") or "").strip()
+        domaine = (request.POST.get("domaine") or "").strip()
 
         if not nom_site or not domaine:
             erreur = "Le nom du site et le domaine sont obligatoires."
         else:
-            SiteClient.objects.create(
+            champs_modules = [
+                "module_ecommerce_actif",
+                "module_prediction_avancee_actif",
+                "module_segmentation_actif",
+                "module_visualisations_actif",
+                "module_historique_actif",
+                "module_multicanal_actif",
+                "module_connecteurs_actif",
+                "module_publicite_actif",
+                "module_securite_entreprise_actif",
+            ]
+
+            site_reference = client.sites.order_by(
+                "date_creation"
+            ).first()
+
+            configuration_modules = {}
+
+            if site_reference is not None:
+                configuration_modules = {
+                    champ: getattr(site_reference, champ)
+                    for champ in champs_modules
+                }
+
+            nouveau_site = SiteClient.objects.create(
                 client=client,
                 nom_site=nom_site,
-                domaine=domaine
+                domaine=domaine,
+                **configuration_modules,
             )
 
-            return redirect("dashboard")
+            return redirect(
+                f"{reverse('dashboard')}?site={nouveau_site.id}"
+            )
 
     return render(request, "predictor/ajouter_site.html", {
         "erreur": erreur,
     })
-
 
 @csrf_exempt
 def tracker_installation_ping(request):
@@ -2194,40 +2267,63 @@ def get_module_scope(request, module_field=None, ecommerce=False):
     sites = get_sites_utilisateur(request)
 
     if ecommerce:
-        sites_actifs = sites.filter(
+        module_disponible = sites.filter(
             Q(module_ecommerce_actif=True) | Q(type_site="ecommerce")
-        )
+        ).exists()
     elif module_field:
-        sites_actifs = sites.filter(**{module_field: True})
+        module_disponible = sites.filter(
+            **{module_field: True}
+        ).exists()
     else:
-        sites_actifs = sites
+        module_disponible = sites.exists()
 
-    selected_site_id = request.GET.get("site")
+    selected_site_id = (
+        request.GET.get("site")
+        or request.POST.get("site")
+        or ""
+    ).strip()
+
     selected_site = None
-    site_selectionne_inactif = False
 
     if selected_site_id and selected_site_id != "all":
-        selected_site = sites.filter(id=selected_site_id).first()
+        selected_site = sites.filter(
+            id=selected_site_id
+        ).first()
 
-        if selected_site and sites_actifs.filter(id=selected_site.id).exists():
-            sites_filtres = sites_actifs.filter(id=selected_site.id)
-        elif selected_site:
-            sites_filtres = SiteClient.objects.none()
-            site_selectionne_inactif = True
-        else:
-            sites_filtres = sites_actifs
+    if selected_site is None:
+        selected_site = sites.order_by(
+            "date_creation"
+        ).first()
+
+    if selected_site is not None:
+        selected_site_id = str(selected_site.id)
+
+        sites_filtres = (
+            sites.filter(pk=selected_site.pk)
+            if module_disponible
+            else SiteClient.objects.none()
+        )
     else:
-        sites_filtres = sites_actifs
+        selected_site_id = ""
+        sites_filtres = SiteClient.objects.none()
+
+    sites_actifs = (
+        sites
+        if module_disponible
+        else SiteClient.objects.none()
+    )
 
     return {
         "sites": sites,
         "sites_actifs": sites_actifs,
         "sites_filtres": sites_filtres,
         "selected_site": selected_site,
-        "selected_site_id": selected_site_id or "all",
-        "site_selectionne_inactif": site_selectionne_inactif,
+        "selected_site_id": selected_site_id,
+        "site_selectionne_inactif": (
+            selected_site is not None
+            and not module_disponible
+        ),
     }
-
 
 def render_module_non_actif(request, nom_module):
     return render(request, "predictor/module_non_actif.html", {
@@ -3131,9 +3227,18 @@ def module_multicanal(request):
         .order_by("-total")[:8]
     )
     client_connecte = get_client_professionnel_utilisateur(request)
-    comptes_externes = CompteConnecteExterne.objects.filter(statut="connecte")
-    if not request.user.is_superuser or client_connecte is not None:
-        comptes_externes = comptes_externes.filter(client=client_connecte)
+
+    comptes_externes = CompteConnecteExterne.objects.filter(
+        statut="connecte",
+        site__in=scope["sites_filtres"],
+    )
+
+    if client_connecte is not None:
+        comptes_externes = comptes_externes.filter(
+            client=client_connecte
+        )
+    elif not request.user.is_superuser:
+        comptes_externes = CompteConnecteExterne.objects.none()
 
     return render(request, "predictor/module_multicanal.html", {
         "sites": scope["sites_actifs"],
@@ -3157,9 +3262,18 @@ def module_connecteurs(request):
     sessions = SessionVisiteur.objects.filter(site__in=scope["sites_filtres"])
     leads = LeadCapture.objects.filter(site__in=scope["sites_filtres"])
     client_connecte = get_client_professionnel_utilisateur(request)
-    comptes_externes = CompteConnecteExterne.objects.all()
-    if not request.user.is_superuser or client_connecte is not None:
-        comptes_externes = comptes_externes.filter(client=client_connecte)
+
+    comptes_externes = CompteConnecteExterne.objects.filter(
+        site__in=scope["sites_filtres"]
+    )
+
+    if client_connecte is not None:
+        comptes_externes = comptes_externes.filter(
+            client=client_connecte
+        )
+    elif not request.user.is_superuser:
+        comptes_externes = CompteConnecteExterne.objects.none()
+
     comptes_externes = comptes_externes.select_related("site")
     base_url = request.build_absolute_uri("/").rstrip("/")
 
@@ -3291,13 +3405,36 @@ def module_publicite(request):
         .order_by("-total")[:10]
     )
     client_connecte = get_client_professionnel_utilisateur(request)
-    comptes_externes = CompteConnecteExterne.objects.all()
-    campagnes_externes = CampagneExterne.objects.all()
-    if not request.user.is_superuser or client_connecte is not None:
-        comptes_externes = comptes_externes.filter(client=client_connecte)
-        campagnes_externes = campagnes_externes.filter(compte__client=client_connecte)
+    sites_selectionnes = scope["sites_filtres"]
+
+    comptes_externes = CompteConnecteExterne.objects.filter(
+        site__in=sites_selectionnes
+    )
+
+    campagnes_externes = CampagneExterne.objects.filter(
+        Q(site__in=sites_selectionnes)
+        | Q(
+            site__isnull=True,
+            compte__site__in=sites_selectionnes,
+        )
+    )
+
+    if client_connecte is not None:
+        comptes_externes = comptes_externes.filter(
+            client=client_connecte
+        )
+        campagnes_externes = campagnes_externes.filter(
+            compte__client=client_connecte
+        )
+    elif not request.user.is_superuser:
+        comptes_externes = CompteConnecteExterne.objects.none()
+        campagnes_externes = CampagneExterne.objects.none()
+
     comptes_externes = comptes_externes.select_related("site")
-    campagnes_externes = campagnes_externes.select_related("compte", "site")[:12]
+    campagnes_externes = campagnes_externes.select_related(
+        "compte",
+        "site"
+    )[:12]
 
     return render(request, "predictor/module_publicite.html", {
         "sites": scope["sites_actifs"],

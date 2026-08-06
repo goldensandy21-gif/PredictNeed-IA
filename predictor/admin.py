@@ -383,3 +383,15 @@ class JournalSynchronisationConnecteurAdmin(admin.ModelAdmin):
     list_filter = ("statut", "compte__plateforme")
     search_fields = ("compte__nom_compte", "message")
     readonly_fields = ("compte", "statut", "message", "details", "date_creation")
+
+
+# Accès Django Admin réservé aux superutilisateurs
+def _predictneed_admin_superuser_only(request):
+    return bool(
+        request.user.is_authenticated
+        and request.user.is_active
+        and request.user.is_superuser
+    )
+
+
+admin.site.has_permission = _predictneed_admin_superuser_only

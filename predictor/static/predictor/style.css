@@ -8560,3 +8560,58 @@ body.dashboard-page .dashboard-overview > #leads.dashboard-collapsible {
     min-width: 0;
     width: 100%;
 }
+
+
+/* CORRECTION MULTI-SITE V2 */
+.dashboard-site-selector {
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    order: -100;
+    display: flex !important;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+    padding: 18px 22px;
+    margin: 0 0 22px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 1px solid #d8e1ef;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-site-selector label {
+    flex: 0 0 auto;
+    margin: 0;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.dashboard-site-selector select {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 280px;
+    min-height: 46px;
+    padding: 10px 44px 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: #ffffff;
+    font-size: 1rem;
+}
+
+@media (max-width: 760px) {
+    .dashboard-site-selector {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .dashboard-site-selector label {
+        white-space: normal;
+    }
+
+    .dashboard-site-selector select {
+        width: 100%;
+        min-width: 0;
+    }
+}

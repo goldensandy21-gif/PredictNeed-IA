@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Historique - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=108">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=114">
 </head>
 <body>
 
@@ -14,7 +14,7 @@
 
 <section class="dashboard module-page">
     <div class="dashboard-actions">
-        <a href="{% url 'dashboard' %}" class="btn-secondary">Retour au dashboard</a>
+        <a href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}" class="btn-secondary">Retour au dashboard</a>
     </div>
 
     <h1>Historique</h1>

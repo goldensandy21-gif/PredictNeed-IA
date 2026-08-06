@@ -26,3 +26,6 @@ env/
 *.sqlite3-journal
 # Sauvegardes locales
 *.bak-*
+*.bak-multisite-*
+*.backup-*
+head

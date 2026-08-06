@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Dashboard - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=113">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=114">
 </head>
 <body class="dashboard-page">
 
@@ -25,7 +25,7 @@
                 <a href="#leads">Leads</a>
                 <a href="#automatisations">Automatisations</a>
                 <a href="#installation">Installation</a>
-                <a href="{% url 'dashboard_parametres' %}">Mon profil</a>
+                <a href="{% url 'dashboard_parametres' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}">Mon profil</a>
             </nav>
 
             <p class="dashboard-sidebar-title">Modules</p>
@@ -54,7 +54,7 @@
                 <a href="{% url 'ajouter_site' %}" class="hero-button">
                     Ajouter un site
                 </a>
-                <a href="{% url 'dashboard_parametres' %}" class="btn-secondary">
+                <a href="{% url 'dashboard_parametres' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}" class="btn-secondary">
                     Mon profil
                 </a>
                 <a href="{% url 'accueil' %}" class="btn-secondary dashboard-return-site">
