@@ -43,6 +43,29 @@
         </aside>
 
     <main class="dashboard dashboard-overview" id="vue-ensemble">
+{% if user.is_authenticated and not user.is_superuser %}
+    {% with compte=user.client_professionnel %}
+        {% if compte.statut_abonnement == "essai" %}
+            <section
+                class="dashboard-section trial-account-banner"
+                aria-label="Période d'essai"
+            >
+                <strong>
+                    Essai gratuit :
+                    {{ compte.jours_restants_essai }}
+                    jour{{ compte.jours_restants_essai|pluralize }}
+                    restant{{ compte.jours_restants_essai|pluralize }}
+                </strong>
+                <span>
+                    Fin de l'essai :
+                    {{ compte.date_fin_essai|date:"d/m/Y" }}.
+                    Aucune carte bancaire enregistrée.
+                </span>
+            </section>
+        {% endif %}
+    {% endwith %}
+{% endif %}
+
         <div class="dashboard-topbar">
             <div>
                 <p class="dashboard-eyebrow">Espace client</p>

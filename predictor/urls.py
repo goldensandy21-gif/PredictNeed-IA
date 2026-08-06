@@ -78,6 +78,11 @@ urlpatterns = [
     path('politique-de-confidentialite/', views.politique_confidentialite, name='politique_confidentialite'),
     path('conditions-generales-utilisation/', views.conditions_generales_utilisation, name='conditions_generales_utilisation'),
     path('politique-cookies/', views.politique_cookies, name='politique_cookies'),
+    path(
+        'dashboard/abonnement/activer/',
+        views.activer_abonnement,
+        name='activer_abonnement',
+    ),
     path('paiement/succes/', views.paiement_succes, name='paiement_succes'),
     path('paiement/annule/', views.paiement_annule, name='paiement_annule'),
     path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),

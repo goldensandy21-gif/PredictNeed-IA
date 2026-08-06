@@ -12,11 +12,21 @@ console_command = '/code/manage.py shell'
   release_command = 'python manage.py migrate --noinput'
 
 [env]
-  DJANGO_ALLOWED_HOSTS = 'predictneed-ia.fly.dev'
-  DJANGO_CSRF_TRUSTED_ORIGINS = 'https://predictneed-ia.fly.dev'
+  DJANGO_ALLOWED_HOSTS = 'predictneed-ia.com,www.predictneed-ia.com,predictneed-ia.fly.dev'
+  DJANGO_CSRF_TRUSTED_ORIGINS = 'https://predictneed-ia.com,https://www.predictneed-ia.com,https://predictneed-ia.fly.dev'
   DJANGO_DEBUG = 'False'
   PORT = '8000'
-  PREDICTNEED_SITE_URL = 'https://predictneed-ia.fly.dev'
+  PREDICTNEED_SITE_URL = 'https://predictneed-ia.com'
+
+PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS = '60'
+DJANGO_EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'ssl0.ovh.net'
+EMAIL_PORT = '465'
+EMAIL_HOST_USER = 'webprojectsby.ariane@newfelstudio.fr'
+EMAIL_USE_SSL = 'True'
+EMAIL_USE_TLS = 'False'
+DEFAULT_FROM_EMAIL = 'PredictNeed IA <webprojectsby.ariane@newfelstudio.fr>'
+PREDICTNEED_CONTACT_EMAIL = 'webprojectsby.ariane@newfelstudio.fr'
 
 [http_service]
   internal_port = 8000

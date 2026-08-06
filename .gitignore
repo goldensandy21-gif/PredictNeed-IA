@@ -29,3 +29,8 @@ env/
 *.bak-multisite-*
 *.backup-*
 head
+# Sauvegardes locales des correctifs
+.trial-backups-*/
+.trial-v2-backup-*/
+predictor/views.py.broken-trial-*
+db.sqlite3.backup-*

@@ -65,7 +65,13 @@ def _stripe_request(method, endpoint, payload=None):
         raise StripeAPIError("Le service de paiement est momentanément indisponible.") from exc
 
 
-def create_subscription_checkout_session(*, client, success_url, cancel_url):
+def create_subscription_checkout_session(
+    *,
+    client,
+    success_url,
+    cancel_url,
+    trial_days=0,
+):
     payload = {
         "mode": "subscription",
         "success_url": success_url,
@@ -84,9 +90,9 @@ def create_subscription_checkout_session(*, client, success_url, cancel_url):
     if settings.STRIPE_AUTOMATIC_TAX:
         payload["automatic_tax[enabled]"] = "true"
 
-    if settings.PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS > 0:
+    if trial_days and int(trial_days) > 0:
         payload["subscription_data[trial_period_days]"] = str(
-            settings.PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS
+            int(trial_days)
         )
 
     if settings.STRIPE_PRICE_ID:
@@ -104,6 +110,7 @@ def create_subscription_checkout_session(*, client, success_url, cancel_url):
         )
 
     return _stripe_request("POST", "/checkout/sessions", payload)
+
 
 
 def retrieve_checkout_session(session_id):

@@ -1,0 +1,77 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Accès temporairement verrouillé - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=115">
+</head>
+<body class="dashboard-page">
+    {% include "predictor/includes/dashboard_header.html" %}
+
+    <main class="dashboard module-page">
+        <section class="dashboard-section">
+            <p class="section-kicker">Compte PredictNeed IA</p>
+            <h1>Votre essai gratuit est terminé</h1>
+
+            <p class="dashboard-intro">
+                Vous pouvez toujours vous connecter à votre espace.
+                Vos sites et toutes vos données sont conservés, mais
+                les prédictions, visiteurs, leads, statistiques,
+                opportunités et modules sont temporairement verrouillés.
+            </p>
+
+            <div class="settings-summary-grid">
+                <article>
+                    <span>Entreprise</span>
+                    <strong>{{ nom_client }}</strong>
+                    <p>{{ client_professionnel.get_statut_abonnement_display }}</p>
+                </article>
+                <article>
+                    <span>Données</span>
+                    <strong>Conservées</strong>
+                    <p>Aucune donnée n'a été supprimée.</p>
+                </article>
+                <article>
+                    <span>Réactivation</span>
+                    <strong>{{ prix_abonnement }} / mois</strong>
+                    <p>Accès rétabli après confirmation du paiement.</p>
+                </article>
+            </div>
+
+            {% if messages %}
+                <div class="module-messages">
+                    {% for message in messages %}
+                        <p class="module-message {{ message.tags }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="dashboard-actions">
+                {% if paiement_configure %}
+                    <form method="post" action="{% url 'activer_abonnement' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="hero-button">
+                            Activer mon abonnement
+                        </button>
+                    </form>
+                {% else %}
+                    <p>
+                        Le paiement en ligne est en cours de configuration.
+                        Votre compte et vos données restent conservés.
+                    </p>
+                {% endif %}
+
+                <a
+                    href="{% url 'dashboard_parametres' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+                    class="btn-secondary"
+                >
+                    Accéder à mon profil
+                </a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

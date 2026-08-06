@@ -1,3 +1,4 @@
+
 {% load static %}
 
 <!DOCTYPE html>
@@ -6,7 +7,7 @@
     <meta charset="UTF-8">
     <title>Inscription professionnelle - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=114">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=115">
 </head>
 <body>
 
@@ -15,33 +16,46 @@
 <section class="login-page">
     <div class="login-card signup-card">
         <h1>Créer un compte professionnel</h1>
-        <p>Configurez votre espace PredictNeed IA et activez votre abonnement mensuel.</p>
+        <p>
+            Accédez immédiatement à PredictNeed IA pendant
+            {{ periode_essai_jours|default:60 }} jours.
+        </p>
 
         <div class="signup-price-summary">
-            <span>Abonnement PredictNeed IA Pro</span>
-            <strong>{{ prix_abonnement }} / mois</strong>
-            <p>{{ periode_essai_jours|default:60 }} jours d'essai inclus, paiement sécurisé et accès au dashboard après validation Stripe.</p>
+            <span>Essai gratuit PredictNeed IA Pro</span>
+            <strong>{{ periode_essai_jours|default:60 }} jours gratuits</strong>
+            <p>
+                Aucune carte bancaire requise. Aucun paiement au moment
+                de l'inscription. Accès direct au dashboard.
+            </p>
         </div>
 
-        <div class="signup-trial-grid" aria-label="Détails de l'essai et du paiement">
+        <div class="signup-trial-grid" aria-label="Détails de l'essai gratuit">
             <div>
-                <strong>{{ periode_essai_jours|default:60 }} jours d'essai</strong>
-                <span>Vous pouvez installer le script et tester les premières remontées avant la première facturation.</span>
+                <strong>Accès immédiat</strong>
+                <span>
+                    Votre compte et votre premier site sont activés dès
+                    la validation du formulaire.
+                </span>
             </div>
             <div>
-                <strong>Aucun engagement</strong>
-                <span>L'abonnement peut être arrêté avant la fin de l'essai si PredictNeed IA ne convient pas.</span>
+                <strong>Aucune carte bancaire</strong>
+                <span>
+                    Stripe n'intervient que plus tard, lorsque vous
+                    choisissez de continuer après l'essai.
+                </span>
             </div>
             <div>
-                <strong>Paiement Stripe</strong>
-                <span>Stripe sécurise la carte, les informations de facturation et l'abonnement mensuel.</span>
+                <strong>Données conservées</strong>
+                <span>
+                    Après l'essai, vous restez connecté et vos données
+                    sont conservées jusqu'à la réactivation.
+                </span>
             </div>
         </div>
 
         {% if erreur %}
-            <div class="error-message">
-                {{ erreur }}
-            </div>
+            <div class="error-message">{{ erreur }}</div>
         {% endif %}
 
         <form method="POST">
@@ -60,33 +74,46 @@
             <input type="text" name="nom_entreprise" required>
 
             <label>Secteur d'activité</label>
-            <input type="text" name="secteur_activite" placeholder="Ex : beauté, coaching, e-commerce" required>
+            <input
+                type="text"
+                name="secteur_activite"
+                placeholder="Ex : beauté, coaching, e-commerce"
+                required
+            >
 
             <label>Nom du site</label>
             <input type="text" name="nom_site" required>
 
             <label>Domaine du site</label>
-            <input type="text" name="domaine" placeholder="exemple.fr" required>
+            <input
+                type="text"
+                name="domaine"
+                placeholder="exemple.fr"
+                required
+            >
 
             <label class="terms-checkbox">
                 <input type="checkbox" name="accept_conditions" required>
                 <span>
                     J'accepte les
-                    <a href="{% url 'conditions_generales_utilisation' %}" target="_blank" rel="noopener">conditions générales d'utilisation</a>,
-                    la
-                    <a href="{% url 'politique_confidentialite' %}" target="_blank" rel="noopener">politique de confidentialité</a>
-                    et le paiement d'un abonnement mensuel PredictNeed IA Pro.
+                    <a href="{% url 'conditions_generales_utilisation' %}" target="_blank" rel="noopener">conditions générales d'utilisation</a>
+                    et la
+                    <a href="{% url 'politique_confidentialite' %}" target="_blank" rel="noopener">politique de confidentialité</a>.
+                    Je comprends que l'essai gratuit ne demande aucune
+                    carte bancaire et qu'aucun paiement automatique
+                    ne sera déclenché.
                 </span>
             </label>
 
-            <button type="submit">Continuer vers le paiement sécurisé</button>
+            <button type="submit">
+                Créer mon compte et accéder au dashboard
+            </button>
         </form>
 
         <p class="small-link">
             Déjà un compte ?
             <a href="{% url 'connexion' %}">Se connecter</a>
         </p>
-
     </div>
 </section>
 

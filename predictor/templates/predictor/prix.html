@@ -1,3 +1,4 @@
+
 {% load static %}
 
 <!DOCTYPE html>
@@ -6,49 +7,48 @@
     <meta charset="UTF-8">
     <title>Prix - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=114">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=115">
 </head>
 <body class="pricing-body">
 
 {% include "predictor/includes/navbar.html" %}
 
 <main class="pricing-page pricing-page-detailed">
-    <section class="pricing-alert-band" aria-label="Conditions d'abonnement">
-        <strong>Pour poursuivre votre inscription, activez la formule PredictNeed IA Pro.</strong>
-        <span>Aucun engagement.</span>
-        <span>Annulation possible à tout moment.</span>
-        <span>{{ periode_essai_jours|default:60 }} jours d'essai inclus.</span>
+    <section class="pricing-alert-band" aria-label="Conditions d'essai">
+        <strong>{{ periode_essai_jours|default:60 }} jours d'essai gratuit.</strong>
+        <span>Aucune carte bancaire requise.</span>
+        <span>Aucun paiement à l'inscription.</span>
+        <span>Accès immédiat au dashboard.</span>
     </section>
 
     <section class="pricing-hero pricing-hero-detailed">
         <div class="pricing-copy">
-            <p class="section-kicker">Abonnement SaaS</p>
-            <h1>Une seule formule pour transformer les visites en opportunités.</h1>
+            <p class="section-kicker">Essai gratuit sans carte</p>
+            <h1>Testez toutes les fonctionnalités avant de choisir l'abonnement.</h1>
             <p>
-                PredictNeed IA Pro regroupe le suivi visiteurs, la prédiction des intentions,
-                la capture de leads, les modules intelligents et le script d'installation
-                dans un seul abonnement.
+                PredictNeed IA Pro regroupe le suivi visiteurs, la
+                prédiction des intentions, la capture de leads, les
+                modules intelligents et le script d'installation.
             </p>
             <p>
-                L'offre est pensée pour les indépendants, TPE, sites vitrines, consultants
-                et activités en ligne qui veulent comprendre ce qui se passe avant une
-                demande de contact ou une décision d'achat.
+                Pendant l'essai, aucun moyen de paiement n'est demandé.
+                Après {{ periode_essai_jours|default:60 }} jours, le
+                compte reste accessible et les données restent conservées.
             </p>
         </div>
 
         <div class="pricing-card pricing-card-featured">
             <span class="pricing-plan">Formule unique</span>
-            <span class="pricing-popular">La formule PredictNeed IA</span>
+            <span class="pricing-popular">PredictNeed IA Pro</span>
+
             <div class="pricing-amount">
                 <strong>{{ prix_abonnement }}</strong>
-                <span>/ mois</span>
+                <span>/ mois après l'essai</span>
             </div>
+
             <p class="pricing-trial-note">
-                Essai gratuit de {{ periode_essai_jours|default:60 }} jours avant la première facturation.
-            </p>
-            <p class="pricing-tax-note">
-                Paiement sécurisé par Stripe. Les taxes applicables sont calculées selon
-                vos informations de facturation.
+                {{ periode_essai_jours|default:60 }} jours gratuits,
+                sans carte bancaire et sans prélèvement automatique.
             </p>
 
             <ul class="pricing-list">
@@ -57,50 +57,52 @@
                 <li>Segmentation intelligente</li>
                 <li>Visualisations, historique et suivi CRM</li>
                 <li>Script d'installation et clé API par site</li>
-                <li>Automatisations email pour confirmer les demandes reçues</li>
-                <li>Pages légales, consentement et outil d’analyse RGPD-ready</li>
+                <li>Automatisations email</li>
+                <li>Outils de consentement et de conformité</li>
             </ul>
 
             {% if user.is_authenticated %}
-                <a href="{% url 'dashboard' %}" class="hero-button pricing-button">Accéder au dashboard</a>
+                <a href="{% url 'dashboard' %}" class="hero-button pricing-button">
+                    Accéder au dashboard
+                </a>
             {% else %}
-                <a href="{% url 'inscription' %}" class="hero-button pricing-button">Commencer l'essai gratuit</a>
+                <a href="{% url 'inscription' %}" class="hero-button pricing-button">
+                    Commencer l'essai sans carte
+                </a>
             {% endif %}
-
         </div>
     </section>
 
     <section class="pricing-plan-showcase" aria-label="Détail de la formule">
         <article class="pricing-single-plan">
             <div class="pricing-plan-visual">
-                <img src="{% static 'predictor/home-hero-dashboard.png' %}" alt="Aperçu du dashboard PredictNeed IA">
+                <img
+                    src="{% static 'predictor/home-hero-dashboard.png' %}"
+                    alt="Aperçu du dashboard PredictNeed IA"
+                >
             </div>
 
             <div class="pricing-single-plan-copy">
                 <span class="pricing-popular">Tout est inclus</span>
                 <h2>PredictNeed IA Pro</h2>
                 <p>
-                    Une formule claire pour installer le script, suivre les visiteurs,
-                    comprendre les intentions et relancer les prospects les plus chauds.
+                    Installez le script, suivez les visiteurs,
+                    comprenez leurs intentions et relancez les
+                    prospects les plus chauds.
                 </p>
-
-                <div class="pricing-amount pricing-single-amount">
-                    <strong>{{ prix_abonnement }}</strong>
-                    <span>par mois</span>
-                </div>
 
                 <div class="pricing-metrics">
                     <div>
                         <strong>{{ periode_essai_jours|default:60 }} jours</strong>
-                        <span>d'essai inclus</span>
+                        <span>gratuits sans carte</span>
                     </div>
                     <div>
-                        <strong>1 espace</strong>
+                        <strong>Accès direct</strong>
                         <span>dashboard professionnel</span>
                     </div>
                     <div>
-                        <strong>Modules</strong>
-                        <span>prédiction, segmentation, historique, sécurité</span>
+                        <strong>Données conservées</strong>
+                        <span>même après l'expiration</span>
                     </div>
                 </div>
             </div>
@@ -110,30 +112,26 @@
     <section class="pricing-details pricing-included-section">
         <div class="pricing-section-heading">
             <span class="section-kicker">Inclus dans la formule</span>
-            <h2>Le client retrouve tous les outils essentiels dans son dashboard.</h2>
-            <p>
-                Même avec une seule formule, le détail reste visible : le client sait
-                exactement ce qu'il paie, ce qu'il installe et ce qu'il peut suivre.
-            </p>
+            <h2>Tous les outils essentiels dans un seul dashboard.</h2>
         </div>
 
         <div class="pricing-feature-grid">
             <article>
                 <h3>Suivi des visiteurs</h3>
                 <ul class="pricing-check-list">
-                    <li>Pages vues en temps réel</li>
-                    <li>Parcours client et points de contact</li>
-                    <li>Clics, temps passé, sources et campagnes UTM</li>
-                    <li>Pages consultées avant la conversion</li>
+                    <li>Pages vues et parcours client</li>
+                    <li>Clics, temps passé et sources</li>
+                    <li>Campagnes UTM</li>
+                    <li>Pages consultées avant conversion</li>
                 </ul>
             </article>
             <article>
                 <h3>Analyse commerciale</h3>
                 <ul class="pricing-check-list">
-                    <li>Score d'intention visiteur</li>
+                    <li>Score d'intention</li>
                     <li>Profil et besoin probable</li>
-                    <li>Leads prioritaires et opportunités CRM</li>
-                    <li>Recommandations d'action commerciale</li>
+                    <li>Leads et opportunités CRM</li>
+                    <li>Recommandations d'action</li>
                 </ul>
             </article>
             <article>
@@ -141,17 +139,17 @@
                 <ul class="pricing-check-list">
                     <li>Prédiction avancée</li>
                     <li>Segmentation intelligente</li>
-                    <li>Visualisations, historique et multi-canal</li>
-                    <li>Connecteurs, publicité et sécurité entreprise</li>
+                    <li>Visualisations et historique</li>
+                    <li>Connecteurs, publicité et sécurité</li>
                 </ul>
             </article>
             <article>
                 <h3>Installation et conformité</h3>
                 <ul class="pricing-check-list">
-                    <li>Script d'installation par site</li>
-                    <li>Bandeau de consentement intégré au tracker</li>
-                    <li>Textes confidentialité et cookies à copier</li>
-                    <li>Purge RGPD et données maîtrisées</li>
+                    <li>Script par site</li>
+                    <li>Bandeau de consentement</li>
+                    <li>Textes confidentialité et cookies</li>
+                    <li>Purge RGPD</li>
                 </ul>
             </article>
         </div>
@@ -159,11 +157,12 @@
 
     <section class="payment-details-section">
         <div class="pricing-section-heading">
-            <span class="section-kicker">Paiement</span>
-            <h2>Un paiement simple, sécurisé et lisible pour le client.</h2>
+            <span class="section-kicker">Après l'essai</span>
+            <h2>Vous décidez seulement après avoir testé.</h2>
             <p>
-                Le compte est créé, l'abonnement est préparé dans Stripe, puis le dashboard
-                devient accessible après validation du checkout.
+                Quinze jours, sept jours et deux jours avant la fin,
+                PredictNeed IA envoie un rappel par email. Aucun
+                prélèvement n'est effectué automatiquement.
             </p>
         </div>
 
@@ -171,22 +170,28 @@
             <article>
                 <span>01</span>
                 <h3>Création du compte</h3>
-                <p>Le client renseigne son entreprise, son site et accepte les conditions avant de passer au paiement sécurisé.</p>
+                <p>Inscription sans carte et connexion immédiate.</p>
             </article>
             <article>
                 <span>02</span>
-                <h3>Checkout Stripe</h3>
-                <p>Stripe gère la carte, la facturation, l'adresse de facturation et les contrôles de sécurité du paiement.</p>
+                <h3>Essai complet</h3>
+                <p>
+                    Toutes les fonctionnalités sont accessibles pendant
+                    {{ periode_essai_jours|default:60 }} jours.
+                </p>
             </article>
             <article>
                 <span>03</span>
-                <h3>Essai puis abonnement</h3>
-                <p>Les {{ periode_essai_jours|default:60 }} jours d'essai sont appliqués à l'abonnement, puis la facturation mensuelle démarre si le compte reste actif.</p>
+                <h3>Rappels par email</h3>
+                <p>Notifications à J-15, J-7 et J-2.</p>
             </article>
             <article>
                 <span>04</span>
-                <h3>Accès dashboard</h3>
-                <p>Après validation, le client peut revenir sur le site public et retrouver le dashboard depuis la navbar.</p>
+                <h3>Choix de continuer</h3>
+                <p>
+                    Stripe demande la carte uniquement lorsque vous
+                    activez volontairement l'abonnement.
+                </p>
             </article>
         </div>
     </section>

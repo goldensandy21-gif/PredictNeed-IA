@@ -158,6 +158,41 @@
             </article>
         </div>
     </section>
+{% if client_professionnel %}
+    <section
+        class="dashboard-section trial-subscription-settings"
+        id="abonnement"
+    >
+        <h2>Essai et abonnement</h2>
+
+        {% if client_professionnel.statut_abonnement == "essai" %}
+            <p>
+                Votre essai gratuit se termine le
+                <strong>
+                    {{ client_professionnel.date_fin_essai|date:"d/m/Y" }}
+                </strong>.
+                Il reste
+                {{ client_professionnel.jours_restants_essai }}
+                jour{{ client_professionnel.jours_restants_essai|pluralize }}.
+                Aucune carte bancaire n'est enregistrée.
+            </p>
+        {% elif client_professionnel.statut_abonnement == "actif" %}
+            <p>Votre abonnement PredictNeed IA est actif.</p>
+        {% else %}
+            <p>
+                Votre compte et vos données sont conservés, mais
+                l'accès aux données est temporairement verrouillé.
+            </p>
+            <form method="post" action="{% url 'activer_abonnement' %}">
+                {% csrf_token %}
+                <button type="submit" class="hero-button">
+                    Activer mon abonnement
+                </button>
+            </form>
+        {% endif %}
+    </section>
+{% endif %}
+
 </main>
 
 </body>

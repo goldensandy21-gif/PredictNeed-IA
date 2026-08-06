@@ -10,6 +10,7 @@ class ClientProfessionnel(models.Model):
         ("essai", "Essai"),
         ("impaye", "Impayé"),
         ("annule", "Annulé"),
+        ("expire", "Essai expiré"),
     ]
 
     utilisateur = models.OneToOneField(
@@ -24,17 +25,116 @@ class ClientProfessionnel(models.Model):
     statut_abonnement = models.CharField(
         max_length=30,
         choices=STATUT_ABONNEMENT_CHOICES,
-        default="actif",
+        default="essai",
     )
     stripe_customer_id = models.CharField(max_length=120, blank=True, null=True)
     stripe_subscription_id = models.CharField(max_length=120, blank=True, null=True)
     stripe_checkout_session_id = models.CharField(max_length=160, blank=True, null=True)
     date_acceptation_cgu = models.DateTimeField(blank=True, null=True)
     date_activation_abonnement = models.DateTimeField(blank=True, null=True)
+    date_debut_essai = models.DateTimeField(blank=True, null=True)
+    date_fin_essai = models.DateTimeField(blank=True, null=True)
+    rappel_15_jours_envoye_le = models.DateTimeField(blank=True, null=True)
+    rappel_7_jours_envoye_le = models.DateTimeField(blank=True, null=True)
+    rappel_2_jours_envoye_le = models.DateTimeField(blank=True, null=True)
+    email_expiration_envoye_le = models.DateTimeField(blank=True, null=True)
     date_creation = models.DateTimeField(auto_now_add=True)
 
     def abonnement_est_actif(self):
-        return self.statut_abonnement in {"actif", "essai"}
+        return self.acces_donnees_autorise()
+
+
+    def initialiser_essai(self, maintenant=None, enregistrer=True):
+        from datetime import timedelta
+        from django.conf import settings
+        from django.utils import timezone
+
+        maintenant = maintenant or timezone.now()
+        self.statut_abonnement = "essai"
+        self.date_debut_essai = maintenant
+        self.date_fin_essai = maintenant + timedelta(
+            days=settings.PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS
+        )
+        self.rappel_15_jours_envoye_le = None
+        self.rappel_7_jours_envoye_le = None
+        self.rappel_2_jours_envoye_le = None
+        self.email_expiration_envoye_le = None
+
+        if enregistrer:
+            self.save(
+                update_fields=[
+                    "statut_abonnement",
+                    "date_debut_essai",
+                    "date_fin_essai",
+                    "rappel_15_jours_envoye_le",
+                    "rappel_7_jours_envoye_le",
+                    "rappel_2_jours_envoye_le",
+                    "email_expiration_envoye_le",
+                ]
+            )
+            if not self.utilisateur.is_active:
+                self.utilisateur.is_active = True
+                self.utilisateur.save(update_fields=["is_active"])
+            self.sites.update(actif=True)
+
+        return self
+
+
+    def jours_restants_essai(self, maintenant=None):
+        from django.utils import timezone
+
+        if not self.date_fin_essai:
+            return 0
+
+        maintenant = maintenant or timezone.now()
+        fin = timezone.localtime(self.date_fin_essai).date()
+        aujourd_hui = timezone.localtime(maintenant).date()
+        return max((fin - aujourd_hui).days, 0)
+
+
+    def essai_est_valide(self, maintenant=None):
+        from django.utils import timezone
+
+        maintenant = maintenant or timezone.now()
+        return bool(
+            self.statut_abonnement == "essai"
+            and self.date_fin_essai
+            and maintenant < self.date_fin_essai
+        )
+
+
+    def actualiser_expiration_essai(self, maintenant=None):
+        from django.utils import timezone
+
+        maintenant = maintenant or timezone.now()
+
+        if self.statut_abonnement != "essai":
+            return self.statut_abonnement
+
+        if not self.date_debut_essai or not self.date_fin_essai:
+            self.initialiser_essai(maintenant=maintenant)
+            return self.statut_abonnement
+
+        if maintenant >= self.date_fin_essai:
+            self.statut_abonnement = "expire"
+            self.save(update_fields=["statut_abonnement"])
+            if not self.utilisateur.is_active:
+                self.utilisateur.is_active = True
+                self.utilisateur.save(update_fields=["is_active"])
+            self.sites.update(actif=True)
+
+        return self.statut_abonnement
+
+
+    def acces_donnees_autorise(self, maintenant=None):
+        if self.statut_abonnement == "actif":
+            return True
+
+        if self.statut_abonnement == "essai":
+            self.actualiser_expiration_essai(maintenant=maintenant)
+            return self.essai_est_valide(maintenant=maintenant)
+
+        return False
 
     def __str__(self):
         return self.nom_entreprise

@@ -778,113 +778,186 @@ def _prepare_pending_client(
     nom_site,
     domaine,
 ):
+    maintenant = timezone.now()
+
     if existing_user:
         user = existing_user
         user.username = username
         user.email = email
-        user.is_active = False
+        user.is_active = True
         user.set_password(password)
-        user.save(update_fields=["username", "email", "password", "is_active"])
+        user.save(
+            update_fields=[
+                "username",
+                "email",
+                "password",
+                "is_active",
+            ]
+        )
     else:
         user = User.objects.create_user(
             username=username,
             email=email,
             password=password,
+            is_active=True,
         )
-        user.is_active = False
-        user.save(update_fields=["is_active"])
 
-    client, created = ClientProfessionnel.objects.get_or_create(
+    client, _ = ClientProfessionnel.objects.get_or_create(
         utilisateur=user,
         defaults={
             "nom_entreprise": nom_entreprise,
             "secteur_activite": secteur_activite,
-            "statut_abonnement": "paiement_en_attente",
-            "date_acceptation_cgu": timezone.now(),
+            "statut_abonnement": "essai",
+            "date_acceptation_cgu": maintenant,
         },
     )
 
-    if not created:
-        client.nom_entreprise = nom_entreprise
-        client.secteur_activite = secteur_activite
-        client.statut_abonnement = "paiement_en_attente"
-        client.date_acceptation_cgu = timezone.now()
-        client.save(
-            update_fields=[
-                "nom_entreprise",
-                "secteur_activite",
-                "statut_abonnement",
-                "date_acceptation_cgu",
-            ]
-        )
+    client.nom_entreprise = nom_entreprise
+    client.secteur_activite = secteur_activite
+    client.date_acceptation_cgu = maintenant
+    client.stripe_customer_id = None
+    client.stripe_subscription_id = None
+    client.stripe_checkout_session_id = None
+    client.initialiser_essai(
+        maintenant=maintenant,
+        enregistrer=False,
+    )
+    client.save(
+        update_fields=[
+            "nom_entreprise",
+            "secteur_activite",
+            "date_acceptation_cgu",
+            "stripe_customer_id",
+            "stripe_subscription_id",
+            "stripe_checkout_session_id",
+            "statut_abonnement",
+            "date_debut_essai",
+            "date_fin_essai",
+            "rappel_15_jours_envoye_le",
+            "rappel_7_jours_envoye_le",
+            "rappel_2_jours_envoye_le",
+            "email_expiration_envoye_le",
+        ]
+    )
+
+    modules_essai = {
+        "module_ecommerce_actif": True,
+        "module_prediction_avancee_actif": True,
+        "module_segmentation_actif": True,
+        "module_visualisations_actif": True,
+        "module_historique_actif": True,
+        "module_multicanal_actif": True,
+        "module_connecteurs_actif": True,
+        "module_publicite_actif": True,
+        "module_securite_entreprise_actif": True,
+    }
 
     site = client.sites.order_by("date_creation").first()
+
     if site:
         site.nom_site = nom_site
         site.domaine = domaine
-        site.actif = False
-        site.save(update_fields=["nom_site", "domaine", "actif"])
+        site.actif = True
+
+        for champ, valeur in modules_essai.items():
+            setattr(site, champ, valeur)
+
+        site.save(
+            update_fields=[
+                "nom_site",
+                "domaine",
+                "actif",
+                *modules_essai.keys(),
+            ]
+        )
     else:
         SiteClient.objects.create(
             client=client,
             nom_site=nom_site,
             domaine=domaine,
-            actif=False,
+            actif=True,
+            **modules_essai,
         )
 
     return client
 
 
+
 def _start_subscription_checkout(request, client):
-    success_url = f"{_absolute_url(request, 'paiement_succes')}?session_id={{CHECKOUT_SESSION_ID}}"
+    success_url = (
+        f"{_absolute_url(request, 'paiement_succes')}"
+        "?session_id={CHECKOUT_SESSION_ID}"
+    )
     cancel_url = _absolute_url(request, "paiement_annule")
 
     checkout_session = create_subscription_checkout_session(
         client=client,
         success_url=success_url,
         cancel_url=cancel_url,
+        trial_days=0,
     )
 
     client.stripe_checkout_session_id = checkout_session.get("id")
-    client.statut_abonnement = "paiement_en_attente"
-    client.save(update_fields=["stripe_checkout_session_id", "statut_abonnement"])
-
+    client.save(update_fields=["stripe_checkout_session_id"])
     return checkout_session
+
 
 
 def _activate_client_from_checkout_session(checkout_session):
     metadata = checkout_session.get("metadata") or {}
-    client_id = metadata.get("client_id") or checkout_session.get("client_reference_id")
+    client_id = (
+        metadata.get("client_id")
+        or checkout_session.get("client_reference_id")
+    )
 
     if not client_id:
         return None
 
     try:
-        client = ClientProfessionnel.objects.select_related("utilisateur").get(pk=client_id)
+        client = (
+            ClientProfessionnel.objects
+            .select_related("utilisateur")
+            .get(pk=client_id)
+        )
     except (ClientProfessionnel.DoesNotExist, ValueError):
+        return None
+
+    checkout_id = checkout_session.get("id")
+    if (
+        not checkout_id
+        or client.stripe_checkout_session_id != checkout_id
+    ):
         return None
 
     if checkout_session.get("status") != "complete":
         return None
 
-    payment_status = checkout_session.get("payment_status")
-    if payment_status not in {"paid", "no_payment_required"}:
+    if checkout_session.get("payment_status") not in {
+        "paid",
+        "no_payment_required",
+    }:
         return None
 
-    now = timezone.now()
+    maintenant = timezone.now()
     client.statut_abonnement = "actif"
-    client.stripe_customer_id = checkout_session.get("customer") or client.stripe_customer_id
-    client.stripe_subscription_id = checkout_session.get("subscription") or client.stripe_subscription_id
-    client.stripe_checkout_session_id = checkout_session.get("id") or client.stripe_checkout_session_id
-    client.date_activation_abonnement = now
+    client.stripe_customer_id = (
+        checkout_session.get("customer")
+        or client.stripe_customer_id
+    )
+    client.stripe_subscription_id = (
+        checkout_session.get("subscription")
+        or client.stripe_subscription_id
+    )
+    client.date_activation_abonnement = maintenant
+
     if not client.date_acceptation_cgu:
-        client.date_acceptation_cgu = now
+        client.date_acceptation_cgu = maintenant
+
     client.save(
         update_fields=[
             "statut_abonnement",
             "stripe_customer_id",
             "stripe_subscription_id",
-            "stripe_checkout_session_id",
             "date_activation_abonnement",
             "date_acceptation_cgu",
         ]
@@ -899,6 +972,7 @@ def _activate_client_from_checkout_session(checkout_session):
     return client
 
 
+
 def _update_subscription_from_stripe(subscription):
     customer_id = subscription.get("customer")
     subscription_id = subscription.get("id")
@@ -910,40 +984,50 @@ def _update_subscription_from_stripe(subscription):
 
     if client_id:
         client = clients.filter(pk=client_id).first()
-
     if client is None and subscription_id:
-        client = clients.filter(stripe_subscription_id=subscription_id).first()
-
+        client = clients.filter(
+            stripe_subscription_id=subscription_id
+        ).first()
     if client is None and customer_id:
-        client = clients.filter(stripe_customer_id=customer_id).first()
-
+        client = clients.filter(
+            stripe_customer_id=customer_id
+        ).first()
     if client is None:
         return
 
     status = subscription.get("status")
-    if status in {"active", "trialing"}:
-        client.statut_abonnement = "actif" if status == "active" else "essai"
-        client.utilisateur.is_active = True
-        client.sites.update(actif=True)
+
+    if status == "active":
+        client.statut_abonnement = "actif"
+        client.date_activation_abonnement = timezone.now()
+    elif status == "trialing":
+        client.statut_abonnement = "essai"
     elif status in {"canceled", "incomplete_expired"}:
         client.statut_abonnement = "annule"
-        client.utilisateur.is_active = False
-        client.sites.update(actif=False)
     elif status in {"past_due", "unpaid", "incomplete"}:
         client.statut_abonnement = "impaye"
     else:
         client.statut_abonnement = "paiement_en_attente"
 
-    client.stripe_customer_id = customer_id or client.stripe_customer_id
-    client.stripe_subscription_id = subscription_id or client.stripe_subscription_id
+    client.stripe_customer_id = (
+        customer_id or client.stripe_customer_id
+    )
+    client.stripe_subscription_id = (
+        subscription_id or client.stripe_subscription_id
+    )
     client.save(
         update_fields=[
             "statut_abonnement",
+            "date_activation_abonnement",
             "stripe_customer_id",
             "stripe_subscription_id",
         ]
     )
+
+    client.utilisateur.is_active = True
     client.utilisateur.save(update_fields=["is_active"])
+    client.sites.update(actif=True)
+
 
 
 def prix(request):
@@ -957,6 +1041,57 @@ def prix(request):
         ),
     )
 
+
+@login_required
+def activer_abonnement(request):
+    if request.method != "POST":
+        return redirect("dashboard")
+
+    client = getattr(
+        request.user,
+        "client_professionnel",
+        None,
+    )
+
+    if client is None:
+        messages.error(
+            request,
+            "Aucun espace professionnel n'est associé à ce compte.",
+        )
+        return redirect("dashboard")
+
+    if client.statut_abonnement == "actif":
+        messages.info(request, "Votre abonnement est déjà actif.")
+        return redirect("dashboard")
+
+    if not stripe_is_configured():
+        messages.error(
+            request,
+            "Le paiement en ligne n'est pas encore disponible. "
+            "Votre compte et vos données restent conservés.",
+        )
+        return redirect("dashboard")
+
+    try:
+        checkout_session = _start_subscription_checkout(
+            request,
+            client,
+        )
+    except StripeConfigurationError:
+        messages.error(
+            request,
+            "Le paiement sécurisé n'est pas encore configuré.",
+        )
+        return redirect("dashboard")
+    except StripeAPIError:
+        messages.error(
+            request,
+            "Le paiement est momentanément indisponible. "
+            "Merci de réessayer dans quelques instants.",
+        )
+        return redirect("dashboard")
+
+    return redirect(checkout_session["url"])
 
 def paiement_succes(request):
     session_id = request.GET.get("session_id")
@@ -1013,7 +1148,7 @@ def paiement_annule(request):
             **_subscription_context(),
             "etat": "annule",
             "titre": "Paiement annulé",
-            "message": "Votre compte n'a pas été activé. Vous pouvez relancer l'inscription et finaliser le paiement sécurisé.",
+            "message": "Le paiement a été annulé. Votre compte et vos données restent conservés ; vous pourrez réessayer depuis votre dashboard.",
         },
     )
 
@@ -2066,11 +2201,17 @@ def inscription(request):
         username = (request.POST.get("username") or "").strip()
         email = (request.POST.get("email") or "").strip().lower()
         password = request.POST.get("password") or ""
-        nom_entreprise = (request.POST.get("nom_entreprise") or "").strip()
-        secteur_activite = (request.POST.get("secteur_activite") or "").strip()
+        nom_entreprise = (
+            request.POST.get("nom_entreprise") or ""
+        ).strip()
+        secteur_activite = (
+            request.POST.get("secteur_activite") or ""
+        ).strip()
         nom_site = (request.POST.get("nom_site") or "").strip()
         domaine = (request.POST.get("domaine") or "").strip()
-        conditions_acceptees = request.POST.get("accept_conditions") == "on"
+        conditions_acceptees = (
+            request.POST.get("accept_conditions") == "on"
+        )
 
         champs_requis = [
             username,
@@ -2085,44 +2226,60 @@ def inscription(request):
         if not all(champs_requis):
             erreur = "Merci de remplir tous les champs obligatoires."
         elif not conditions_acceptees:
-            erreur = "Vous devez accepter les conditions d'utilisation pour créer un compte."
-        elif not stripe_is_configured():
-            erreur = "Le paiement sécurisé n'est pas encore configuré. L'inscription payante est momentanément indisponible."
+            erreur = (
+                "Vous devez accepter les conditions "
+                "d'utilisation pour créer un compte."
+            )
         else:
-            existing_user, erreur = _find_existing_user_for_signup(User, username, email)
+            existing_user, erreur = _find_existing_user_for_signup(
+                User,
+                username,
+                email,
+            )
 
             if erreur is None:
-                client = _prepare_pending_client(
-                    User=User,
-                    existing_user=existing_user,
-                    username=username,
-                    email=email,
-                    password=password,
-                    nom_entreprise=nom_entreprise,
-                    secteur_activite=secteur_activite,
-                    nom_site=nom_site,
-                    domaine=domaine,
-                )
+                from django.db import transaction
 
-                try:
-                    checkout_session = _start_subscription_checkout(request, client)
-                except StripeConfigurationError:
-                    erreur = "Le paiement sécurisé n'est pas encore configuré. L'inscription payante est momentanément indisponible."
-                except StripeAPIError:
-                    erreur = "Le paiement sécurisé est momentanément indisponible. Merci de réessayer dans quelques instants."
-                else:
-                    return redirect(checkout_session["url"])
+                with transaction.atomic():
+                    client = _prepare_pending_client(
+                        User=User,
+                        existing_user=existing_user,
+                        username=username,
+                        email=email,
+                        password=password,
+                        nom_entreprise=nom_entreprise,
+                        secteur_activite=secteur_activite,
+                        nom_site=nom_site,
+                        domaine=domaine,
+                    )
+
+                login(request, client.utilisateur)
+                messages.success(
+                    request,
+                    (
+                        "Votre essai gratuit de "
+                        f"{settings.PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS} "
+                        "jours est actif. Aucune carte bancaire "
+                        "n'a été demandée."
+                    ),
+                )
+                return redirect("dashboard")
 
     return render(
         request,
         "predictor/inscription.html",
         _seo_context(
             "Créer un compte - PredictNeed IA",
-            "Créez un compte professionnel PredictNeed IA et activez l'abonnement pour suivre les intentions visiteurs et les opportunités commerciales.",
+            (
+                "Créez gratuitement votre compte PredictNeed IA "
+                "sans carte bancaire et accédez immédiatement "
+                "au dashboard."
+            ),
             erreur=erreur,
             **_subscription_context(),
         ),
     )
+
 
 @csrf_exempt
 @tracker_cors
