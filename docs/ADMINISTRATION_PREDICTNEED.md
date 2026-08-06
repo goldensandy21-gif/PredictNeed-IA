@@ -1,0 +1,61 @@
+# Administration technique de PredictNeed IA
+
+État documenté : 6 août 2026, avant le déploiement final.
+
+## Architecture
+- Django ; production sur Fly.io ; messagerie/domaine OVH.
+- URL publique : `https://predictneed-ia.com`.
+- Données séparées par `SiteClient`.
+- Session unique par `(site, session_id)`.
+- Clé API distincte par site.
+- Modules du dashboard évalués sur le site sélectionné.
+
+## Migrations importantes
+- `0015_essai_gratuit_sans_carte` : essai 60 jours.
+- `0016_newsletter_seo_lancement` : newsletter et SEO.
+- `0017_securite_comptes_multisite` : sécurité comptes et multi-site.
+- `0018_machine_learning_et_maintenance` : ML et maintenance.
+
+## Sécurité
+- Validation Django + confirmation du mot de passe.
+- Vérification email par token signé valable 7 jours.
+- Réinitialisation du mot de passe par email.
+- Limitation persistante en base sur routes sensibles ; clé hachée SHA-256.
+- Django Admin réservé aux superutilisateurs.
+
+## Machine learning
+Commande : `python manage.py entrainer_modeles_ml`
+
+Valeurs par défaut : 40 sessions résolues, 10 conversions, 10 pertes, balanced accuracy minimale 0,55, rappel minimal 0,40 et spécificité minimale 0,40.
+
+Le modèle est une régression logistique supervisée séparée par site. Le scoring à règles reste le moteur de repli. Les prédictions ML enregistrent le moteur, la probabilité et la version du modèle.
+
+## Conservation
+Simulation : `python manage.py purge_donnees_rgpd`
+
+Exécution : `python manage.py purge_donnees_rgpd --execute`
+
+Valeurs par défaut : analytics détaillées 395 jours ; leads 1 095 jours.
+
+Maintenance : `python manage.py maintenance_quotidienne`
+
+Cette commande gère les essais, exécute la purge et nettoie les anciennes limitations de sécurité. Chaque exécution est journalisée.
+
+## Stripe
+Le code Checkout/webhook existe. La production ne doit être considérée comme prête qu'après configuration et test de `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET`. Ne jamais stocker les secrets dans Git.
+
+## Avant déploiement
+`python manage.py check`
+
+`python manage.py makemigrations --check --dry-run`
+
+`python manage.py test`
+
+`git diff --check`
+
+Les avertissements HSTS includeSubDomains/preload restent volontairement non activés tant que tous les sous-domaines HTTPS et la décision de preload ne sont pas validés.
+
+## Après déploiement
+Vérifier `/healthz/`, migrations, comptes existants, inscription essai, simulation RGPD, maintenance manuelle, entraînement ML manuel, puis créer/mettre à jour les tâches Fly sans doublon. Configurer ensuite Stripe et Search Console.
+
+Cette documentation technique ne remplace pas une validation juridique professionnelle.

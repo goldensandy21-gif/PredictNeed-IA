@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Paramètres - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=118">
 </head>
 <body class="dashboard-page">
 
@@ -122,6 +122,8 @@
             Cette zone sert à sécuriser l'accès au dashboard. Le changement de mot de
             passe s'applique immédiatement et la session reste ouverte après validation.
         </p>
+
+        <p>Mot de passe oublié ? <a href="{% url 'password_reset' %}">Demander un lien de réinitialisation par email</a>.</p>
 
         <form method="post" class="settings-form">
             {% csrf_token %}

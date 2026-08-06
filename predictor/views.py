@@ -83,9 +83,9 @@ PUBLIC_MODULES = [
         "slug": "prediction-avancee",
         "badge": "IA",
         "nom": "Prédiction avancée",
-        "accroche": "Identifier les visiteurs les plus susceptibles de passer à l'action.",
+        "accroche": "Scorer les intentions immédiatement puis utiliser un modèle supervisé par site lorsque les résultats réels sont suffisants.",
         "resume": "Le module applique un scoring comportemental explicable et utilise, lorsqu'un volume suffisant de résultats réels existe pour le site, un modèle supervisé séparé et traçable.",
-        "hero": "Transformez les pages consultées, les clics et le temps passé en recommandations concrètes pour vos équipes.",
+        "hero": "Commencez avec un scoring comportemental explicable puis activez un modèle supervisé propre au site lorsque les données résolues et la qualité d’évaluation sont suffisantes.",
         "benefices": [
             "Détection des intentions fortes, moyennes ou faibles.",
             "Priorisation des visiteurs et prospects à relancer.",
@@ -688,7 +688,7 @@ def guide_utilisation(request):
         "predictor/guide_utilisation.html",
         _seo_context(
             "Guide d'utilisation et glossaire - PredictNeed IA",
-            "Guide complet pour utiliser PredictNeed IA : installation du script, dashboard, modules, leads, connecteurs, pixels, cookies et glossaire.",
+            "Guide complet PredictNeed IA : compte, sécurité, dashboard multi-site, scoring, machine learning supervisé, leads, connecteurs, consentement et conservation des données.",
         ),
     )
 
@@ -1214,9 +1214,9 @@ def dashboard(request):
         )
     else:
         automatisations_email = AutomatisationEmail.objects.none()
-    # La disponibilité des modules appartient au compte client.
-    # L’interface reste donc identique quel que soit le site sélectionné.
-    modules_scope = sites_disponibles
+    # Les modules du dashboard correspondent strictement
+    # au site actuellement sélectionné.
+    modules_scope = sites
 
     a_module_ecommerce = modules_scope.filter(
         Q(module_ecommerce_actif=True) | Q(type_site="ecommerce")
@@ -1437,6 +1437,34 @@ def dashboard(request):
         for automatisation in automatisations_email
     )
 
+    email_verifie = bool(client is not None and client.email_verifie_le is not None)
+    if request.user.is_superuser and client is None:
+        email_verifie = True
+
+    modele_ml_dashboard = None
+    ml_sessions_resolues = 0
+    ml_conversions = 0
+    ml_pertes = 0
+
+    if selected_site is not None and a_module_prediction_avancee:
+        from .models import ModeleMachineLearning
+
+        modele_ml_dashboard = (
+            ModeleMachineLearning.objects
+            .filter(site=selected_site, actif=True)
+            .order_by("-date_entrainement")
+            .first()
+        )
+        leads_resolus = leads.filter(statut_suivi__in=["converti", "perdu"])
+        ml_sessions_resolues = leads_resolus.values("session_id").distinct().count()
+        ml_conversions = (
+            leads_resolus.filter(statut_suivi="converti")
+            .values("session_id").distinct().count()
+        )
+        ml_pertes = (
+            leads_resolus.filter(statut_suivi="perdu")
+            .values("session_id").distinct().count()
+        )
 
     return render(request, "predictor/dashboard.html", {
         "nom_client": nom_client,
@@ -1486,6 +1514,13 @@ def dashboard(request):
         "emails_automatises_envoyes": emails_automatises_envoyes,
         "emails_automatises_erreurs": emails_automatises_erreurs,
         "relances_programmees": relances_programmees,
+        "email_verifie": email_verifie,
+        "modele_ml_dashboard": modele_ml_dashboard,
+        "ml_sessions_resolues": ml_sessions_resolues,
+        "ml_conversions": ml_conversions,
+        "ml_pertes": ml_pertes,
+        "minimum_ml": settings.PREDICTNEED_ML_MIN_SAMPLES,
+        "minimum_ml_par_classe": settings.PREDICTNEED_ML_MIN_PER_CLASS,
     })
 
 

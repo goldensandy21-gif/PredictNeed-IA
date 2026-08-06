@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <title>Prix - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=118">
 </head>
 <body class="pricing-body">
 
@@ -53,7 +53,7 @@
 
             <ul class="pricing-list">
                 <li>Dashboard complet PredictNeed IA</li>
-                <li>Prédiction avancée des intentions</li>
+                <li>Scoring comportemental et machine learning supervisé par site lorsque les données sont suffisantes</li>
                 <li>Segmentation intelligente</li>
                 <li>Visualisations, historique et suivi CRM</li>
                 <li>Script d'installation et clé API par site</li>
@@ -176,8 +176,10 @@
                 <span>02</span>
                 <h3>Essai complet</h3>
                 <p>
-                    Toutes les fonctionnalités sont accessibles pendant
+                    Tous les modules sont accessibles pendant
                     {{ periode_essai_jours|default:60 }} jours.
+                    Le machine learning ne s’active que lorsqu’un site possède
+                    suffisamment de résultats réels et réussit le contrôle qualité.
                 </p>
             </article>
             <article>

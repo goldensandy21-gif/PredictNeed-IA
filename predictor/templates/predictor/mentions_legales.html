@@ -1,160 +1,28 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <title>Mentions légales - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=118">
 </head>
 <body class="legal-body">
-
 {% include "predictor/includes/navbar.html" %}
-
 <main class="legal-document">
-    <header class="legal-hero">
-        <p class="footer-kicker">Informations légales</p>
-        <h1>Mentions légales</h1>
-        <p>
-           Conformément aux dispositions de la loi n° 2004-575 du 21 juin 2004 pour la confiance en l'économie numérique, il est précisé aux utilisateurs du site PredictNeed IA l'identité des différents intervenants dans le cadre de sa réalisation et de son suivi.
-        </p>
-    </header>
-
-    <section class="legal-section">
-        <h2>Éditeur du site</h2>
-        <dl class="legal-definition-list">
-            <div>
-                <dt>Nom commercial du service</dt>
-                <dd>PredictNeed IA</dd>
-            </div>
-            <div>
-                <dt>Éditeur</dt>
-                <dd>Sonia EYENE NDZIE.</dd>
-            </div>
-            <div>
-                <dt>Forme juridique</dt>
-                <dd>Projet entrepreneurial en phase de lancement ; les informations d’immatriculation seront publiées avant tout encaissement commercial.</dd>
-            </div>
-            <div>
-                <dt>Siège social ou adresse professionnelle</dt>
-                <dd>4 La Viarie 42410 Chuyer</dd>
-            </div>
-            <div>
-                <dt>Adresse email de contact</dt>
-                <dd>webprojectsby.ariane@newfelstudio.fr.</dd>
-            </div>
-            <div>
-                <dt>Téléphone professionnel</dt>
-                <dd>07 45 57 98 63.</dd>
-            </div>
-            <div>
-                <dt>Directeur ou directrice de la publication</dt>
-                <dd>EYENE NDZIE Sonia.</dd>
-            </div>
-        </dl>
-    </section>
-
-    <section class="legal-section">
-        <h2>Hébergement du site</h2>
-        <dl class="legal-definition-list">
-        <div>
-            <dt>Hébergeur de production</dt>
-            <dd>Fly.io, Inc.</dd>
-        </div>
-
-        <div>
-            <dt>Adresse de l'hébergeur</dt>
-            <dd>2261 Market Street #4990, San Francisco, CA 94114, États-Unis</dd>
-        </div>
-
-        <div>
-            <dt>Téléphone</dt>
-            <dd>+1 312 626 4490</dd>
-        </div>
-
-        <div>
-            <dt>Site web</dt>
-            <dd>
-                <a href="https://fly.io/" target="_blank" rel="noopener">
-                    fly.io
-                </a>
-            </dd>
-        </div>
-    </section>
-
-    <section class="legal-section">
-        <p><strong>OVH SAS</strong>, 2 rue Kellermann, 59100 Roubaix, France, fournit la messagerie professionnelle et peut intervenir dans la gestion du domaine. L’application reste actuellement hébergée sur Fly.io.</p></section><section class="legal-section"><h2>Activité du service</h2>
-        <p>
-            PredictNeed IA est une application SaaS d'analyse comportementale destinée
-            aux professionnels. Le service permet d'enregistrer des sites clients,
-            d'installer un script de suivi, d'analyser des événements visiteurs, de
-            générer des prédictions d'intention, de capturer des leads et de suivre des
-            opportunités commerciales dans un tableau de bord.
-        </p>
-        <p>
-            Le service s'adresse principalement aux entreprises, indépendants,
-            e-commerçants, prestataires de services, consultants, centres de formation
-            et professionnels souhaitant mieux qualifier les intentions de leurs visiteurs.
-        </p>
-        <p>
-            Si une activité réglementée est exercée dans le cadre de l'exploitation du
-            service, l'autorité ayant délivré l'autorisation devra être ajoutée ici :
-
-        </p>
-    </section>
-
-    <section class="legal-section">
-        <h2>Propriété intellectuelle</h2>
-        <p>
-            La structure du site, les textes, interfaces, tableaux de bord, éléments
-            graphiques, bases de données, modèles de scoring, scripts, noms commerciaux
-            et contenus associés à PredictNeed IA sont protégés par le droit de la
-            propriété intellectuelle.
-        </p>
-        <p>
-            Toute reproduction, représentation, extraction, adaptation, traduction,
-            diffusion ou réutilisation non autorisée, totale ou partielle, est interdite,
-            sauf autorisation écrite préalable de l'éditeur ou exception légale applicable.
-        </p>
-    </section>
-
-    <section class="legal-section">
-        <h2>Responsabilité</h2>
-        <p>
-            PredictNeed IA fournit des analyses et recommandations issues de données
-            comportementales. Ces résultats constituent une aide à la décision commerciale
-            et ne garantissent pas une vente, une conversion, un chiffre d'affaires ou un
-            résultat déterminé.
-        </p>
-        <p>
-            L'utilisateur professionnel reste responsable de l'utilisation des données,
-            de l'information fournie aux visiteurs de ses propres sites, du recueil du
-            consentement lorsque celui-ci est requis, ainsi que de la conformité de ses
-            propres actions commerciales.
-        </p>
-    </section>
-
-    <section class="legal-section">
-        <h2>Données personnelles et cookies</h2>
-        <p>
-            Le traitement de vos données à caractère personnel est régi par notre Charte du respect de la vie privée, disponible depuis la section "Charte de Protection des Données Personnelles", conformément au Règlement Général sur la Protection des Données 2016/679 du 27 avril 2016 («RGPD»).
-            <a href="{% url 'politique_confidentialite' %}">politique de confidentialité RGPD</a>.
-            L'utilisation des cookies, sessions et stockages locaux est détaillée dans la
-            <a href="{% url 'politique_cookies' %}">politique de cookies</a>.
-        </p>
-    </section>
-
-    <section class="legal-section">
-        <h2>Contact et signalement</h2>
-        <p>
-            Pour toute question, réclamation, demande relative au site ou signalement
-            d'un contenu illicite : <strong>webprojectsby.ariane@newfelstudio.fr.</strong>
-        </p>
-    </section>
+    <header class="legal-hero"><p class="footer-kicker">Informations légales</p><h1>Mentions légales</h1><p>Ces informations identifient l'éditeur et les principaux prestataires techniques actuellement utilisés par PredictNeed IA.</p></header>
+    <section class="legal-section"><h2>Éditeur du site</h2><dl class="legal-definition-list">
+        <div><dt>Nom commercial</dt><dd>PredictNeed IA</dd></div><div><dt>Éditeur</dt><dd>Sonia EYENE NDZIE</dd></div>
+        <div><dt>Situation</dt><dd>Projet entrepreneurial en phase de lancement. Les informations d'immatriculation seront publiées avant tout encaissement commercial dès qu'elles auront été officiellement attribuées.</dd></div>
+        <div><dt>Adresse professionnelle</dt><dd>4 La Viarie, 42410 Chuyer, France</dd></div><div><dt>Email</dt><dd>webprojectsby.ariane@newfelstudio.fr</dd></div><div><dt>Téléphone professionnel</dt><dd>07 45 57 98 63</dd></div><div><dt>Direction de la publication</dt><dd>Sonia EYENE NDZIE</dd></div>
+    </dl></section>
+    <section class="legal-section"><h2>Hébergement et services techniques</h2><p>L'application PredictNeed IA est hébergée par <strong>Fly.io, Inc.</strong>, 2261 Market Street #4990, San Francisco, CA 94114, États-Unis. Site : <a href="https://fly.io/" target="_blank" rel="noopener">fly.io</a>.</p><p><strong>OVH SAS</strong>, 2 rue Kellermann, 59100 Roubaix, France, fournit la messagerie professionnelle et peut intervenir dans la gestion du domaine. L'application reste hébergée sur Fly.io.</p></section>
+    <section class="legal-section"><h2>Activité du service</h2><p>PredictNeed IA est une application SaaS d'analyse comportementale destinée aux professionnels. Elle permet de rattacher des sites à un compte, d'installer un script, de collecter les événements autorisés, de produire des scores et recommandations, de capturer des leads et de suivre des opportunités.</p><p>Le moteur utilise un scoring comportemental explicable. Lorsqu'un site dispose d'assez de résultats résolus et satisfait le contrôle qualité, un modèle supervisé distinct peut être activé. Les résultats restent des aides à la décision.</p></section>
+    <section class="legal-section"><h2>Propriété intellectuelle</h2><p>La structure du site, les textes, interfaces, tableaux de bord, éléments graphiques, bases de données, modèles de scoring, scripts et contenus associés à PredictNeed IA sont protégés par les droits applicables. Toute réutilisation non autorisée reste interdite.</p></section>
+    <section class="legal-section"><h2>Responsabilité</h2><p>Les scores, probabilités, profils, entreprises probables et recommandations peuvent comporter des approximations. Ils ne garantissent ni vente, ni conversion, ni chiffre d'affaires. L'utilisateur professionnel conserve la responsabilité de sa qualification et de ses décisions commerciales.</p></section>
+    <section class="legal-section"><h2>Données personnelles et cookies</h2><p>Les traitements sont détaillés dans la <a href="{% url 'politique_confidentialite' %}">politique de confidentialité</a>. Les cookies, stockages locaux et traceurs sont détaillés dans la <a href="{% url 'politique_cookies' %}">politique de cookies</a>.</p></section>
+    <section class="legal-section"><h2>Contact</h2><p>Pour toute question relative au site : <strong>webprojectsby.ariane@newfelstudio.fr</strong>.</p><p class="legal-update"><strong>Dernière mise à jour : 6 août 2026</strong></p></section>
 </main>
-
 {% include "predictor/includes/footer.html" %}
-
 </body>
 </html>

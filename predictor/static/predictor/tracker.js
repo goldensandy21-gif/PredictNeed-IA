@@ -116,6 +116,8 @@
             if (now() - Number(consent.updated_at) > consentValidityMs) {
                 localStorage.removeItem(consentStorageKey);
                 localStorage.removeItem(sessionStorageKey);
+                localStorage.removeItem(leadSentStorageKey);
+                sessionStorage.removeItem(leadSentStorageKey);
                 return null;
             }
 
@@ -201,6 +203,8 @@
         elapsedSecondsSent = 0;
         clearOfferReopenTimer();
         localStorage.removeItem(sessionStorageKey);
+        localStorage.removeItem(leadSentStorageKey);
+        sessionStorage.removeItem(leadSentStorageKey);
     }
 
     function injectConsentStyles() {

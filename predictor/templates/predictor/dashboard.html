@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Dashboard - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=118">
 </head>
 <body class="dashboard-page">
 
@@ -134,6 +134,18 @@
                     </div>
                 </div>
 
+                <div class="check-item {% if email_verifie %}done{% else %}todo{% endif %}">
+                    <span class="check-icon">{% if email_verifie %}✓{% else %}2{% endif %}</span>
+                    <div>
+                        <strong>Adresse email confirmée</strong>
+                        {% if email_verifie %}
+                            <p>La vérification du compte est terminée.</p>
+                        {% else %}
+                            <p>Confirmez votre email ou <a href="{% url 'dashboard_parametres' %}#verification-email">renvoyez le lien</a>.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
                 <div class="check-item {% if a_un_site %}done{% else %}todo{% endif %}">
                     <span class="check-icon">{% if a_un_site %}✓{% else %}2{% endif %}</span>
                     <div>
@@ -154,7 +166,7 @@
                     <span class="check-icon">{% if a_lead_capture %}✓{% else %}4{% endif %}</span>
                     <div>
                         <strong>Premier lead capturé</strong>
-                        <p>Les coordonnées apparaîtront dans la section “Leads chauds”.</p>
+                        <p>Les coordonnées apparaîtront dans la section « Leads ».</p>
                     </div>
                 </div>
             </div>
@@ -184,7 +196,7 @@
 
         {% if a_module_ecommerce or a_module_prediction_avancee or a_module_segmentation or a_module_visualisations or a_module_historique or a_module_multicanal or a_module_connecteurs or a_module_publicite or a_module_securite_entreprise %}
         <div class="dashboard-section" id="modules-intelligents">
-            <h2>Modules intelligents activés</h2>
+            <h2>Modules actifs pour le site sélectionné</h2>
 
             <div class="stats-grid">
                 {% if a_module_ecommerce %}
@@ -252,6 +264,20 @@
             </div>
         </div>
     {% endif %}
+
+        {% if a_module_prediction_avancee %}
+            <section class="dashboard-section" id="moteur-prediction">
+                <h2>Moteur de prédiction du site sélectionné</h2>
+                {% if modele_ml_dashboard %}
+                    <p><strong>Machine learning supervisé actif.</strong> Modèle {{ modele_ml_dashboard.version }}, entraîné sur {{ modele_ml_dashboard.nombre_echantillons }} sessions résolues.</p>
+                    <p>La probabilité produite reste une estimation commerciale à vérifier, jamais une certitude.</p>
+                {% else %}
+                    <p><strong>Scoring comportemental à règles actif.</strong> Aucun modèle ML n’est utilisé pour ce site tant que les données réelles et le contrôle qualité ne sont pas suffisants.</p>
+                    <p>Données résolues : {{ ml_sessions_resolues }} session{{ ml_sessions_resolues|pluralize }}, dont {{ ml_conversions }} conversion{{ ml_conversions|pluralize }} et {{ ml_pertes }} perte{{ ml_pertes|pluralize }}. Minimum : {{ minimum_ml }} sessions, avec au moins {{ minimum_ml_par_classe }} conversions et {{ minimum_ml_par_classe }} pertes.</p>
+                {% endif %}
+                <a href="{% url 'module_prediction_avancee' %}?site={{ selected_site_id }}" class="btn-secondary">Voir la prédiction avancée</a>
+            </section>
+        {% endif %}
 
         <details class="dashboard-section dashboard-collapsible" id="analyse-visiteurs">
             <summary>
@@ -364,7 +390,7 @@
 
             <div class="dashboard-collapsible-body">
             <p class="section-description">
-                Visualisez les pages regardées par chaque visiteur, le site concerné, le message laissé et l’entreprise détectée quand un signal fiable existe.
+                Visualisez les pages regardées par chaque visiteur, le site concerné, le message laissé et l’entreprise probable lorsqu’un indice exploitable existe ; cet indice reste à vérifier.
             </p>
 
             <div class="module-table-wrapper">
@@ -471,47 +497,13 @@
             </div>
         </details>
 
-            {% if a_module_ecommerce %}
-        <div class="dashboard-section" id="ecommerce">
-            <h2>Analyse e-commerce</h2>
-
-            <p class="dashboard-intro">
-                Cette section apparaît uniquement pour les sites e-commerce.
-            </p>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h2>0</h2>
-                    <p>Produits consultés</p>
-                </div>
-
-                <div class="stat-card">
-                    <h2>0</h2>
-                    <p>Produits ajoutés au panier</p>
-                </div>
-
-                <div class="stat-card">
-                    <h2>0</h2>
-                    <p>Paniers abandonnés</p>
-                </div>
-
-                <div class="stat-card">
-                    <h2>0</h2>
-                    <p>Achats réalisés</p>
-                </div>
-
-                <div class="stat-card">
-                    <h2>0 €</h2>
-                    <p>Montant total du panier</p>
-                </div>
-
-                <div class="stat-card">
-                    <h2>-</h2>
-                    <p>Catégorie préférée</p>
-                </div>
-            </div>
-        </div>
-    {% endif %}
+        {% if a_module_ecommerce %}
+            <section class="dashboard-section" id="ecommerce">
+                <h2>Analyse e-commerce</h2>
+                <p class="dashboard-intro">Les indicateurs e-commerce sont calculés à partir des événements réellement enregistrés pour le site sélectionné. Aucun chiffre fictif n’est affiché dans cette vue d’ensemble.</p>
+                <a href="{% url 'module_ecommerce' %}?site={{ selected_site_id }}" class="btn-secondary">Consulter les statistiques e-commerce</a>
+            </section>
+        {% endif %}
 
         <details class="dashboard-section dashboard-collapsible" id="statut-sites">
             <summary>
@@ -956,7 +948,7 @@
             {% if a_module_ecommerce %}
                 <span>Clients à relancer</span>
             {% else %}
-                <span>Leads chauds à contacter</span>
+                <span>Leads prioritaires à traiter</span>
             {% endif %}
                 <small>{{ total_leads }} lead{{ total_leads|pluralize }} capturé{{ total_leads|pluralize }}</small>
             </summary>
