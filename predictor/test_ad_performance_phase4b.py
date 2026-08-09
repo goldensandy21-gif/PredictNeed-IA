@@ -324,6 +324,40 @@ class CampaignFinancialPerformanceTests(TestCase):
         )
         self.assertEqual(result["roas"], Decimal("0.00"))
 
+    def test_refunded_sale_is_excluded_from_ad_revenue(self):
+        campaign = self.make_campaign("667")
+        self.add_measure(
+            campaign,
+            date(2026, 8, 9),
+            spend="100",
+        )
+        sale = self.add_sale(
+            amount="500",
+            utm_id="667",
+            suffix="refunded",
+        )
+        sale.statut = "remboursee"
+        sale.save(
+            update_fields=[
+                "statut",
+                "date_mise_a_jour",
+            ]
+        )
+        SessionVisiteur.objects.create(
+            site=self.site,
+            session_id="session-667-visible",
+            utm_id="667",
+        )
+
+        result = calculer_performance_campagne(campaign)
+
+        self.assertEqual(
+            result["chiffre_affaires_attribue"],
+            Decimal("0.00"),
+        )
+        self.assertEqual(result["ventes_attribuees"], 0)
+        self.assertEqual(result["roas"], Decimal("0.00"))
+
     def test_missing_spend_never_invents_roi(self):
         campaign = self.make_campaign(
             "777",

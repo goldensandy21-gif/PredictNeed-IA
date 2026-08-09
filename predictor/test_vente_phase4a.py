@@ -147,6 +147,23 @@ class VentePhase4ATests(TestCase):
             ).exists()
         )
 
+    def test_sale_amount_over_field_capacity_is_rejected(self):
+        _, opportunity = self.make_opp(self.a, "too-large")
+
+        with self.assertRaises(ValueError):
+            enregistrer_vente_opportunite(
+                opportunity,
+                montant=Decimal("10000000000.00"),
+                devise="EUR",
+                reference_vente="TOO-LARGE",
+            )
+
+        self.assertFalse(
+            Vente.objects.filter(
+                opportunite=opportunity,
+            ).exists()
+        )
+
     def test_lost_cancels_sale(self):
         lead, opportunity = self.make_opp(self.a, "lost")
         sale = enregistrer_vente_opportunite(

@@ -77,6 +77,10 @@ Les mutations du dashboard liées aux leads, opportunités, automatisations et s
 
 Le moteur de performance publicitaire rapproche uniquement les ventes confirmées qui disposent d'une attribution déterministe vers la campagne. Pour une campagne native, l'identifiant externe peut être rapproché via `utm_id` ou via un `utm_campaign` contenant explicitement cet identifiant. Pour une campagne UTM, la campagne, la source et le medium sont comparés lorsqu'ils sont renseignés. Le ROAS correspond au chiffre d'affaires attribué divisé par la dépense publicitaire. Le ROI publicitaire correspond à `(CA attribué - dépense publicitaire) / dépense publicitaire`. Aucun ratio n'est calculé si la dépense est absente, si l'attribution n'est pas observable ou si les devises sont incompatibles. Ce ROI publicitaire n'intègre pas les coûts produits, salaires, logistique ou autres charges.
 
+Les ventes au statut `annulee` ou `remboursee` sont exclues du chiffre d'affaires attribué et des ratios publicitaires. PredictNeed IA ne modélise pas encore les remboursements partiels ni le revenu net après remboursement ; dans cette version, un remboursement doit donc être représenté par le statut `remboursee` et il sort entièrement du calcul financier.
+
+Les montants de vente sont normalisés à deux décimales et bornés à la capacité du champ `Decimal(12,2)` avant l'écriture. Un montant supérieur à `9999999999.99` est refusé au niveau applicatif.
+
 Le module Publicité affiche désormais les résultats financiers campagne par campagne à partir du moteur de performance : dépense, conversions de la régie, ventes confirmées attribuées, chiffre d'affaires attribué, ROAS, ROI publicitaire et recommandation explicable. Les filtres de dates du module s'appliquent aussi aux mesures journalières et aux ventes utilisées dans ces calculs. Une campagne dont l'attribution n'est pas observable, dont la dépense manque ou dont les devises sont incompatibles reste visible mais sans ratio financier inventé.
 
 ### Meta Ads

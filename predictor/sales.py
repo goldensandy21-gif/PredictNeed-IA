@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import re
 
 from django.db.models import Sum
@@ -16,11 +16,26 @@ def enregistrer_vente_opportunite(
     date_vente=None,
     reference_vente="",
 ):
-    montant = Decimal(montant)
+    try:
+        montant = Decimal(montant).quantize(Decimal("0.01"))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ValueError(
+            "Le montant réellement vendu doit être un nombre valide."
+        ) from exc
+
+    if not montant.is_finite():
+        raise ValueError(
+            "Le montant réellement vendu doit être un nombre fini."
+        )
 
     if montant <= 0:
         raise ValueError(
             "Le montant réellement vendu doit être supérieur à zéro."
+        )
+
+    if montant > Decimal("9999999999.99"):
+        raise ValueError(
+            "Le montant réellement vendu dépasse la capacité enregistrable."
         )
 
     appliquer_attribution_opportunite(opportunite)
