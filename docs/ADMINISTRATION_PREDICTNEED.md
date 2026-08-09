@@ -59,6 +59,8 @@ Le client REST Google Ads est séparé du flux OAuth générique. Il sait lister
 
 Après OAuth Google Ads, PredictNeed IA ne rattache aucun compte automatiquement. Les comptes publicitaires accessibles sont conservés temporairement côté session pendant 15 minutes, sans exposer les jetons OAuth dans le navigateur. Le client choisit explicitement le `customer_id` à associer au site. Le `login_customer_id` du compte administrateur est conservé lorsqu'il est nécessaire. `GOOGLE_ADS_DEVELOPER_TOKEN` est requis pour activer le bouton Google Ads.
 
+La synchronisation Google Ads native interroge par défaut les 30 derniers jours et stocke une mesure par campagne et par date : impressions, clics, conversions et coût. `metrics.cost_micros` est converti dans la devise du compte. Les conversions restent décimales afin de ne pas perdre les conversions fractionnaires attribuées par la régie. Les autres plateformes conservent pour le moment leur rapprochement UTM tant que leur adaptateur API natif n'est pas implémenté.
+
 ## Stripe
 Le code Checkout/webhook existe. La production ne doit être considérée comme prête qu'après configuration et test de `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET`. Ne jamais stocker les secrets dans Git.
 

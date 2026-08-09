@@ -481,3 +481,45 @@ def access_token_pour_compte(compte):
     )
 
     return access_token
+
+def lister_performances_campagnes(
+    access_token,
+    customer_id,
+    *,
+    login_customer_id="",
+    periode="LAST_30_DAYS",
+):
+    periodes_autorisees = {
+        "TODAY",
+        "YESTERDAY",
+        "LAST_7_DAYS",
+        "LAST_14_DAYS",
+        "LAST_30_DAYS",
+        "THIS_MONTH",
+        "LAST_MONTH",
+    }
+    if periode not in periodes_autorisees:
+        raise ValueError("Période Google Ads non autorisée.")
+
+    query = (
+        "SELECT "
+        "segments.date, "
+        "campaign.id, "
+        "campaign.name, "
+        "campaign.status, "
+        "campaign.advertising_channel_type, "
+        "metrics.impressions, "
+        "metrics.clicks, "
+        "metrics.conversions, "
+        "metrics.cost_micros "
+        "FROM campaign "
+        f"WHERE segments.date DURING {periode} "
+        "AND campaign.status != 'REMOVED' "
+        "ORDER BY segments.date, campaign.id"
+    )
+    return rechercher(
+        access_token,
+        customer_id,
+        query,
+        login_customer_id=login_customer_id,
+    )

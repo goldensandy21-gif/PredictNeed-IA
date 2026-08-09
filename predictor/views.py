@@ -32,6 +32,7 @@ from .google_ads_api import (
     GoogleAdsConfigurationError,
     decouvrir_comptes_publicitaires,
 )
+from .google_ads_sync import synchroniser_compte_google_ads
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -4028,11 +4029,39 @@ def synchroniser_compte_connecteur(request, compte_id):
             f"{reverse('module_connecteurs')}?site={site.pk}"
         )
 
-    total = synchroniser_compte_depuis_utm(compte, sites)
-    messages.success(
-        request,
-        f"{total} campagne(s) rapprochée(s) avec les données PredictNeed IA."
-    )
+    if compte.plateforme == "google_ads":
+        try:
+            resultat = synchroniser_compte_google_ads(
+                compte,
+                periode="LAST_30_DAYS",
+            )
+        except (
+            GoogleAdsAPIError,
+            GoogleAdsConfigurationError,
+            ValueError,
+        ) as exc:
+            messages.error(
+                request,
+                f"Synchronisation Google Ads impossible : {exc}",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        messages.success(
+            request,
+            (
+                f"{resultat['campagnes']} campagne(s) Google Ads "
+                f"et {resultat['mesures']} mesure(s) journalière(s) "
+                "synchronisées."
+            ),
+        )
+    else:
+        total = synchroniser_compte_depuis_utm(compte, sites)
+        messages.success(
+            request,
+            f"{total} campagne(s) rapprochée(s) avec les données PredictNeed IA."
+        )
     return redirect(
         f"{reverse('module_connecteurs')}?site={site.pk}"
     )

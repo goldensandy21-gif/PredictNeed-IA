@@ -855,7 +855,11 @@ class CampagneExterne(models.Model):
     utm_campaign = models.CharField(max_length=150, blank=True, null=True)
     impressions = models.PositiveIntegerField(default=0)
     clics = models.PositiveIntegerField(default=0)
-    conversions = models.PositiveIntegerField(default=0)
+    conversions = models.DecimalField(
+        max_digits=14,
+        decimal_places=4,
+        default=0,
+    )
     depense = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     devise = models.CharField(max_length=12, default="EUR")
     donnees_brutes = models.JSONField(default=dict, blank=True)

@@ -101,9 +101,9 @@ def recalculer_totaux_campagne(campagne):
     campagne.source_donnees = "api_regie"
     campagne.impressions = int(totaux["impressions"] or 0)
     campagne.clics = int(totaux["clics"] or 0)
-    campagne.conversions = int(
-        Decimal(totaux["conversions"] or 0)
-    )
+    campagne.conversions = Decimal(
+        totaux["conversions"] or 0
+    ).quantize(Decimal("0.0001"))
     campagne.depense = Decimal(totaux["depense"] or 0)
 
     if derniere_mesure is not None:
