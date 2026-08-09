@@ -1,36 +1,29 @@
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
 
 from .ad_metrics import enregistrer_mesure_campagne_native
+from .ad_sync_utils import (
+    decimal_depuis,
+    decimal_non_negatif,
+    devise_depuis_configuration,
+    entier_non_negatif,
+    finaliser_synchronisation_native,
+)
 from .google_ads_api import (
     access_token_pour_compte,
     lister_performances_campagnes,
     normaliser_customer_id,
 )
-from .models import CampagneExterne, JournalSynchronisationConnecteur
-
-
-def _decimal(value, default="0"):
-    try:
-        return Decimal(str(value))
-    except (InvalidOperation, TypeError, ValueError):
-        return Decimal(default)
-
-
-def _entier(value):
-    try:
-        return max(int(value or 0), 0)
-    except (TypeError, ValueError):
-        return 0
+from .models import CampagneExterne
 
 
 def _depense_depuis_micros(value):
-    micros = _decimal(value)
+    micros = decimal_depuis(value)
     if micros < 0:
         micros = Decimal("0")
     return (micros / Decimal("1000000")).quantize(Decimal("0.01"))
@@ -47,7 +40,7 @@ def synchroniser_compte_google_ads(compte, *, periode="LAST_30_DAYS"):
     customer_id = normaliser_customer_id(compte.identifiant_externe)
     configuration = dict(compte.configuration or {})
     login_customer_id = configuration.get("login_customer_id") or ""
-    devise = (configuration.get("devise") or "EUR").strip().upper()[:12] or "EUR"
+    devise = devise_depuis_configuration(compte)
     access_token = access_token_pour_compte(compte)
 
     rows = lister_performances_campagnes(
@@ -103,16 +96,16 @@ def synchroniser_compte_google_ads(compte, *, periode="LAST_30_DAYS"):
                 },
             )
 
-            conversions = _decimal(metrics.get("conversions"))
-            if conversions < 0:
-                conversions = Decimal("0")
-
             enregistrer_mesure_campagne_native(
                 campagne,
                 date=jour,
-                impressions=_entier(metrics.get("impressions")),
-                clics=_entier(metrics.get("clicks")),
-                conversions=conversions,
+                impressions=entier_non_negatif(
+                    metrics.get("impressions")
+                ),
+                clics=entier_non_negatif(metrics.get("clicks")),
+                conversions=decimal_non_negatif(
+                    metrics.get("conversions")
+                ),
                 depense=_depense_depuis_micros(metrics.get("costMicros")),
                 devise=devise,
                 donnees_brutes={
@@ -128,23 +121,14 @@ def synchroniser_compte_google_ads(compte, *, periode="LAST_30_DAYS"):
             campagnes_ids.add(campagne.id)
             mesures_total += 1
 
-        compte.derniere_synchro = maintenant
-        compte.dernier_message = (
-            f"{len(campagnes_ids)} campagne(s) Google Ads et "
-            f"{mesures_total} mesure(s) journalière(s) synchronisées sur {periode}."
-        )
-        compte.save(update_fields=["derniere_synchro", "dernier_message", "date_mise_a_jour"])
-
-        JournalSynchronisationConnecteur.objects.create(
+        finaliser_synchronisation_native(
             compte=compte,
-            statut="succes",
-            message=compte.dernier_message,
-            details={
-                "source": "google_ads_api",
-                "periode": periode,
-                "campagnes": len(campagnes_ids),
-                "mesures": mesures_total,
-            },
+            label="Google Ads",
+            source="google_ads_api",
+            periode=periode,
+            campagnes=len(campagnes_ids),
+            mesures=mesures_total,
+            maintenant=maintenant,
         )
 
     return {

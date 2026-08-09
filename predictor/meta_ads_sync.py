@@ -1,40 +1,25 @@
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
 
 from .ad_metrics import enregistrer_mesure_campagne_native
+from .ad_sync_utils import (
+    decimal_non_negatif,
+    devise_depuis_configuration,
+    entier_non_negatif,
+    finaliser_synchronisation_native,
+)
 from .external_connectors import lire_token_signe
 from .meta_ads_api import (
     _extraire_conversions_meta,
     lister_performances_campagnes_meta,
     normaliser_account_id_meta,
 )
-from .models import CampagneExterne, JournalSynchronisationConnecteur
-
-
-def _decimal(value, default="0"):
-    try:
-        return Decimal(str(value))
-    except (InvalidOperation, TypeError, ValueError):
-        return Decimal(default)
-
-
-def _decimal_non_negatif(value):
-    nombre = _decimal(value)
-    if nombre < 0:
-        return Decimal("0")
-    return nombre
-
-
-def _entier(value):
-    try:
-        return max(int(value or 0), 0)
-    except (TypeError, ValueError):
-        return 0
+from .models import CampagneExterne
 
 
 def _devise_depuis_ligne(row, compte):
@@ -43,13 +28,7 @@ def _devise_depuis_ligne(row, compte):
     if devise:
         return devise[:12]
 
-    configuration = dict(compte.configuration or {})
-    return (
-        str(configuration.get("devise") or "EUR")
-        .strip()
-        .upper()[:12]
-        or "EUR"
-    )
+    return devise_depuis_configuration(compte)
 
 
 def access_token_pour_compte_meta(compte):
@@ -138,10 +117,12 @@ def synchroniser_compte_meta_ads(compte, *, periode="LAST_30_DAYS"):
             enregistrer_mesure_campagne_native(
                 campagne,
                 date=jour,
-                impressions=_entier(row.get("impressions")),
-                clics=_entier(row.get("clicks")),
+                impressions=entier_non_negatif(
+                    row.get("impressions")
+                ),
+                clics=entier_non_negatif(row.get("clicks")),
                 conversions=conversions,
-                depense=_decimal_non_negatif(row.get("spend")).quantize(
+                depense=decimal_non_negatif(row.get("spend")).quantize(
                     Decimal("0.01")
                 ),
                 devise=devise,
@@ -158,29 +139,14 @@ def synchroniser_compte_meta_ads(compte, *, periode="LAST_30_DAYS"):
             campagnes_ids.add(campagne.id)
             mesures_total += 1
 
-        compte.derniere_synchro = maintenant
-        compte.dernier_message = (
-            f"{len(campagnes_ids)} campagne(s) Meta Ads et "
-            f"{mesures_total} mesure(s) journalière(s) synchronisées sur {periode}."
-        )
-        compte.save(
-            update_fields=[
-                "derniere_synchro",
-                "dernier_message",
-                "date_mise_a_jour",
-            ]
-        )
-
-        JournalSynchronisationConnecteur.objects.create(
+        finaliser_synchronisation_native(
             compte=compte,
-            statut="succes",
-            message=compte.dernier_message,
-            details={
-                "source": "meta_ads_api",
-                "periode": periode,
-                "campagnes": len(campagnes_ids),
-                "mesures": mesures_total,
-            },
+            label="Meta Ads",
+            source="meta_ads_api",
+            periode=periode,
+            campagnes=len(campagnes_ids),
+            mesures=mesures_total,
+            maintenant=maintenant,
         )
 
     return {

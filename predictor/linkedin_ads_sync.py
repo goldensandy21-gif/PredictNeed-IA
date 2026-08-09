@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 from django.utils import timezone
 
 from .ad_metrics import enregistrer_mesure_campagne_native
+from .ad_sync_utils import (
+    decimal_non_negatif,
+    devise_depuis_configuration,
+    entier_non_negatif,
+    finaliser_synchronisation_native,
+)
 from .linkedin_ads_api import (
     access_token_pour_compte_linkedin,
     extraire_depense_linkedin,
@@ -15,38 +20,7 @@ from .linkedin_ads_api import (
     normaliser_sponsored_account_id,
     normaliser_sponsored_campaign_id,
 )
-from .models import CampagneExterne, JournalSynchronisationConnecteur
-
-
-def _decimal(value, default="0"):
-    try:
-        return Decimal(str(value))
-    except (InvalidOperation, TypeError, ValueError):
-        return Decimal(default)
-
-
-def _decimal_non_negatif(value):
-    nombre = _decimal(value)
-    if nombre < 0:
-        return Decimal("0")
-    return nombre
-
-
-def _entier(value):
-    try:
-        return max(int(value or 0), 0)
-    except (TypeError, ValueError):
-        return 0
-
-
-def _devise_compte(compte):
-    configuration = dict(compte.configuration or {})
-    return (
-        str(configuration.get("devise") or "EUR")
-        .strip()
-        .upper()[:12]
-        or "EUR"
-    )
+from .models import CampagneExterne
 
 
 def _date_depuis_ligne(row):
@@ -107,7 +81,7 @@ def synchroniser_compte_linkedin_ads(compte, *, periode="LAST_30_DAYS"):
     account_id = normaliser_sponsored_account_id(
         compte.identifiant_externe
     )
-    devise_compte = _devise_compte(compte)
+    devise_compte = devise_depuis_configuration(compte)
     access_token = access_token_pour_compte_linkedin(compte)
 
     campagnes = {
@@ -176,12 +150,14 @@ def synchroniser_compte_linkedin_ads(compte, *, periode="LAST_30_DAYS"):
             enregistrer_mesure_campagne_native(
                 campagne,
                 date=jour,
-                impressions=_entier(row.get("impressions")),
-                clics=_entier(
+                impressions=entier_non_negatif(
+                    row.get("impressions")
+                ),
+                clics=entier_non_negatif(
                     row.get("landingPageClicks")
                     or row.get("clicks")
                 ),
-                conversions=_decimal_non_negatif(
+                conversions=decimal_non_negatif(
                     row.get("externalWebsiteConversions")
                 ),
                 depense=depense,
@@ -200,29 +176,14 @@ def synchroniser_compte_linkedin_ads(compte, *, periode="LAST_30_DAYS"):
             campagnes_ids.add(campagne.id)
             mesures_total += 1
 
-        compte.derniere_synchro = maintenant
-        compte.dernier_message = (
-            f"{len(campagnes_ids)} campagne(s) LinkedIn Ads et "
-            f"{mesures_total} mesure(s) journalière(s) synchronisées sur {periode}."
-        )
-        compte.save(
-            update_fields=[
-                "derniere_synchro",
-                "dernier_message",
-                "date_mise_a_jour",
-            ]
-        )
-
-        JournalSynchronisationConnecteur.objects.create(
+        finaliser_synchronisation_native(
             compte=compte,
-            statut="succes",
-            message=compte.dernier_message,
-            details={
-                "source": "linkedin_ads_api",
-                "periode": periode,
-                "campagnes": len(campagnes_ids),
-                "mesures": mesures_total,
-            },
+            label="LinkedIn Ads",
+            source="linkedin_ads_api",
+            periode=periode,
+            campagnes=len(campagnes_ids),
+            mesures=mesures_total,
+            maintenant=maintenant,
         )
 
     return {

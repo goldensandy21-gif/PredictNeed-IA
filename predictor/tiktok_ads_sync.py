@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
 
 from .ad_metrics import enregistrer_mesure_campagne_native
-from .models import CampagneExterne, JournalSynchronisationConnecteur
+from .ad_sync_utils import (
+    decimal_non_negatif,
+    devise_depuis_configuration,
+    entier_non_negatif,
+    finaliser_synchronisation_native,
+)
+from .models import CampagneExterne
 from .tiktok_ads_api import (
     access_token_pour_compte_tiktok,
     lister_campagnes_tiktok,
@@ -15,37 +21,6 @@ from .tiktok_ads_api import (
     normaliser_advertiser_id,
     normaliser_campaign_id_tiktok,
 )
-
-
-def _decimal(value, default="0"):
-    try:
-        return Decimal(str(value))
-    except (InvalidOperation, TypeError, ValueError):
-        return Decimal(default)
-
-
-def _decimal_non_negatif(value):
-    nombre = _decimal(value)
-    if nombre < 0:
-        return Decimal("0")
-    return nombre
-
-
-def _entier(value):
-    try:
-        return max(int(value or 0), 0)
-    except (TypeError, ValueError):
-        return 0
-
-
-def _devise_compte(compte):
-    configuration = dict(compte.configuration or {})
-    return (
-        str(configuration.get("devise") or "EUR")
-        .strip()
-        .upper()[:12]
-        or "EUR"
-    )
 
 
 def _campaign_id_depuis_ligne(row):
@@ -98,7 +73,7 @@ def synchroniser_compte_tiktok_ads(compte, *, periode="LAST_30_DAYS"):
     advertiser_id = normaliser_advertiser_id(
         compte.identifiant_externe
     )
-    devise = _devise_compte(compte)
+    devise = devise_depuis_configuration(compte)
     access_token = access_token_pour_compte_tiktok(compte)
 
     campagnes = {
@@ -164,13 +139,15 @@ def synchroniser_compte_tiktok_ads(compte, *, periode="LAST_30_DAYS"):
             enregistrer_mesure_campagne_native(
                 campagne,
                 date=jour,
-                impressions=_entier(metrics.get("impressions")),
-                clics=_entier(metrics.get("clicks")),
-                conversions=_decimal_non_negatif(
+                impressions=entier_non_negatif(
+                    metrics.get("impressions")
+                ),
+                clics=entier_non_negatif(metrics.get("clicks")),
+                conversions=decimal_non_negatif(
                     metrics.get("conversion")
                     or metrics.get("conversions")
                 ),
-                depense=_decimal_non_negatif(
+                depense=decimal_non_negatif(
                     metrics.get("spend")
                 ).quantize(Decimal("0.01")),
                 devise=devise,
@@ -186,29 +163,14 @@ def synchroniser_compte_tiktok_ads(compte, *, periode="LAST_30_DAYS"):
             campagnes_ids.add(campagne.id)
             mesures_total += 1
 
-        compte.derniere_synchro = maintenant
-        compte.dernier_message = (
-            f"{len(campagnes_ids)} campagne(s) TikTok Ads et "
-            f"{mesures_total} mesure(s) journalière(s) synchronisées sur {periode}."
-        )
-        compte.save(
-            update_fields=[
-                "derniere_synchro",
-                "dernier_message",
-                "date_mise_a_jour",
-            ]
-        )
-
-        JournalSynchronisationConnecteur.objects.create(
+        finaliser_synchronisation_native(
             compte=compte,
-            statut="succes",
-            message=compte.dernier_message,
-            details={
-                "source": "tiktok_ads_api",
-                "periode": periode,
-                "campagnes": len(campagnes_ids),
-                "mesures": mesures_total,
-            },
+            label="TikTok Ads",
+            source="tiktok_ads_api",
+            periode=periode,
+            campagnes=len(campagnes_ids),
+            mesures=mesures_total,
+            maintenant=maintenant,
         )
 
     return {
