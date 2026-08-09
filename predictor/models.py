@@ -824,6 +824,11 @@ class CompteConnecteExterne(models.Model):
 
 
 class CampagneExterne(models.Model):
+    SOURCE_DONNEES_CHOICES = [
+        ("utm_predictneed", "UTM PredictNeed"),
+        ("api_regie", "API native de la régie"),
+    ]
+
     compte = models.ForeignKey(
         CompteConnecteExterne,
         on_delete=models.CASCADE,
@@ -837,6 +842,11 @@ class CampagneExterne(models.Model):
         null=True
     )
     plateforme = models.CharField(max_length=40, choices=CompteConnecteExterne.PLATEFORME_CHOICES)
+    source_donnees = models.CharField(
+        max_length=30,
+        choices=SOURCE_DONNEES_CHOICES,
+        default="utm_predictneed",
+    )
     identifiant_externe = models.CharField(max_length=180, blank=True, null=True)
     nom = models.CharField(max_length=220)
     statut = models.CharField(max_length=80, blank=True, null=True)
@@ -865,6 +875,67 @@ class CampagneExterne(models.Model):
 
     def __str__(self):
         return f"{self.nom} - {self.get_plateforme_display()}"
+
+
+class MesureCampagneExterne(models.Model):
+    campagne = models.ForeignKey(
+        CampagneExterne,
+        on_delete=models.CASCADE,
+        related_name="mesures_journalieres",
+    )
+    compte = models.ForeignKey(
+        CompteConnecteExterne,
+        on_delete=models.CASCADE,
+        related_name="mesures_campagnes",
+    )
+    site = models.ForeignKey(
+        SiteClient,
+        on_delete=models.CASCADE,
+        related_name="mesures_campagnes_externes",
+    )
+    plateforme = models.CharField(
+        max_length=40,
+        choices=CompteConnecteExterne.PLATEFORME_CHOICES,
+    )
+    date = models.DateField()
+    impressions = models.PositiveBigIntegerField(default=0)
+    clics = models.PositiveBigIntegerField(default=0)
+    conversions = models.DecimalField(
+        max_digits=14,
+        decimal_places=4,
+        default=0,
+    )
+    depense = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+    )
+    devise = models.CharField(max_length=12, default="EUR")
+    donnees_brutes = models.JSONField(default=dict, blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_mise_a_jour = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date", "campagne__nom"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["campagne", "date"],
+                name="mesure_campagne_jour_uniq",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["site", "plateforme", "-date"],
+                name="mesure_site_plat_date_idx",
+            ),
+            models.Index(
+                fields=["compte", "-date"],
+                name="mesure_compte_date_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.campagne.nom} - {self.date}"
 
 
 class JournalSynchronisationConnecteur(models.Model):

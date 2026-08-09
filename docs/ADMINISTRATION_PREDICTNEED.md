@@ -23,6 +23,7 @@
 - `0019_connecteurs_uniques_par_site` : connecteurs séparés par site.
 - `0020_attribution_campagnes` : attribution first-touch et snapshot opportunité.
 - `0021_ventes_reelles` : ventes réelles et chiffre d'affaires.
+- `0022_mesures_regies_journalieres` : historique journalier des métriques natives des régies.
 
 ## Sécurité
 - Validation Django + confirmation du mot de passe.
@@ -50,6 +51,9 @@ Valeurs par défaut : analytics détaillées 395 jours ; leads 1 095 jours.
 Maintenance : `python manage.py maintenance_quotidienne`
 
 Cette commande gère les essais, exécute la purge et nettoie les anciennes limitations de sécurité. Chaque exécution est journalisée.
+
+## Données publicitaires natives
+Les campagnes UTM restent distinguées des campagnes alimentées par API native. Les métriques natives sont stockées par campagne et par jour afin de conserver l'historique des impressions, clics, conversions et dépenses. Les totaux de `CampagneExterne` sont recalculés à partir de ces mesures journalières.
 
 ## Stripe
 Le code Checkout/webhook existe. La production ne doit être considérée comme prête qu'après configuration et test de `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET`. Ne jamais stocker les secrets dans Git.

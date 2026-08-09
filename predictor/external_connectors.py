@@ -218,6 +218,7 @@ def synchroniser_compte_depuis_utm(compte, sites):
             defaults={
                 "site_id": campagne["site"],
                 "plateforme": compte.plateforme,
+                "source_donnees": "utm_predictneed",
                 "nom": nom,
                 "statut": "Rapprochée via UTM",
                 "utm_source": campagne["utm_source"] or "",

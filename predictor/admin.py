@@ -16,6 +16,7 @@ from .models import (
     EmailAutomatise,
     CompteConnecteExterne,
     CampagneExterne,
+    MesureCampagneExterne,
     JournalSynchronisationConnecteur,
     NewsletterInscription,
     LimitationSecurite,
@@ -426,6 +427,7 @@ class CampagneExterneAdmin(admin.ModelAdmin):
     list_display = (
         "nom",
         "plateforme",
+        "source_donnees",
         "compte",
         "site",
         "utm_source",
@@ -436,7 +438,7 @@ class CampagneExterneAdmin(admin.ModelAdmin):
         "depense",
         "derniere_synchro",
     )
-    list_filter = ("plateforme", "site", "devise")
+    list_filter = ("plateforme", "source_donnees", "site", "devise")
     search_fields = (
         "nom",
         "identifiant_externe",
@@ -446,6 +448,48 @@ class CampagneExterneAdmin(admin.ModelAdmin):
         "compte__nom_compte",
     )
     readonly_fields = ("donnees_brutes", "date_creation", "date_mise_a_jour")
+
+
+@admin.register(MesureCampagneExterne)
+class MesureCampagneExterneAdmin(admin.ModelAdmin):
+    list_display = (
+        "campagne",
+        "plateforme",
+        "site",
+        "date",
+        "impressions",
+        "clics",
+        "conversions",
+        "depense",
+        "devise",
+    )
+    list_filter = (
+        "plateforme",
+        "site",
+        "devise",
+        "date",
+    )
+    search_fields = (
+        "campagne__nom",
+        "campagne__identifiant_externe",
+        "compte__nom_compte",
+        "site__nom_site",
+    )
+    readonly_fields = (
+        "campagne",
+        "compte",
+        "site",
+        "plateforme",
+        "date",
+        "impressions",
+        "clics",
+        "conversions",
+        "depense",
+        "devise",
+        "donnees_brutes",
+        "date_creation",
+        "date_mise_a_jour",
+    )
 
 
 @admin.register(JournalSynchronisationConnecteur)
