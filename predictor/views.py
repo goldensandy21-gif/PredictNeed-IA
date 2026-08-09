@@ -1240,7 +1240,11 @@ def stripe_webhook(request):
 
     if event_type == "checkout.session.completed":
         _activate_client_from_checkout_session(event_object)
-    elif event_type in {"customer.subscription.updated", "customer.subscription.deleted"}:
+    elif event_type in {
+        "customer.subscription.created",
+        "customer.subscription.updated",
+        "customer.subscription.deleted",
+    }:
         _update_subscription_from_stripe(event_object)
 
     return HttpResponse(status=200)

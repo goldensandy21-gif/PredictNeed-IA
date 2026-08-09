@@ -14,7 +14,17 @@
     <main class="dashboard module-page">
         <section class="dashboard-section">
             <p class="section-kicker">Compte PredictNeed IA</p>
-            <h1>Votre essai gratuit est terminé</h1>
+            <h1>
+                {% if client_professionnel.statut_abonnement == "expire" %}
+                    Votre essai gratuit est terminé
+                {% elif client_professionnel.statut_abonnement == "impaye" %}
+                    Votre paiement doit être régularisé
+                {% elif client_professionnel.statut_abonnement == "annule" %}
+                    Votre abonnement doit être réactivé
+                {% else %}
+                    Votre accès est temporairement verrouillé
+                {% endif %}
+            </h1>
 
             <p class="dashboard-intro">
                 Vous pouvez toujours vous connecter à votre espace.

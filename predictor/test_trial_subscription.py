@@ -1,5 +1,7 @@
 
+import json
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core import mail
@@ -132,6 +134,27 @@ class FreeTrialTests(TestCase):
             client.rappel_15_jours_envoye_le
         )
 
+    def test_7_and_2_day_reminders_are_sent_once(self):
+        _, client_7, _ = self.create_trial_client(
+            timedelta(days=7)
+        )
+        _, client_2, _ = self.create_trial_client(
+            timedelta(days=2)
+        )
+
+        call_command("gerer_essais_gratuits")
+        call_command("gerer_essais_gratuits")
+
+        client_7.refresh_from_db()
+        client_2.refresh_from_db()
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIsNotNone(
+            client_7.rappel_7_jours_envoye_le
+        )
+        self.assertIsNotNone(
+            client_2.rappel_2_jours_envoye_le
+        )
+
     def test_expiration_keeps_user_and_site_active(self):
         user, client, site = self.create_trial_client(
             timedelta(days=-1)
@@ -146,3 +169,211 @@ class FreeTrialTests(TestCase):
         self.assertEqual(client.statut_abonnement, "expire")
         self.assertTrue(user.is_active)
         self.assertTrue(site.actif)
+
+    def test_public_tracker_stays_available_after_trial_expiration(self):
+        _, client, site = self.create_trial_client(
+            timedelta(days=-1)
+        )
+        call_command("gerer_essais_gratuits")
+        client.refresh_from_db()
+        self.assertEqual(client.statut_abonnement, "expire")
+
+        response = self.client.post(
+            reverse("track_event"),
+            data=json.dumps(
+                {
+                    "api_key": str(site.cle_api),
+                    "session_id": "expired-public-session",
+                    "type_evenement": "page_vue",
+                    "page": "/",
+                    "consentement_tracking": True,
+                }
+            ),
+            content_type="application/json",
+            HTTP_ORIGIN="https://example.com",
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+    @override_settings(
+        STRIPE_SECRET_KEY="sk_test_predictneed",
+        STRIPE_PRICE_ID="price_test_predictneed",
+    )
+    @patch("predictor.views.create_subscription_checkout_session")
+    def test_checkout_creation_is_mocked_and_saves_session_id(self, checkout):
+        user, client, _ = self.create_trial_client(
+            timedelta(days=-1)
+        )
+        client.email_verifie_le = timezone.now()
+        client.save(update_fields=["email_verifie_le"])
+        checkout.return_value = {
+            "id": "cs_test_predictneed",
+            "url": "https://checkout.stripe.test/session",
+        }
+        self.client.force_login(user)
+
+        response = self.client.post(reverse("activer_abonnement"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response["Location"],
+            "https://checkout.stripe.test/session",
+        )
+        client.refresh_from_db()
+        self.assertEqual(
+            client.stripe_checkout_session_id,
+            "cs_test_predictneed",
+        )
+        self.assertEqual(checkout.call_args.kwargs["trial_days"], 0)
+
+    @override_settings(
+        STRIPE_SECRET_KEY="sk_test_predictneed",
+    )
+    @patch("predictor.views.retrieve_checkout_session")
+    def test_checkout_success_reactivates_expired_client(self, retrieve):
+        user, client, site = self.create_trial_client(
+            timedelta(days=-1)
+        )
+        client.statut_abonnement = "expire"
+        client.stripe_checkout_session_id = "cs_test_success"
+        client.save(
+            update_fields=[
+                "statut_abonnement",
+                "stripe_checkout_session_id",
+            ]
+        )
+        retrieve.return_value = {
+            "id": "cs_test_success",
+            "status": "complete",
+            "payment_status": "paid",
+            "customer": "cus_test_success",
+            "subscription": "sub_test_success",
+            "metadata": {"client_id": str(client.id)},
+        }
+
+        response = self.client.get(
+            reverse("paiement_succes"),
+            {"session_id": "cs_test_success"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("dashboard"))
+        client.refresh_from_db()
+        site.refresh_from_db()
+        self.assertEqual(client.statut_abonnement, "actif")
+        self.assertEqual(client.stripe_customer_id, "cus_test_success")
+        self.assertEqual(
+            client.stripe_subscription_id,
+            "sub_test_success",
+        )
+        self.assertTrue(site.actif)
+        self.assertEqual(
+            int(self.client.session["_auth_user_id"]),
+            user.id,
+        )
+
+    @override_settings(STRIPE_WEBHOOK_SECRET="whsec_test")
+    @patch("predictor.views.verify_stripe_signature", return_value=True)
+    def test_subscription_webhook_locks_modules_but_keeps_tracker_active(
+        self,
+        _signature,
+    ):
+        user, client, site = self.create_trial_client(
+            timedelta(days=20)
+        )
+        client.statut_abonnement = "actif"
+        client.stripe_customer_id = "cus_test_webhook"
+        client.stripe_subscription_id = "sub_test_webhook"
+        client.save(
+            update_fields=[
+                "statut_abonnement",
+                "stripe_customer_id",
+                "stripe_subscription_id",
+            ]
+        )
+
+        event = {
+            "type": "customer.subscription.updated",
+            "data": {
+                "object": {
+                    "id": "sub_test_webhook",
+                    "customer": "cus_test_webhook",
+                    "status": "past_due",
+                    "metadata": {"client_id": str(client.id)},
+                }
+            },
+        }
+        response = self.client.post(
+            reverse("stripe_webhook"),
+            data=json.dumps(event),
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="t=1,v1=fake",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        client.refresh_from_db()
+        site.refresh_from_db()
+        self.assertEqual(client.statut_abonnement, "impaye")
+        self.assertTrue(site.actif)
+
+        self.client.force_login(user)
+        locked = self.client.get(reverse("module_prediction_avancee"))
+        self.assertContains(
+            locked,
+            "Votre paiement doit être régularisé",
+        )
+
+        tracker = self.client.post(
+            reverse("track_event"),
+            data=json.dumps(
+                {
+                    "api_key": str(site.cle_api),
+                    "session_id": "past-due-public-session",
+                    "type_evenement": "page_vue",
+                    "page": "/",
+                    "consentement_tracking": True,
+                }
+            ),
+            content_type="application/json",
+            HTTP_ORIGIN="https://example.com",
+        )
+        self.assertEqual(tracker.status_code, 200)
+
+    @override_settings(STRIPE_WEBHOOK_SECRET="whsec_test")
+    @patch("predictor.views.verify_stripe_signature", return_value=True)
+    def test_subscription_created_webhook_can_reactivate_client(
+        self,
+        _signature,
+    ):
+        _, client, _ = self.create_trial_client(
+            timedelta(days=-1)
+        )
+        client.statut_abonnement = "expire"
+        client.save(update_fields=["statut_abonnement"])
+
+        event = {
+            "type": "customer.subscription.created",
+            "data": {
+                "object": {
+                    "id": "sub_created",
+                    "customer": "cus_created",
+                    "status": "active",
+                    "metadata": {"client_id": str(client.id)},
+                }
+            },
+        }
+        response = self.client.post(
+            reverse("stripe_webhook"),
+            data=json.dumps(event),
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="t=1,v1=fake",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        client.refresh_from_db()
+        self.assertEqual(client.statut_abonnement, "actif")
+        self.assertEqual(client.stripe_customer_id, "cus_created")
+        self.assertEqual(
+            client.stripe_subscription_id,
+            "sub_created",
+        )

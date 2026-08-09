@@ -58,6 +58,15 @@ Maintenance : `python manage.py maintenance_quotidienne`
 
 Cette commande gère les essais, exécute la purge et nettoie les anciennes limitations de sécurité. Chaque exécution est journalisée.
 
+## Essai gratuit et Stripe
+L'inscription crée un essai gratuit de `PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS` jours, 60 jours par défaut, sans carte bancaire ni session Stripe. L'utilisateur, le site et les paramètres restent actifs pendant l'essai, même tant que l'email n'est pas confirmé ; la confirmation est en revanche requise avant l'ajout d'un autre site et avant l'activation d'un abonnement payant.
+
+La commande `gerer_essais_gratuits` envoie les rappels J-15, J-7 et J-2 une seule fois par client, puis passe le client au statut `expire` lorsque la date de fin est dépassée. L'utilisateur et les sites restent actifs pour conserver le login, les paramètres et le tracker public, mais le middleware verrouille les modules métier du dashboard tant que le statut n'autorise pas l'accès aux données.
+
+Stripe n'est appelé que lorsque le client choisit volontairement d'activer l'abonnement. Checkout est créé en mode `subscription`, sans nouveau `trial_period_days`, car l'essai PredictNeed IA s'est déroulé sans carte dans l'application. `STRIPE_SECRET_KEY` suffit à activer le bouton de paiement ; `STRIPE_PRICE_ID` est recommandé pour utiliser le produit/prix configuré dans Stripe, sinon le code construit un prix récurrent à partir des variables `PREDICTNEED_SUBSCRIPTION_*`.
+
+Le retour `paiement_succes` vérifie la session Checkout auprès de Stripe et n'active le client que si l'identifiant de session correspond à celui stocké, que la session est `complete` et que le paiement est `paid` ou `no_payment_required`. Les webhooks `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated` et `customer.subscription.deleted` mettent à jour le statut local. Les statuts `past_due`, `unpaid` et `incomplete` verrouillent les modules sans désactiver le login ni le tracker public ; un statut `active` réactive l'accès.
+
 ## Architecture applicative
 Les vues Django gardent les routes publiques et la composition des templates. Les règles réutilisées par plusieurs modules sont extraites vers des services dédiés : attribution, ventes, performance publicitaire, métriques natives, ML, automatisations, paiement, sécurité, connecteurs OAuth et helpers de dashboard multi-site.
 
