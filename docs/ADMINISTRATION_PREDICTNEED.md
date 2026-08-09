@@ -155,6 +155,8 @@ La meta Google Search Console est injectée seulement lorsque `GOOGLE_SITE_VERIF
 
 `git diff --check`
 
+La suite contient aussi un parcours transversal local (`predictor.test_parcours_transverse`) couvrant inscription, confirmation email, tracker avec attribution first-touch, lead, automatisation, opportunité, vente réelle, mesure publicitaire native, ROAS/ROI, isolation second site, isolation second client, expiration d'essai et réactivation Stripe mockée.
+
 Les avertissements HSTS includeSubDomains/preload restent volontairement non activés tant que tous les sous-domaines HTTPS et la décision de preload ne sont pas validés.
 
 ## Après déploiement
