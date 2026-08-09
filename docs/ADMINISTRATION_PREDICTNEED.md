@@ -162,4 +162,17 @@ Les avertissements HSTS includeSubDomains/preload restent volontairement non act
 ## Après déploiement
 Vérifier `/healthz/`, migrations, comptes existants, inscription essai, simulation RGPD, maintenance manuelle, entraînement ML manuel, puis créer/mettre à jour les tâches Fly sans doublon. Configurer ensuite Stripe et Search Console.
 
+## Audit Fly lecture seule du 9 août 2026
+App auditée : `predictneed-ia`, région `fra`, image actuelle `predictneed-ia:deployment-01KZC0EVQW4340CD8XR8SJNEW9`, digest `sha256:008a019c47902731863ad1ed4b84520042ca0c0196c0f5ae8c23069b5749692c`. La dernière release listée est `v44`, complète, du 6 août 2026.
+
+Machines visibles : deux machines `app` de 1 Go en `fra` dont une démarrée et une arrêtée, plus une machine de rappels `predictneed-rappels-essais` de 256 Mo, arrêtée après exécution, commande `python /code/manage.py gerer_essais_gratuits`. Aucun deuxième scheduler identique n'a été vu.
+
+Certificat Fly : `predictneed-ia.com` en statut `Issued`. `https://predictneed-ia.com/` répond 200. `https://predictneed-ia.fly.dev/` redirige en 301 vers le domaine canonique. Sur l'image actuellement déployée, `/healthz/` répond 404 car la production est encore sur une version ancienne.
+
+Migrations production actuellement visibles par l'image déployée : jusqu'à `0015_essai_gratuit_sans_carte`. La branche locale contient les migrations ultérieures `0016` à `0023` déjà validées localement ; elles ne doivent être appliquées en production qu'après sauvegarde/snapshot DB et validation explicite du déploiement.
+
+Données production lues en lecture seule : 1 client professionnel, 2 sites actifs, 27 sessions, 2 automatisations email, 0 connecteur externe, 0 lead, 0 opportunité. Les compteurs legacy visibles indiquent `connecteurs_site_null=0` et `automatisations_site_null=0`.
+
+Secrets Fly visibles uniquement par nom : `SECRET_KEY`, `DATABASE_URL`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `PREDICTNEED_SITE_URL`, `EMAIL_HOST_PASSWORD`. Avant déploiement complet, ajouter au minimum `PREDICTNEED_TOKEN_ENCRYPTION_KEY`, les secrets Stripe (`STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`) et les secrets des régies réellement activées. Les anciens noms `ALLOWED_HOSTS` et `CSRF_TRUSTED_ORIGINS` restent supportés par `settings.py`.
+
 Cette documentation technique ne remplace pas une validation juridique professionnelle.
