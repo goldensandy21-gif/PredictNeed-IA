@@ -1,9 +1,10 @@
 from django.shortcuts import get_object_or_404, render, redirect
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, Prefetch, Q, Sum
 from .analyse import analyser_besoin, analyser_session_automatique
-from .models import ClientProfessionnel, SiteClient, SessionVisiteur, EvenementUtilisateur, PredictionBesoin, LeadCapture,  OpportuniteCRM, AutomatisationEmail, EtapeAutomatisationEmail, EmailAutomatise, CompteConnecteExterne, CampagneExterne
+from .models import ClientProfessionnel, SiteClient, SessionVisiteur, EvenementUtilisateur, PredictionBesoin, LeadCapture, OpportuniteCRM, Vente, AutomatisationEmail, EtapeAutomatisationEmail, EmailAutomatise, CompteConnecteExterne, CampagneExterne
 from .automations import ensure_default_automation_steps, envoyer_confirmation_lead, get_or_create_lead_confirmation_automation
 from .attribution import appliquer_attribution_opportunite
+from .sales import annuler_vente_opportunite, enregistrer_vente_opportunite
 from .billing import (
     StripeAPIError,
     StripeConfigurationError,
@@ -286,6 +287,25 @@ def _public_site_base_url(request):
         return configured_url.rstrip("/")
 
     return request.build_absolute_uri("/").rstrip("/")
+
+
+def _site_selectionne_pour_mutation(request, client):
+    selected_site_id = (
+        request.POST.get("site")
+        or request.GET.get("site")
+        or ""
+    ).strip()
+
+    if not selected_site_id:
+        return None
+
+    if request.user.is_superuser and client is None:
+        return SiteClient.objects.filter(pk=selected_site_id).first()
+
+    if client is not None:
+        return client.sites.filter(pk=selected_site_id).first()
+
+    return None
 
 
 def _coerce_bool(value, default=False):
@@ -1220,6 +1240,7 @@ def dashboard(request):
     predictions = PredictionBesoin.objects.filter(session__in=sessions)
     leads = LeadCapture.objects.filter(site__in=sites)
     opportunites = OpportuniteCRM.objects.filter(site__in=sites)
+    ventes = Vente.objects.filter(site__in=sites)
     emails_automatises = EmailAutomatise.objects.filter(site__in=sites)
 
     if client is not None:
@@ -1276,7 +1297,27 @@ def dashboard(request):
     total_sessions = sessions.count()
     total_leads = leads.count()
     total_opportunites = opportunites.count()
-    dernieres_opportunites = opportunites.order_by("-date_mise_a_jour")[:5]
+    dernieres_opportunites = (
+        opportunites
+        .select_related("lead", "lead__session", "vente")
+        .order_by("-date_mise_a_jour")[:5]
+    )
+    ventes_confirmees = ventes.filter(statut="confirmee")
+    total_ventes = ventes_confirmees.count()
+    chiffre_affaires_realise = (
+        ventes_confirmees.aggregate(total=Sum("montant")).get("total")
+        or Decimal("0")
+    )
+    ventes_attribuees = (
+        ventes_confirmees
+        .exclude(utm_campaign_attribution__isnull=True)
+        .exclude(utm_campaign_attribution="")
+    )
+    total_ventes_attribuees = ventes_attribuees.count()
+    chiffre_affaires_attribue = (
+        ventes_attribuees.aggregate(total=Sum("montant")).get("total")
+        or Decimal("0")
+    )
     intentions_fortes = predictions.filter(intention="Forte").count()
 
     sessions_mobile = sessions.filter(est_mobile=True).count()
@@ -1513,6 +1554,10 @@ def dashboard(request):
         "a_lead_capture": a_lead_capture,
         "dernieres_opportunites": dernieres_opportunites,
         "total_opportunites": total_opportunites,
+        "total_ventes": total_ventes,
+        "chiffre_affaires_realise": chiffre_affaires_realise,
+        "total_ventes_attribuees": total_ventes_attribuees,
+        "chiffre_affaires_attribue": chiffre_affaires_attribue,
         "sessions_mobile": sessions_mobile,
         "sessions_tablette": sessions_tablette,
         "sessions_desktop": sessions_desktop,
@@ -1655,19 +1700,28 @@ def creer_opportunite_depuis_lead(request, lead_id):
         return redirect("dashboard")
 
     client = getattr(request.user, "client_professionnel", None)
+    site = _site_selectionne_pour_mutation(request, client)
 
-    if request.user.is_superuser and client is None:
-        lead = LeadCapture.objects.filter(id=lead_id).first()
+    if site is None:
+        messages.error(
+            request,
+            "Sélectionnez un site valide avant de créer une opportunité.",
+        )
+        return redirect("dashboard")
 
-    elif client is not None:
-        sites = client.sites.all()
-        lead = LeadCapture.objects.filter(id=lead_id, site__in=sites).first()
-
-    else:
-        lead = None
+    lead = LeadCapture.objects.filter(
+        id=lead_id,
+        site=site,
+    ).first()
 
     if lead is None:
-        return redirect("dashboard")
+        messages.error(
+            request,
+            "Ce lead n'appartient pas au site sélectionné.",
+        )
+        return redirect(
+            f"{reverse('dashboard')}?site={site.pk}&scroll=leads"
+        )
 
     opportunite_existante = OpportuniteCRM.objects.filter(lead=lead).first()
 
@@ -1704,7 +1758,9 @@ def creer_opportunite_depuis_lead(request, lead_id):
             "utm_campaign_attribution": opportunite_existante.utm_campaign_attribution or "",
         })
 
-    return redirect("/dashboard/?scroll=opportunites")
+    return redirect(
+        f"{reverse('dashboard')}?site={site.pk}&scroll=opportunites"
+    )
 
 @login_required
 def modifier_opportunite(request, opportunite_id):
@@ -1712,24 +1768,40 @@ def modifier_opportunite(request, opportunite_id):
         return redirect("dashboard")
 
     client = getattr(request.user, "client_professionnel", None)
+    site = _site_selectionne_pour_mutation(request, client)
 
-    if request.user.is_superuser and client is None:
-        opportunite = OpportuniteCRM.objects.filter(id=opportunite_id).first()
-
-    elif client is not None:
-        sites = client.sites.all()
-        opportunite = OpportuniteCRM.objects.filter(
-            id=opportunite_id,
-            site__in=sites
-        ).first()
-
-    else:
-        opportunite = None
-
-    if opportunite is None:
+    if site is None:
+        messages.error(
+            request,
+            "Sélectionnez un site valide avant de modifier une opportunité.",
+        )
         return redirect("dashboard")
 
+    opportunite = (
+        OpportuniteCRM.objects
+        .select_related("lead", "lead__session")
+        .filter(id=opportunite_id, site=site)
+        .first()
+    )
+
+    if opportunite is None:
+        messages.error(
+            request,
+            "Cette opportunité n'appartient pas au site sélectionné.",
+        )
+        return redirect(
+            f"{reverse('dashboard')}?site={site.pk}&scroll=opportunites"
+        )
+
     montant = request.POST.get("montant_estime", "0").replace(",", ".")
+    montant_realise = (
+        request.POST.get("montant_realise") or ""
+    ).strip().replace(",", ".")
+    devise = (request.POST.get("devise") or "EUR").strip().upper()
+    date_vente_raw = (request.POST.get("date_vente") or "").strip()
+    reference_vente = (
+        request.POST.get("reference_vente") or ""
+    ).strip()[:120]
     probabilite = request.POST.get("probabilite", "20")
     etape = request.POST.get("etape")
     notes = request.POST.get("notes", "")
@@ -1751,6 +1823,55 @@ def modifier_opportunite(request, opportunite_id):
 
     opportunite.notes = notes
     opportunite.save()
+    appliquer_attribution_opportunite(opportunite)
+
+    vente = Vente.objects.filter(opportunite=opportunite).first()
+    vente_erreur = ""
+
+    if opportunite.etape == "gagne":
+        if opportunite.lead is not None:
+            opportunite.lead.statut_suivi = "converti"
+            opportunite.lead.save(update_fields=["statut_suivi"])
+
+        if montant_realise:
+            try:
+                date_vente = (
+                    parse_date(date_vente_raw)
+                    if date_vente_raw
+                    else timezone.localdate()
+                )
+
+                if date_vente_raw and date_vente is None:
+                    raise ValueError("La date de vente est invalide.")
+
+                vente = enregistrer_vente_opportunite(
+                    opportunite,
+                    montant=Decimal(montant_realise),
+                    devise=devise,
+                    date_vente=date_vente,
+                    reference_vente=reference_vente,
+                )
+            except (InvalidOperation, ValueError) as exc:
+                vente_erreur = str(exc)
+                messages.error(request, vente_erreur)
+
+        elif "montant_realise" in request.POST and vente is not None:
+            annuler_vente_opportunite(opportunite)
+            vente.refresh_from_db()
+
+    else:
+        annuler_vente_opportunite(opportunite)
+
+        if opportunite.lead is not None:
+            if opportunite.etape == "perdu":
+                opportunite.lead.statut_suivi = "perdu"
+            elif opportunite.lead.statut_suivi in {"converti", "perdu"}:
+                opportunite.lead.statut_suivi = "contacte"
+
+            opportunite.lead.save(update_fields=["statut_suivi"])
+
+        if vente is not None:
+            vente.refresh_from_db()
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({
@@ -1760,9 +1881,27 @@ def modifier_opportunite(request, opportunite_id):
             "etape": opportunite.etape,
             "etape_label": opportunite.get_etape_display(),
             "notes": opportunite.notes or "",
-        })
+            "vente": (
+                {
+                    "montant": str(vente.montant).replace(".", ","),
+                    "devise": vente.devise,
+                    "date_vente": (
+                        vente.date_vente.isoformat()
+                        if vente and vente.date_vente
+                        else ""
+                    ),
+                    "reference": vente.reference_vente or "",
+                    "statut": vente.statut,
+                }
+                if vente is not None
+                else None
+            ),
+            "error": vente_erreur,
+        }, status=400 if vente_erreur else 200)
 
-    return redirect("/dashboard/?scroll=opportunites")
+    return redirect(
+        f"{reverse('dashboard')}?site={site.pk}&scroll=opportunites"
+    )
 
 
 @login_required

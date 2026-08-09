@@ -857,6 +857,25 @@
             </summary>
 
             <div class="dashboard-collapsible-body">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h2>{{ total_ventes }}</h2>
+                    <p>Ventes réelles confirmées</p>
+                </div>
+                <div class="stat-card">
+                    <h2>{{ chiffre_affaires_realise|floatformat:2 }} €</h2>
+                    <p>Chiffre d'affaires réel</p>
+                </div>
+                <div class="stat-card">
+                    <h2>{{ total_ventes_attribuees }}</h2>
+                    <p>Ventes attribuées à une campagne</p>
+                </div>
+                <div class="stat-card">
+                    <h2>{{ chiffre_affaires_attribue|floatformat:2 }} €</h2>
+                    <p>CA attribué aux campagnes</p>
+                </div>
+            </div>
+
             <div class="opportunities-list">
                 {% for opportunite in dernieres_opportunites %}
                     <div class="opportunity-card" id="opportunite-{{ opportunite.id }}">
@@ -877,6 +896,33 @@
                             <span class="opportunity-probability">{{ opportunite.probabilite }}</span> %
                         </p>
 
+                        <p>
+                            <strong>Attribution :</strong>
+                            {{ opportunite.utm_source_attribution|default:opportunite.source_attribution|default:"Non attribuée" }}
+                            {% if opportunite.utm_campaign_attribution %}
+                                · {{ opportunite.utm_campaign_attribution }}
+                            {% endif %}
+                        </p>
+
+                        {% if opportunite.vente %}
+                            <p>
+                                <strong>Vente réelle :</strong>
+                                {{ opportunite.vente.montant|floatformat:2 }}
+                                {{ opportunite.vente.devise }}
+                                · {{ opportunite.vente.get_statut_display }}
+                            </p>
+                            {% if opportunite.vente.reference_vente %}
+                                <p>
+                                    <strong>Référence :</strong>
+                                    {{ opportunite.vente.reference_vente }}
+                                </p>
+                            {% endif %}
+                        {% elif opportunite.etape == "gagne" %}
+                            <p class="table-muted">
+                                Opportunité gagnée, mais aucun montant réel n'est encore enregistré.
+                            </p>
+                        {% endif %}
+
                         {% if opportunite.lead %}
                             <p>
                                 <strong>Lead lié :</strong>
@@ -890,6 +936,7 @@
                             class="opportunity-edit-form"
                         >
                             {% csrf_token %}
+                            <input type="hidden" name="site" value="{{ selected_site_id }}">
 
                             <div class="opportunity-form-grid">
                                 <div class="form-group">
@@ -924,7 +971,51 @@
                                         <option value="perdu" {% if opportunite.etape == "perdu" %}selected{% endif %}>Perdu</option>
                                     </select>
                                 </div>
+
+                                <div class="form-group">
+                                    <label>Montant réellement vendu (€)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        name="montant_realise"
+                                        value="{% if opportunite.vente and opportunite.vente.statut == 'confirmee' %}{{ opportunite.vente.montant }}{% endif %}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Devise</label>
+                                    <input
+                                        type="text"
+                                        maxlength="3"
+                                        name="devise"
+                                        value="{% if opportunite.vente %}{{ opportunite.vente.devise }}{% else %}EUR{% endif %}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Date de vente</label>
+                                    <input
+                                        type="date"
+                                        name="date_vente"
+                                        value="{% if opportunite.vente and opportunite.vente.date_vente %}{{ opportunite.vente.date_vente|date:'Y-m-d' }}{% endif %}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Référence vente / commande</label>
+                                    <input
+                                        type="text"
+                                        maxlength="120"
+                                        name="reference_vente"
+                                        value="{% if opportunite.vente %}{{ opportunite.vente.reference_vente|default:'' }}{% endif %}"
+                                    >
+                                </div>
                             </div>
+
+                            <p class="section-description">
+                                Le montant réel reste distinct du montant estimé. Seules les ventes confirmées alimentent le chiffre d'affaires.
+                            </p>
 
                             <div class="form-group">
                                 <label>Notes commerciales</label>
@@ -1024,6 +1115,7 @@
                         class="opportunity-create-form"
                     >
                         {% csrf_token %}
+                        <input type="hidden" name="site" value="{{ selected_site_id }}">
                         <button type="submit" class="opportunity-button">
                             Créer une opportunité
                         </button>

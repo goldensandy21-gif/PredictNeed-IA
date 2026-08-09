@@ -414,6 +414,87 @@ class OpportuniteCRM(models.Model):
         return f"{self.titre} - {self.get_etape_display()}"
 
 
+class Vente(models.Model):
+    STATUT_CHOICES = [
+        ("confirmee", "Confirmée"),
+        ("annulee", "Annulée"),
+        ("remboursee", "Remboursée"),
+    ]
+
+    site = models.ForeignKey(
+        SiteClient,
+        on_delete=models.CASCADE,
+        related_name="ventes",
+    )
+    opportunite = models.OneToOneField(
+        OpportuniteCRM,
+        on_delete=models.SET_NULL,
+        related_name="vente",
+        blank=True,
+        null=True,
+    )
+    lead = models.ForeignKey(
+        LeadCapture,
+        on_delete=models.SET_NULL,
+        related_name="ventes",
+        blank=True,
+        null=True,
+    )
+    session = models.ForeignKey(
+        SessionVisiteur,
+        on_delete=models.SET_NULL,
+        related_name="ventes",
+        blank=True,
+        null=True,
+    )
+
+    montant = models.DecimalField(max_digits=12, decimal_places=2)
+    devise = models.CharField(max_length=3, default="EUR")
+    date_vente = models.DateField(blank=True, null=True)
+    reference_vente = models.CharField(max_length=120, blank=True, null=True)
+    statut = models.CharField(
+        max_length=20,
+        choices=STATUT_CHOICES,
+        default="confirmee",
+    )
+
+    source_attribution = models.CharField(max_length=100, blank=True, null=True)
+    utm_source_attribution = models.CharField(max_length=150, blank=True, null=True)
+    utm_medium_attribution = models.CharField(max_length=150, blank=True, null=True)
+    utm_campaign_attribution = models.CharField(max_length=150, blank=True, null=True)
+    details_attribution = models.JSONField(default=dict, blank=True)
+
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_mise_a_jour = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-date_vente", "-date_creation"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["site", "reference_vente"],
+                condition=(
+                    models.Q(reference_vente__isnull=False)
+                    & ~models.Q(reference_vente="")
+                ),
+                name="vente_reference_unique_par_site",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["site", "statut", "-date_vente"],
+                name="vente_site_statut_date_idx",
+            ),
+            models.Index(
+                fields=["site", "utm_campaign_attribution"],
+                name="vente_site_campaign_idx",
+            ),
+        ]
+
+    def __str__(self):
+        reference = self.reference_vente or f"Vente #{self.pk}"
+        return f"{reference} - {self.montant} {self.devise}"
+
+
 class LimitationSecurite(models.Model):
     action = models.CharField(max_length=80)
     cle_hachee = models.CharField(max_length=64)

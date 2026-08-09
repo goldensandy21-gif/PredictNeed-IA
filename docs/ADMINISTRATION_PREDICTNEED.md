@@ -12,12 +12,17 @@
 - Connecteurs OAuth rattachés à un site précis ; synchronisation limitée à ce site.
 - Attribution first-touch par session : source, UTM, identifiant de clic et page d'entrée.
 - Snapshot de l'attribution sur chaque opportunité liée à un lead/session.
+- Vente réelle séparée du montant estimé, avec montant, devise, date, référence et attribution.
+- Création/modification d'opportunité limitée au site sélectionné.
 
 ## Migrations importantes
 - `0015_essai_gratuit_sans_carte` : essai 60 jours.
 - `0016_newsletter_seo_lancement` : newsletter et SEO.
 - `0017_securite_comptes_multisite` : sécurité comptes et multi-site.
 - `0018_machine_learning_et_maintenance` : ML et maintenance.
+- `0019_connecteurs_uniques_par_site` : connecteurs séparés par site.
+- `0020_attribution_campagnes` : attribution first-touch et snapshot opportunité.
+- `0021_ventes_reelles` : ventes réelles et chiffre d'affaires.
 
 ## Sécurité
 - Validation Django + confirmation du mot de passe.

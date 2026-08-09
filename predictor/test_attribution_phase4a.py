@@ -143,6 +143,7 @@ class AttributionPhase4ATests(TestCase):
 
         response = self.client.post(
             reverse("creer_opportunite_depuis_lead", args=[lead.id]),
+            {"site": str(self.site.id)},
         )
 
         self.assertEqual(response.status_code, 302)

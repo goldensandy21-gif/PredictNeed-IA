@@ -10,6 +10,7 @@ from .models import (
     PredictionBesoin,
     LeadCapture,
     OpportuniteCRM,
+    Vente,
     AutomatisationEmail,
     EtapeAutomatisationEmail,
     EmailAutomatise,
@@ -256,6 +257,40 @@ class OpportuniteCRMAdmin(admin.ModelAdmin):
         "titre",
         "lead__email",
         "lead__telephone",
+        "utm_campaign_attribution",
+    )
+    readonly_fields = (
+        "source_attribution",
+        "utm_source_attribution",
+        "utm_medium_attribution",
+        "utm_campaign_attribution",
+        "details_attribution",
+        "date_creation",
+        "date_mise_a_jour",
+    )
+
+
+@admin.register(Vente)
+class VenteAdmin(admin.ModelAdmin):
+    list_display = (
+        "reference_vente",
+        "site",
+        "montant",
+        "devise",
+        "statut",
+        "utm_campaign_attribution",
+        "date_vente",
+    )
+    list_filter = (
+        "statut",
+        "devise",
+        "site",
+        "utm_source_attribution",
+    )
+    search_fields = (
+        "reference_vente",
+        "opportunite__titre",
+        "lead__email",
         "utm_campaign_attribution",
     )
     readonly_fields = (
