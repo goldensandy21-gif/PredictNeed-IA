@@ -3,6 +3,7 @@ from django.db.models import Count, Prefetch, Q
 from .analyse import analyser_besoin, analyser_session_automatique
 from .models import ClientProfessionnel, SiteClient, SessionVisiteur, EvenementUtilisateur, PredictionBesoin, LeadCapture,  OpportuniteCRM, AutomatisationEmail, EtapeAutomatisationEmail, EmailAutomatise, CompteConnecteExterne, CampagneExterne
 from .automations import ensure_default_automation_steps, envoyer_confirmation_lead, get_or_create_lead_confirmation_automation
+from .attribution import appliquer_attribution_opportunite
 from .billing import (
     StripeAPIError,
     StripeConfigurationError,
@@ -474,7 +475,10 @@ def _update_session_client_info(session_visiteur, data):
     incoming_is_desktop = incoming_appareil == "Desktop"
 
     session_visiteur.user_agent = user_agent or session_visiteur.user_agent
-    session_visiteur.referer = data.get("referer", session_visiteur.referer)
+
+    incoming_referer = str(data.get("referer") or "").strip()[:2000]
+    if incoming_referer and not session_visiteur.referer:
+        session_visiteur.referer = incoming_referer
 
     if detected_is_mobile_context and (not incoming_appareil or incoming_is_desktop):
         session_visiteur.appareil = detected["appareil"]
@@ -499,10 +503,25 @@ def _update_session_client_info(session_visiteur, data):
             or detected["systeme_exploitation"]
         )
 
-    session_visiteur.source_visite = data.get("source_visite", session_visiteur.source_visite)
-    session_visiteur.utm_source = data.get("utm_source", session_visiteur.utm_source)
-    session_visiteur.utm_medium = data.get("utm_medium", session_visiteur.utm_medium)
-    session_visiteur.utm_campaign = data.get("utm_campaign", session_visiteur.utm_campaign)
+    attribution_fields = {
+        "source_visite": ("source_visite", 100),
+        "utm_source": ("utm_source", 150),
+        "utm_medium": ("utm_medium", 150),
+        "utm_campaign": ("utm_campaign", 150),
+        "utm_content": ("utm_content", 150),
+        "utm_term": ("utm_term", 150),
+        "utm_id": ("utm_id", 150),
+        "click_id_source": ("click_id_source", 40),
+        "click_id": ("click_id", 255),
+        "landing_page": ("landing_page", 500),
+    }
+
+    for field_name, (data_key, max_length) in attribution_fields.items():
+        incoming_value = str(data.get(data_key) or "").strip()[:max_length]
+        current_value = getattr(session_visiteur, field_name, None)
+
+        if incoming_value and not current_value:
+            setattr(session_visiteur, field_name, incoming_value)
 
     session_visiteur.est_mobile = _coerce_bool(
         data.get("est_mobile"),
@@ -1666,7 +1685,9 @@ def creer_opportunite_depuis_lead(request, lead_id):
         )
 
         lead.statut_suivi = "contacte"
-        lead.save()
+        lead.save(update_fields=["statut_suivi"])
+
+    appliquer_attribution_opportunite(opportunite_existante)
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({
@@ -1679,6 +1700,8 @@ def creer_opportunite_depuis_lead(request, lead_id):
             "etape_label": opportunite_existante.get_etape_display(),
             "lead_contact": lead.email or lead.telephone or "Lead sans contact",
             "notes": opportunite_existante.notes or "",
+            "source_attribution": opportunite_existante.source_attribution or "",
+            "utm_campaign_attribution": opportunite_existante.utm_campaign_attribution or "",
         })
 
     return redirect("/dashboard/?scroll=opportunites")

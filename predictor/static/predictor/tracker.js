@@ -170,13 +170,13 @@
             return null;
         }
 
-        sessionId = localStorage.getItem(sessionStorageKey);
+        sessionId = sessionStorage.getItem(sessionStorageKey);
 
         if (!sessionId) {
             sessionId = createSessionId();
 
             if (!debugMode) {
-                localStorage.setItem(sessionStorageKey, sessionId);
+                sessionStorage.setItem(sessionStorageKey, sessionId);
             }
         }
 
@@ -203,6 +203,7 @@
         elapsedSecondsSent = 0;
         clearOfferReopenTimer();
         localStorage.removeItem(sessionStorageKey);
+        sessionStorage.removeItem(sessionStorageKey);
         localStorage.removeItem(leadSentStorageKey);
         sessionStorage.removeItem(leadSentStorageKey);
     }
@@ -892,6 +893,12 @@
                     utm_source: infosSource.utm_source,
                     utm_medium: infosSource.utm_medium,
                     utm_campaign: infosSource.utm_campaign,
+                    utm_content: infosSource.utm_content,
+                    utm_term: infosSource.utm_term,
+                    utm_id: infosSource.utm_id,
+                    click_id_source: infosSource.click_id_source,
+                    click_id: infosSource.click_id,
+                    landing_page: infosSource.landing_page,
                     est_mobile: infosAppareil.est_mobile,
                     est_tablette: infosAppareil.est_tablette,
                     est_desktop: infosAppareil.est_desktop,
@@ -1013,11 +1020,39 @@
         const utmSource = params.get("utm_source");
         const utmMedium = params.get("utm_medium");
         const utmCampaign = params.get("utm_campaign");
+        const utmContent = params.get("utm_content");
+        const utmTerm = params.get("utm_term");
+        const utmId = params.get("utm_id");
+
+        const clickCandidates = [
+            ["google_ads", "gclid"],
+            ["google_ads", "gbraid"],
+            ["google_ads", "wbraid"],
+            ["meta_ads", "fbclid"],
+            ["tiktok_ads", "ttclid"],
+            ["linkedin_ads", "li_fat_id"],
+        ];
+
+        let clickIdSource = "";
+        let clickId = "";
+
+        for (let index = 0; index < clickCandidates.length; index += 1) {
+            const candidate = clickCandidates[index];
+            const value = params.get(candidate[1]);
+
+            if (value) {
+                clickIdSource = candidate[0];
+                clickId = value;
+                break;
+            }
+        }
 
         let source = "direct";
 
         if (utmSource) {
             source = utmSource;
+        } else if (clickIdSource) {
+            source = clickIdSource;
         } else if (document.referrer) {
             try {
                 const refererHost = new URL(document.referrer).hostname;
@@ -1028,6 +1063,7 @@
                     refererHost.includes("facebook") ||
                     refererHost.includes("instagram") ||
                     refererHost.includes("linkedin") ||
+                    refererHost.includes("tiktok") ||
                     refererHost.includes("x.com") ||
                     refererHost.includes("twitter")
                 ) {
@@ -1045,6 +1081,12 @@
             utm_source: utmSource || "",
             utm_medium: utmMedium || "",
             utm_campaign: utmCampaign || "",
+            utm_content: utmContent || "",
+            utm_term: utmTerm || "",
+            utm_id: utmId || "",
+            click_id_source: clickIdSource,
+            click_id: clickId,
+            landing_page: window.location.pathname,
         };
     }
 
@@ -1377,6 +1419,12 @@
                 utm_source: infosSource.utm_source,
                 utm_medium: infosSource.utm_medium,
                 utm_campaign: infosSource.utm_campaign,
+                utm_content: infosSource.utm_content,
+                utm_term: infosSource.utm_term,
+                utm_id: infosSource.utm_id,
+                click_id_source: infosSource.click_id_source,
+                click_id: infosSource.click_id,
+                landing_page: infosSource.landing_page,
                 est_mobile: infosAppareil.est_mobile,
                 est_tablette: infosAppareil.est_tablette,
                 est_desktop: infosAppareil.est_desktop,
@@ -1485,6 +1533,12 @@
             utm_source: infosSource.utm_source,
             utm_medium: infosSource.utm_medium,
             utm_campaign: infosSource.utm_campaign,
+            utm_content: infosSource.utm_content,
+            utm_term: infosSource.utm_term,
+            utm_id: infosSource.utm_id,
+            click_id_source: infosSource.click_id_source,
+            click_id: infosSource.click_id,
+            landing_page: infosSource.landing_page,
             est_mobile: infosAppareil.est_mobile,
             est_tablette: infosAppareil.est_tablette,
             est_desktop: infosAppareil.est_desktop,

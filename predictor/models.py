@@ -231,6 +231,12 @@ class SessionVisiteur(models.Model):
     utm_source = models.CharField(max_length=150, blank=True, null=True)
     utm_medium = models.CharField(max_length=150, blank=True, null=True)
     utm_campaign = models.CharField(max_length=150, blank=True, null=True)
+    utm_content = models.CharField(max_length=150, blank=True, null=True)
+    utm_term = models.CharField(max_length=150, blank=True, null=True)
+    utm_id = models.CharField(max_length=150, blank=True, null=True)
+    click_id_source = models.CharField(max_length=40, blank=True, null=True)
+    click_id = models.CharField(max_length=255, blank=True, null=True)
+    landing_page = models.CharField(max_length=500, blank=True, null=True)
 
     est_mobile = models.BooleanField(default=False)
     est_tablette = models.BooleanField(default=False)
@@ -251,6 +257,12 @@ class SessionVisiteur(models.Model):
                 fields=["session_id"],
                 condition=models.Q(site__isnull=True),
                 name="session_publique_unique_sans_site",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["site", "utm_campaign"],
+                name="session_site_campaign_idx",
             ),
         ]
 
@@ -381,6 +393,13 @@ class OpportuniteCRM(models.Model):
 
     titre = models.CharField(max_length=200)
     montant_estime = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    source_attribution = models.CharField(max_length=100, blank=True, null=True)
+    utm_source_attribution = models.CharField(max_length=150, blank=True, null=True)
+    utm_medium_attribution = models.CharField(max_length=150, blank=True, null=True)
+    utm_campaign_attribution = models.CharField(max_length=150, blank=True, null=True)
+    details_attribution = models.JSONField(default=dict, blank=True)
+
     etape = models.CharField(
         max_length=30,
         choices=ETAPE_CHOICES,

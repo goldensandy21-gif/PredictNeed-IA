@@ -128,6 +128,9 @@ class SessionVisiteurAdmin(admin.ModelAdmin):
         "utm_source",
         "utm_medium",
         "utm_campaign",
+        "utm_content",
+        "click_id_source",
+        "landing_page",
         "nombre_pages_vues",
         "nombre_clics",
         "temps_total_secondes",
@@ -155,6 +158,12 @@ class SessionVisiteurAdmin(admin.ModelAdmin):
         "utm_source",
         "utm_medium",
         "utm_campaign",
+        "utm_content",
+        "utm_term",
+        "utm_id",
+        "click_id_source",
+        "click_id",
+        "landing_page",
         "navigateur",
         "systeme_exploitation",
     )
@@ -171,6 +180,12 @@ class SessionVisiteurAdmin(admin.ModelAdmin):
         "utm_source",
         "utm_medium",
         "utm_campaign",
+        "utm_content",
+        "utm_term",
+        "utm_id",
+        "click_id_source",
+        "click_id",
+        "landing_page",
         "est_mobile",
         "est_tablette",
         "est_desktop",
@@ -233,11 +248,25 @@ class OpportuniteCRMAdmin(admin.ModelAdmin):
         "montant_estime",
         "etape",
         "probabilite",
+        "utm_campaign_attribution",
         "date_creation",
     )
-    list_filter = ("etape", "site")
-    search_fields = ("titre", "lead__email", "lead__telephone")
-    readonly_fields = ("date_creation", "date_mise_a_jour")
+    list_filter = ("etape", "site", "utm_source_attribution")
+    search_fields = (
+        "titre",
+        "lead__email",
+        "lead__telephone",
+        "utm_campaign_attribution",
+    )
+    readonly_fields = (
+        "source_attribution",
+        "utm_source_attribution",
+        "utm_medium_attribution",
+        "utm_campaign_attribution",
+        "details_attribution",
+        "date_creation",
+        "date_mise_a_jour",
+    )
 
 
 class EtapeAutomatisationEmailInline(admin.TabularInline):

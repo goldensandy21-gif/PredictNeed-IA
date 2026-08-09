@@ -10,6 +10,8 @@
 - Clé API distincte par site.
 - Modules du dashboard évalués sur le site sélectionné.
 - Connecteurs OAuth rattachés à un site précis ; synchronisation limitée à ce site.
+- Attribution first-touch par session : source, UTM, identifiant de clic et page d'entrée.
+- Snapshot de l'attribution sur chaque opportunité liée à un lead/session.
 
 ## Migrations importantes
 - `0015_essai_gratuit_sans_carte` : essai 60 jours.
