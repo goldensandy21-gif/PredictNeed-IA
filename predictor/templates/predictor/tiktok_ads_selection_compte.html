@@ -1,0 +1,84 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Choisir un advertiser TikTok Ads - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=120">
+</head>
+<body>
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<section class="dashboard module-page">
+    <div class="dashboard-actions">
+        <a
+            href="{% url 'module_connecteurs' %}?site={{ site.id }}"
+            class="btn-secondary"
+        >
+            Retour aux connecteurs
+        </a>
+    </div>
+
+    <h1>Choisir l'advertiser TikTok Ads</h1>
+    <p class="dashboard-intro">
+        TikTok a autorisé PredictNeed IA à consulter les advertisers
+        accessibles. Sélectionnez explicitement l'advertiser à rattacher à
+        <strong>{{ site.nom_site }}</strong>.
+    </p>
+
+    {% if messages %}
+        <div class="module-messages">
+            {% for message in messages %}
+                <p class="module-message {{ message.tags }}">{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" class="dashboard-section">
+        {% csrf_token %}
+        <input type="hidden" name="flow" value="{{ flow_id }}">
+
+        <div class="connector-account-grid">
+            {% for compte in comptes_tiktok_ads %}
+                <label class="connector-account-card">
+                    <div>
+                        <h3>{{ compte.nom }}</h3>
+                        <p>ID advertiser : <strong>{{ compte.advertiser_id }}</strong></p>
+                        {% if compte.devise %}
+                            <p>Devise : {{ compte.devise }}</p>
+                        {% endif %}
+                        {% if compte.fuseau_horaire %}
+                            <p>Fuseau : {{ compte.fuseau_horaire }}</p>
+                        {% endif %}
+                        {% if compte.role %}
+                            <p>Rôle : {{ compte.role }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="connector-account-actions">
+                        <input
+                            type="radio"
+                            name="advertiser_id"
+                            value="{{ compte.advertiser_id }}"
+                            required
+                        >
+                        <span class="module-status">Sélectionner</span>
+                    </div>
+                </label>
+            {% empty %}
+                <p>Aucun advertiser TikTok Ads disponible.</p>
+            {% endfor %}
+        </div>
+
+        {% if comptes_tiktok_ads %}
+            <button type="submit" class="module-filter-button">
+                Rattacher cet advertiser au site
+            </button>
+        {% endif %}
+    </form>
+</section>
+
+</body>
+</html>

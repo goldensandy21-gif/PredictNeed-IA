@@ -92,6 +92,11 @@ urlpatterns = [
         name="selectionner_compte_linkedin_ads"
     ),
     path(
+        "connecteurs/tiktok-ads/selectionner-compte/",
+        views.selectionner_compte_tiktok_ads,
+        name="selectionner_compte_tiktok_ads"
+    ),
+    path(
         "connecteurs/<int:compte_id>/synchroniser/",
         views.synchroniser_compte_connecteur,
         name="synchroniser_compte_connecteur"

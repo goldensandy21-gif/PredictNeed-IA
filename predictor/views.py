@@ -56,6 +56,13 @@ from .linkedin_ads_api import (
     lister_comptes_publicitaires_linkedin,
 )
 from .linkedin_ads_sync import synchroniser_compte_linkedin_ads
+from .tiktok_ads_api import (
+    TikTokAdsAPIError,
+    TikTokAdsConfigurationError,
+    echanger_code_contre_token_tiktok,
+    lister_comptes_publicitaires_tiktok,
+)
+from .tiktok_ads_sync import synchroniser_compte_tiktok_ads
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -3669,7 +3676,10 @@ def connecteur_oauth_callback(request, plateforme):
         )
         return redirect("module_connecteurs")
 
-    code = request.GET.get("code")
+    code = (
+        request.GET.get("code")
+        or request.GET.get("auth_code")
+    )
     state = request.GET.get("state")
 
     if not code or not state:
@@ -3723,8 +3733,20 @@ def connecteur_oauth_callback(request, plateforme):
 
     try:
         fournisseur = get_fournisseur(plateforme)
-        token_payload = echanger_code_contre_token(request, plateforme, code)
-    except (ConnecteurConfigurationError, ConnecteurOAuthError) as exc:
+        if plateforme == "tiktok_ads":
+            token_payload = echanger_code_contre_token_tiktok(code)
+        else:
+            token_payload = echanger_code_contre_token(
+                request,
+                plateforme,
+                code,
+            )
+    except (
+        ConnecteurConfigurationError,
+        ConnecteurOAuthError,
+        TikTokAdsAPIError,
+        TikTokAdsConfigurationError,
+    ) as exc:
         messages.error(request, f"Connexion impossible : {exc}")
         return redirect(
             f"{reverse('module_connecteurs')}?site={site.pk}"
@@ -3900,6 +3922,66 @@ def connecteur_oauth_callback(request, plateforme):
 
         selection_url = reverse(
             "selectionner_compte_linkedin_ads"
+        )
+        return redirect(
+            f"{selection_url}?flow={flow_id}"
+        )
+
+    if plateforme == "tiktok_ads":
+        if not access_token:
+            messages.error(
+                request,
+                "TikTok Ads n'a pas renvoyé de jeton d'accès.",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        try:
+            comptes_tiktok_ads = (
+                lister_comptes_publicitaires_tiktok(
+                    access_token,
+                    advertiser_ids=token_payload.get(
+                        "advertiser_ids",
+                        [],
+                    ),
+                )
+            )
+        except (
+            TikTokAdsAPIError,
+            TikTokAdsConfigurationError,
+            ValueError,
+        ) as exc:
+            messages.error(
+                request,
+                f"Impossible de lire les advertisers TikTok Ads : {exc}",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        if not comptes_tiktok_ads:
+            messages.error(
+                request,
+                "Aucun advertiser TikTok Ads accessible n'a été trouvé.",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        flow_id = creer_flux_selection_compte(
+            request,
+            "tiktok_ads",
+            client=client,
+            site=site,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_payload=token_payload,
+            comptes=comptes_tiktok_ads,
+        )
+
+        selection_url = reverse(
+            "selectionner_compte_tiktok_ads"
         )
         return redirect(
             f"{selection_url}?flow={flow_id}"
@@ -4176,6 +4258,33 @@ def selectionner_compte_linkedin_ads(request):
 
 
 @login_required
+def selectionner_compte_tiktok_ads(request):
+    return _selectionner_compte_publicitaire(
+        request,
+        plateforme="tiktok_ads",
+        template_name="predictor/tiktok_ads_selection_compte.html",
+        context_key="comptes_tiktok_ads",
+        id_key="advertiser_id",
+        post_key="advertiser_id",
+        nom_plateforme="TikTok Ads",
+        message_expiration=(
+            "La sélection TikTok Ads a expiré. Relancez la connexion."
+        ),
+        message_selection_invalide="Sélection TikTok Ads invalide.",
+        configuration_selection=lambda selection, advertiser_id: {
+            "source": "oauth_tiktok_ads",
+            "advertiser_id": advertiser_id,
+            "devise": selection.get("devise") or "",
+            "fuseau_horaire": (
+                selection.get("fuseau_horaire") or ""
+            ),
+            "statut_tiktok": selection.get("statut") or "",
+            "role": selection.get("role") or "",
+        },
+    )
+
+
+@login_required
 @require_POST
 def synchroniser_compte_connecteur(request, compte_id):
     client = get_client_professionnel_utilisateur(request)
@@ -4285,6 +4394,33 @@ def synchroniser_compte_connecteur(request, compte_id):
             request,
             (
                 f"{resultat['campagnes']} campagne(s) LinkedIn Ads "
+                f"et {resultat['mesures']} mesure(s) journalière(s) "
+                "synchronisées."
+            ),
+        )
+    elif compte.plateforme == "tiktok_ads":
+        try:
+            resultat = synchroniser_compte_tiktok_ads(
+                compte,
+                periode="LAST_30_DAYS",
+            )
+        except (
+            TikTokAdsAPIError,
+            TikTokAdsConfigurationError,
+            ValueError,
+        ) as exc:
+            messages.error(
+                request,
+                f"Synchronisation TikTok Ads impossible : {exc}",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        messages.success(
+            request,
+            (
+                f"{resultat['campagnes']} campagne(s) TikTok Ads "
                 f"et {resultat['mesures']} mesure(s) journalière(s) "
                 "synchronisées."
             ),

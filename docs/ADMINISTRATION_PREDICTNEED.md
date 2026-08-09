@@ -60,7 +60,7 @@ Le client REST Google Ads est séparé du flux OAuth générique. Il sait lister
 
 Après OAuth Google Ads, PredictNeed IA ne rattache aucun compte automatiquement. Les comptes publicitaires accessibles sont conservés temporairement côté session pendant 15 minutes, sans exposer les jetons OAuth dans le navigateur. Le client choisit explicitement le `customer_id` à associer au site. Le `login_customer_id` du compte administrateur est conservé lorsqu'il est nécessaire. `GOOGLE_ADS_DEVELOPER_TOKEN` est requis pour activer le bouton Google Ads.
 
-La synchronisation Google Ads native interroge par défaut les 30 derniers jours et stocke une mesure par campagne et par date : impressions, clics, conversions et coût. `metrics.cost_micros` est converti dans la devise du compte. Les conversions restent décimales afin de ne pas perdre les conversions fractionnaires attribuées par la régie. TikTok Ads conserve pour le moment son rapprochement UTM tant que son adaptateur API natif n'est pas implémenté.
+La synchronisation Google Ads native interroge par défaut les 30 derniers jours et stocke une mesure par campagne et par date : impressions, clics, conversions et coût. `metrics.cost_micros` est converti dans la devise du compte. Les conversions restent décimales afin de ne pas perdre les conversions fractionnaires attribuées par la régie.
 
 Les montants commerciaux et publicitaires ne sont jamais additionnés entre devises différentes. Le dashboard regroupe le chiffre d'affaires réel et attribué par code devise. Une campagne publicitaire native ne peut contenir qu'une seule devise dans son historique journalier. Le futur calcul ROAS/ROI devra comparer uniquement des montants exprimés dans la même devise, sauf ajout ultérieur d'un mécanisme explicite de conversion de change.
 
@@ -85,6 +85,14 @@ L'intégration LinkedIn Ads utilise les endpoints REST Marketing API avec le hea
 Après OAuth LinkedIn Ads, PredictNeed IA découvre les comptes publicitaires accessibles via `/rest/adAccounts`, pagine les résultats et ne rattache aucun compte automatiquement. Le flux temporaire serveur de sélection reste valable 15 minutes, vérifie l'utilisateur, le client et le site, puis stocke uniquement côté serveur les jetons signés, l'identifiant `sponsoredAccount`, l'URN, le nom, la devise, le statut, le type et les informations de service du compte choisi.
 
 La synchronisation LinkedIn Ads native lit les campagnes du compte sélectionné puis interroge `/rest/adAnalytics` au pivot campagne, granularité journalière. Elle stocke les impressions, clics de landing page, conversions externes disponibles, coût local, devise et date dans `MesureCampagneExterne`. Les campagnes LinkedIn sont identifiées par `sponsoredCampaign`. La synchronisation est idempotente par campagne et par date. Aucun fallback UTM n'est utilisé pour un compte LinkedIn Ads connecté en natif.
+
+### TikTok Ads
+
+L'intégration TikTok Ads utilise l'API for Business v1.3. L'URL d'autorisation est `https://ads.tiktok.com/marketing_api/auth` et l'échange du code utilise un POST JSON vers `/open_api/v1.3/oauth2/access_token/` avec `app_id`, `secret` et `auth_code`. La version par défaut est `v1.3` et peut être remplacée avec `TIKTOK_ADS_API_VERSION`. Les permissions nécessaires côté app TikTok sont au minimum la lecture des campagnes et le reporting consolidé. TikTok peut exiger une revue de l'application et une configuration explicite de l'URL de redirection avant de délivrer un `auth_code`.
+
+Après OAuth TikTok Ads, PredictNeed IA récupère les advertisers accessibles via `/oauth2/advertiser/get/`, ou via la liste `advertiser_ids` renvoyée par l'échange token lorsque TikTok la fournit. Aucun advertiser n'est rattaché automatiquement. Le client choisit explicitement l'advertiser à associer au site ; les jetons restent stockés côté serveur sous forme signée.
+
+La synchronisation TikTok Ads native lit `/campaign/get/`, puis `/report/integrated/get/` en rapport `BASIC`, niveau `AUCTION_CAMPAIGN`, dimensions `campaign_id` et `stat_time_day`. Elle stocke par jour les impressions, clics, conversions disponibles sous `conversion`, dépenses `spend`, devise du compte et identifiant campagne dans `MesureCampagneExterne`. La synchronisation est idempotente par campagne et par date. Aucun fallback UTM n'est utilisé pour un compte TikTok Ads connecté en natif.
 
 
 

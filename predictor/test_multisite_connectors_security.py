@@ -271,7 +271,19 @@ class MultisiteConnectorSecurityTests(TestCase):
         "predictor.views.synchroniser_compte_depuis_utm",
         return_value=0,
     )
-    def test_utm_sync_is_limited_to_connector_site(self, sync):
+    @patch(
+        "predictor.views.synchroniser_compte_tiktok_ads",
+        return_value={
+            "campagnes": 0,
+            "mesures": 0,
+            "periode": "LAST_30_DAYS",
+        },
+    )
+    def test_tiktok_native_sync_is_limited_to_connector_site(
+        self,
+        sync_native,
+        sync_utm,
+    ):
         account = CompteConnecteExterne.objects.create(
             client=self.client_pro,
             site=self.site_b,
@@ -287,12 +299,9 @@ class MultisiteConnectorSecurityTests(TestCase):
             f"{reverse('module_connecteurs')}?site={self.site_b.id}",
         )
 
-        self.assertEqual(sync.call_count, 1)
-        sites_arg = sync.call_args.args[1]
-        self.assertListEqual(
-            list(sites_arg.values_list("id", flat=True)),
-            [self.site_b.id],
-        )
+        self.assertEqual(sync_native.call_count, 1)
+        self.assertEqual(sync_native.call_args.args[0], account)
+        self.assertEqual(sync_utm.call_count, 0)
 
     def test_disconnect_rejects_another_clients_account(self):
         account = CompteConnecteExterne.objects.create(

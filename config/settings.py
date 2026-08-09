@@ -319,23 +319,36 @@ PREDICTNEED_EXTERNAL_CONNECTORS = {
     },
     "tiktok_ads": {
         "nom": "TikTok Ads",
-        "description": "Connexion OAuth configurable pour les comptes TikTok Ads.",
+        "description": "Connexion OAuth pour lire les annonceurs, campagnes et rapports TikTok Ads autorisés.",
         "client_id": os.environ.get("TIKTOK_ADS_CLIENT_ID", ""),
         "client_secret": os.environ.get("TIKTOK_ADS_CLIENT_SECRET", ""),
-        "auth_url": os.environ.get("TIKTOK_ADS_AUTH_URL", ""),
-        "token_url": os.environ.get("TIKTOK_ADS_TOKEN_URL", ""),
+        "api_version": os.environ.get("TIKTOK_ADS_API_VERSION", "v1.3"),
+        "base_url": os.environ.get(
+            "TIKTOK_ADS_BASE_URL",
+            "https://business-api.tiktok.com/open_api",
+        ),
+        "auth_url": os.environ.get(
+            "TIKTOK_ADS_AUTH_URL",
+            "https://ads.tiktok.com/marketing_api/auth",
+        ),
+        "token_url": os.environ.get(
+            "TIKTOK_ADS_TOKEN_URL",
+            "https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/",
+        ),
         "variables_requises": [
             "TIKTOK_ADS_CLIENT_ID",
             "TIKTOK_ADS_CLIENT_SECRET",
-            "TIKTOK_ADS_AUTH_URL",
-            "TIKTOK_ADS_TOKEN_URL",
         ],
         "variables_optionnelles": [
+            "TIKTOK_ADS_API_VERSION",
+            "TIKTOK_ADS_BASE_URL",
+            "TIKTOK_ADS_AUTH_URL",
+            "TIKTOK_ADS_TOKEN_URL",
             "TIKTOK_ADS_SCOPES",
         ],
         "scopes": [
             scope
-            for scope in os.environ.get("TIKTOK_ADS_SCOPES", "advertiser.read").split(",")
+            for scope in os.environ.get("TIKTOK_ADS_SCOPES", "").split(",")
             if scope
         ],
     },

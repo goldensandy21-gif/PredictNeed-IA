@@ -107,13 +107,31 @@ def construire_url_autorisation(request, plateforme, site_id=None):
             f"{fournisseur['nom']} n'est pas encore configuré côté serveur."
         )
 
-    params = {
-        "response_type": "code",
-        "client_id": fournisseur["client_id"],
-        "redirect_uri": redirect_uri_connecteur(request, plateforme),
-        "scope": " ".join(fournisseur.get("scopes", [])),
-        "state": signer_state_connecteur(request, plateforme, site_id=site_id),
-    }
+    if plateforme == "tiktok_ads":
+        params = {
+            "app_id": fournisseur["client_id"],
+            "redirect_uri": redirect_uri_connecteur(request, plateforme),
+            "state": signer_state_connecteur(
+                request,
+                plateforme,
+                site_id=site_id,
+            ),
+        }
+        scopes = fournisseur.get("scopes", [])
+        if scopes:
+            params["scope"] = ",".join(scopes)
+    else:
+        params = {
+            "response_type": "code",
+            "client_id": fournisseur["client_id"],
+            "redirect_uri": redirect_uri_connecteur(request, plateforme),
+            "scope": " ".join(fournisseur.get("scopes", [])),
+            "state": signer_state_connecteur(
+                request,
+                plateforme,
+                site_id=site_id,
+            ),
+        }
     params.update(fournisseur.get("extra_auth_params", {}))
 
     return f"{fournisseur['auth_url']}?{urlencode(params)}"
