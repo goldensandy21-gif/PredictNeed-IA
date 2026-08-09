@@ -19,6 +19,12 @@ from .billing import (
     stripe_is_configured,
     verify_stripe_signature,
 )
+from .connector_oauth_flows import (
+    charger_flux_selection_compte,
+    creer_flux_selection_compte,
+    supprimer_flux_selection_compte,
+    upsert_compte_selectionne,
+)
 from .external_connectors import (
     ConnecteurConfigurationError,
     ConnecteurOAuthError,
@@ -49,7 +55,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
 import re
-import secrets
 from urllib.parse import urlparse
 from django.conf import settings
 from django.contrib import messages
@@ -3764,40 +3769,16 @@ def connecteur_oauth_callback(request, plateforme):
                 f"{reverse('module_connecteurs')}?site={site.pk}"
             )
 
-        flow_id = secrets.token_urlsafe(24)
-        flows = dict(
-            request.session.get(
-                "google_ads_oauth_flows",
-                {},
-            )
+        flow_id = creer_flux_selection_compte(
+            request,
+            "google_ads",
+            client=client,
+            site=site,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_payload=token_payload,
+            comptes=comptes_google_ads,
         )
-        now_ts = timezone.now().timestamp()
-
-        flows = {
-            key: value
-            for key, value in flows.items()
-            if (
-                isinstance(value, dict)
-                and now_ts - float(
-                    value.get("created_at", 0)
-                ) <= 15 * 60
-            )
-        }
-
-        flows[flow_id] = {
-            "user_id": request.user.id,
-            "client_id": client.id,
-            "site_id": site.id,
-            "created_at": now_ts,
-            "access_token_signe": signer_token(access_token),
-            "refresh_token_signe": signer_token(refresh_token),
-            "token_type": token_payload.get("token_type", "Bearer"),
-            "expires_in": token_payload.get("expires_in"),
-            "comptes": comptes_google_ads,
-        }
-
-        request.session["google_ads_oauth_flows"] = flows
-        request.session.modified = True
 
         selection_url = reverse(
             "selectionner_compte_google_ads"
@@ -3844,56 +3825,16 @@ def connecteur_oauth_callback(request, plateforme):
                 f"{reverse('module_connecteurs')}?site={site.pk}"
             )
 
-        flow_id = secrets.token_urlsafe(24)
-        flows = dict(
-            request.session.get(
-                "meta_ads_oauth_flows",
-                {},
-            )
+        flow_id = creer_flux_selection_compte(
+            request,
+            "meta_ads",
+            client=client,
+            site=site,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_payload=token_payload,
+            comptes=comptes_meta_ads,
         )
-        now_ts = timezone.now().timestamp()
-        flows_valides = {}
-
-        for key, value in flows.items():
-            if not isinstance(value, dict):
-                continue
-
-            try:
-                created_at = float(
-                    value.get("created_at", 0)
-                )
-            except (TypeError, ValueError):
-                continue
-
-            age = now_ts - created_at
-            if 0 <= age <= 15 * 60:
-                flows_valides[key] = value
-
-        flows_valides[flow_id] = {
-            "user_id": request.user.id,
-            "client_id": client.id,
-            "site_id": site.id,
-            "created_at": now_ts,
-            "access_token_signe": signer_token(
-                access_token
-            ),
-            "refresh_token_signe": signer_token(
-                refresh_token
-            ),
-            "token_type": token_payload.get(
-                "token_type",
-                "Bearer",
-            ),
-            "expires_in": token_payload.get(
-                "expires_in"
-            ),
-            "comptes": comptes_meta_ads,
-        }
-
-        request.session[
-            "meta_ads_oauth_flows"
-        ] = flows_valides
-        request.session.modified = True
 
         selection_url = reverse(
             "selectionner_compte_meta_ads"
@@ -3945,14 +3886,6 @@ def selectionner_compte_meta_ads(request):
         or ""
     ).strip()
 
-    flows = dict(
-        request.session.get(
-            "meta_ads_oauth_flows",
-            {},
-        )
-    )
-    pending = flows.get(flow_id)
-
     site_fallback = None
     if client is not None:
         site_fallback = (
@@ -3969,63 +3902,22 @@ def selectionner_compte_meta_ads(request):
             )
         return redirect("module_connecteurs")
 
-    if (
-        not flow_id
-        or not isinstance(pending, dict)
-        or client is None
-    ):
+    flux = charger_flux_selection_compte(
+        request,
+        "meta_ads",
+        flow_id,
+        client,
+    )
+
+    if not flux["ok"]:
         messages.error(
             request,
             "La sélection Meta Ads a expiré. Relancez la connexion.",
         )
         return redirect_connecteurs(site_fallback)
 
-    try:
-        created_at = float(
-            pending.get("created_at", 0)
-        )
-    except (TypeError, ValueError):
-        created_at = 0
-
-    age = timezone.now().timestamp() - created_at
-
-    if (
-        age < 0
-        or age > 15 * 60
-        or pending.get("user_id") != request.user.id
-        or pending.get("client_id") != client.id
-    ):
-        flows.pop(flow_id, None)
-        request.session[
-            "meta_ads_oauth_flows"
-        ] = flows
-        request.session.modified = True
-        messages.error(
-            request,
-            "La sélection Meta Ads n'est plus valide.",
-        )
-        return redirect_connecteurs(site_fallback)
-
-    site = (
-        client.sites
-        .filter(
-            pk=pending.get("site_id"),
-            module_connecteurs_actif=True,
-        )
-        .first()
-    )
-
-    if site is None:
-        flows.pop(flow_id, None)
-        request.session[
-            "meta_ads_oauth_flows"
-        ] = flows
-        request.session.modified = True
-        messages.error(
-            request,
-            "Le site associé à cette connexion Meta Ads n'est plus disponible.",
-        )
-        return redirect_connecteurs(site_fallback)
+    pending = flux["pending"]
+    site = flux["site"]
 
     comptes = [
         compte
@@ -4060,116 +3952,49 @@ def selectionner_compte_meta_ads(request):
                 "Sélection Meta Ads invalide.",
             )
         else:
-            existing = (
-                CompteConnecteExterne.objects
-                .filter(
-                    client=client,
-                    site=site,
-                    plateforme="meta_ads",
-                    identifiant_externe=account_id,
-                )
-                .first()
-            )
-
-            refresh_token_signe = (
-                pending.get(
-                    "refresh_token_signe"
-                )
-                or (
-                    existing.refresh_token_signe
-                    if existing is not None
-                    else ""
-                )
-            )
-
-            expires_at = None
-            expires_in = pending.get(
-                "expires_in"
-            )
-
-            try:
-                if expires_in:
-                    expires_at = (
-                        timezone.now()
-                        + timedelta(
-                            seconds=int(expires_in)
-                        )
-                    )
-            except (TypeError, ValueError):
-                expires_at = None
-
             compte, _ = (
-                CompteConnecteExterne.objects
-                .update_or_create(
+                upsert_compte_selectionne(
                     client=client,
                     site=site,
                     plateforme="meta_ads",
                     identifiant_externe=account_id,
-                    defaults={
-                        "nom_compte": (
-                            selection.get("nom")
-                            or f"Meta Ads {account_id}"
+                    nom_compte=(
+                        selection.get("nom")
+                        or f"Meta Ads {account_id}"
+                    ),
+                    pending=pending,
+                    configuration={
+                        "source": "oauth_meta_ads",
+                        "account_id": account_id,
+                        "graph_id": (
+                            selection.get("graph_id")
+                            or f"act_{account_id}"
                         ),
-                        "statut": "connecte",
-                        "scopes": " ".join(
-                            get_fournisseur(
-                                "meta_ads"
-                            ).get("scopes", [])
+                        "devise": (
+                            selection.get("devise")
+                            or ""
                         ),
-                        "access_token_signe": pending.get(
-                            "access_token_signe",
-                            "",
+                        "fuseau_horaire": (
+                            selection.get("fuseau_horaire")
+                            or ""
                         ),
-                        "refresh_token_signe": (
-                            refresh_token_signe
-                        ),
-                        "token_type": pending.get(
-                            "token_type",
-                            "Bearer",
-                        ),
-                        "expires_at": expires_at,
-                        "configuration": {
-                            "source": (
-                                "oauth_meta_ads"
-                            ),
-                            "account_id": account_id,
-                            "graph_id": (
-                                selection.get(
-                                    "graph_id"
-                                )
-                                or f"act_{account_id}"
-                            ),
-                            "devise": (
-                                selection.get(
-                                    "devise"
-                                )
-                                or ""
-                            ),
-                            "fuseau_horaire": (
-                                selection.get(
-                                    "fuseau_horaire"
-                                )
-                                or ""
-                            ),
-                            "statut_meta": (
-                                selection.get(
-                                    "statut_meta"
-                                )
-                            ),
-                        },
-                        "dernier_message": (
-                            "Compte Meta Ads sélectionné et prêt "
-                            "pour l'import natif des campagnes."
+                        "statut_meta": selection.get(
+                            "statut_meta"
                         ),
                     },
+                    dernier_message=(
+                        "Compte Meta Ads sélectionné et prêt "
+                        "pour l'import natif des campagnes."
+                    ),
                 )
             )
 
-            flows.pop(flow_id, None)
-            request.session[
-                "meta_ads_oauth_flows"
-            ] = flows
-            request.session.modified = True
+            supprimer_flux_selection_compte(
+                request,
+                "meta_ads",
+                flow_id,
+                flows=flux["flows"],
+            )
 
             messages.success(
                 request,
@@ -4200,14 +4025,6 @@ def selectionner_compte_google_ads(request):
         or ""
     ).strip()
 
-    flows = dict(
-        request.session.get(
-            "google_ads_oauth_flows",
-            {},
-        )
-    )
-    pending = flows.get(flow_id)
-
     site_fallback = None
     if client is not None:
         site_fallback = (
@@ -4224,54 +4041,22 @@ def selectionner_compte_google_ads(request):
             )
         return redirect("module_connecteurs")
 
-    if (
-        not flow_id
-        or not isinstance(pending, dict)
-        or client is None
-    ):
+    flux = charger_flux_selection_compte(
+        request,
+        "google_ads",
+        flow_id,
+        client,
+    )
+
+    if not flux["ok"]:
         messages.error(
             request,
             "La sélection Google Ads a expiré. Relancez la connexion.",
         )
         return redirect_connecteurs(site_fallback)
 
-    try:
-        created_at = float(pending.get("created_at", 0))
-    except (TypeError, ValueError):
-        created_at = 0
-
-    if (
-        timezone.now().timestamp() - created_at > 15 * 60
-        or pending.get("user_id") != request.user.id
-        or pending.get("client_id") != client.id
-    ):
-        flows.pop(flow_id, None)
-        request.session["google_ads_oauth_flows"] = flows
-        request.session.modified = True
-        messages.error(
-            request,
-            "La sélection Google Ads n'est plus valide.",
-        )
-        return redirect_connecteurs(site_fallback)
-
-    site = (
-        client.sites
-        .filter(
-            pk=pending.get("site_id"),
-            module_connecteurs_actif=True,
-        )
-        .first()
-    )
-
-    if site is None:
-        flows.pop(flow_id, None)
-        request.session["google_ads_oauth_flows"] = flows
-        request.session.modified = True
-        messages.error(
-            request,
-            "Le site associé à cette connexion Google Ads n'est plus disponible.",
-        )
-        return redirect_connecteurs(site_fallback)
+    pending = flux["pending"]
+    site = flux["site"]
 
     comptes = [
         compte
@@ -4304,107 +4089,53 @@ def selectionner_compte_google_ads(request):
                 "Sélection Google Ads invalide.",
             )
         else:
-            existing = (
-                CompteConnecteExterne.objects
-                .filter(
-                    client=client,
-                    site=site,
-                    plateforme="google_ads",
-                    identifiant_externe=customer_id,
-                )
-                .first()
-            )
-
-            refresh_token_signe = (
-                pending.get("refresh_token_signe")
-                or (
-                    existing.refresh_token_signe
-                    if existing is not None
-                    else ""
-                )
-            )
-
-            expires_at = None
-            expires_in = pending.get("expires_in")
-            try:
-                if expires_in:
-                    expires_at = (
-                        timezone.now()
-                        + timedelta(
-                            seconds=int(expires_in)
-                        )
-                    )
-            except (TypeError, ValueError):
-                expires_at = None
-
             compte, _ = (
-                CompteConnecteExterne.objects
-                .update_or_create(
+                upsert_compte_selectionne(
                     client=client,
                     site=site,
                     plateforme="google_ads",
                     identifiant_externe=customer_id,
-                    defaults={
-                        "nom_compte": (
-                            selection.get("nom")
-                            or f"Google Ads {customer_id}"
+                    nom_compte=(
+                        selection.get("nom")
+                        or f"Google Ads {customer_id}"
+                    ),
+                    pending=pending,
+                    configuration={
+                        "source": "oauth_google_ads",
+                        "customer_id": customer_id,
+                        "login_customer_id": (
+                            selection.get("login_customer_id")
+                            or ""
                         ),
-                        "statut": "connecte",
-                        "scopes": " ".join(
-                            get_fournisseur(
-                                "google_ads"
-                            ).get("scopes", [])
+                        "devise": (
+                            selection.get("devise")
+                            or ""
                         ),
-                        "access_token_signe": pending.get(
-                            "access_token_signe",
-                            "",
+                        "fuseau_horaire": (
+                            selection.get("fuseau_horaire")
+                            or ""
                         ),
-                        "refresh_token_signe": refresh_token_signe,
-                        "token_type": pending.get(
-                            "token_type",
-                            "Bearer",
+                        "test_account": bool(
+                            selection.get("test_account")
                         ),
-                        "expires_at": expires_at,
-                        "configuration": {
-                            "source": "oauth_google_ads",
-                            "customer_id": customer_id,
-                            "login_customer_id": (
-                                selection.get(
-                                    "login_customer_id"
-                                )
-                                or ""
-                            ),
-                            "devise": (
-                                selection.get("devise")
-                                or ""
-                            ),
-                            "fuseau_horaire": (
-                                selection.get(
-                                    "fuseau_horaire"
-                                )
-                                or ""
-                            ),
-                            "test_account": bool(
-                                selection.get(
-                                    "test_account"
-                                )
-                            ),
-                            "statut_google": (
-                                selection.get("statut")
-                                or ""
-                            ),
-                        },
-                        "dernier_message": (
-                            "Compte Google Ads sélectionné et prêt "
-                            "pour l'import natif des campagnes."
+                        "statut_google": (
+                            selection.get("statut")
+                            or ""
                         ),
                     },
+                    dernier_message=(
+                        "Compte Google Ads sélectionné et prêt "
+                        "pour l'import natif des campagnes."
+                    ),
                 )
             )
 
-            flows.pop(flow_id, None)
-            request.session["google_ads_oauth_flows"] = flows
-            request.session.modified = True
+            supprimer_flux_selection_compte(
+                request,
+                "google_ads",
+                flow_id,
+                flows=flux["flows"],
+            )
 
             messages.success(
                 request,

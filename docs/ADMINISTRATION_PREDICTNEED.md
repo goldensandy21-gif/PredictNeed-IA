@@ -10,6 +10,7 @@
 - Clé API distincte par site.
 - Modules du dashboard évalués sur le site sélectionné.
 - Connecteurs OAuth rattachés à un site précis ; synchronisation limitée à ce site.
+- Les flux temporaires de sélection de comptes publicitaires sont centralisés : durée 15 minutes, validation utilisateur/client/site, jetons signés côté serveur et conservation rétrocompatible du refresh token existant.
 - Attribution first-touch par session : source, UTM, identifiant de clic et page d'entrée.
 - Snapshot de l'attribution sur chaque opportunité liée à un lead/session.
 - Vente réelle séparée du montant estimé, avec montant, devise, date, référence et attribution.
