@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
+import re
 
 from django.db.models import Sum
 from django.utils import timezone
@@ -55,7 +56,24 @@ def enregistrer_mesure_campagne_native(
             "La plateforme du compte et de la campagne doit être identique."
         )
 
-    devise = str(devise or "EUR").strip().upper()[:12] or "EUR"
+    devise = str(devise or "EUR").strip().upper()
+
+    if not re.fullmatch(r"[A-Z]{3}", devise):
+        raise ValueError(
+            "La devise publicitaire doit être un code ISO à 3 lettres."
+        )
+
+    devises_existantes = set(
+        campagne.mesures_journalieres
+        .exclude(devise="")
+        .values_list("devise", flat=True)
+        .distinct()
+    )
+
+    if devises_existantes and devises_existantes != {devise}:
+        raise ValueError(
+            "Les mesures d'une même campagne publicitaire doivent utiliser une seule devise."
+        )
 
     mesure, _ = MesureCampagneExterne.objects.update_or_create(
         campagne=campagne,
@@ -85,6 +103,18 @@ def enregistrer_mesure_campagne_native(
 
 def recalculer_totaux_campagne(campagne):
     mesures = campagne.mesures_journalieres.all()
+
+    devises = set(
+        mesures
+        .exclude(devise="")
+        .values_list("devise", flat=True)
+        .distinct()
+    )
+
+    if len(devises) > 1:
+        raise ValueError(
+            "Impossible d'additionner des dépenses publicitaires de devises différentes."
+        )
 
     totaux = mesures.aggregate(
         impressions=Sum("impressions"),

@@ -1,6 +1,7 @@
 from decimal import Decimal
 import re
 
+from django.db.models import Sum
 from django.utils import timezone
 
 from .attribution import appliquer_attribution_opportunite
@@ -26,7 +27,9 @@ def enregistrer_vente_opportunite(
 
     devise = str(devise or "EUR").strip().upper()
     if not re.fullmatch(r"[A-Z]{3}", devise):
-        devise = "EUR"
+        raise ValueError(
+            "La devise doit être un code ISO à 3 lettres, par exemple EUR ou USD."
+        )
 
     reference = str(reference_vente or "").strip()[:120] or None
 
@@ -81,3 +84,25 @@ def annuler_vente_opportunite(opportunite):
         vente.save(update_fields=["statut", "date_mise_a_jour"])
 
     return vente
+
+def agreger_montants_par_devise(queryset):
+    resultats = []
+
+    for ligne in (
+        queryset
+        .values("devise")
+        .annotate(total=Sum("montant"))
+        .order_by("devise")
+    ):
+        devise = str(ligne.get("devise") or "").strip().upper()
+        total = ligne.get("total") or Decimal("0")
+
+        if not re.fullmatch(r"[A-Z]{3}", devise):
+            continue
+
+        resultats.append({
+            "devise": devise,
+            "total": total,
+        })
+
+    return resultats

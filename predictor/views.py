@@ -4,7 +4,11 @@ from .analyse import analyser_besoin, analyser_session_automatique
 from .models import ClientProfessionnel, SiteClient, SessionVisiteur, EvenementUtilisateur, PredictionBesoin, LeadCapture, OpportuniteCRM, Vente, AutomatisationEmail, EtapeAutomatisationEmail, EmailAutomatise, CompteConnecteExterne, CampagneExterne
 from .automations import ensure_default_automation_steps, envoyer_confirmation_lead, get_or_create_lead_confirmation_automation
 from .attribution import appliquer_attribution_opportunite
-from .sales import annuler_vente_opportunite, enregistrer_vente_opportunite
+from .sales import (
+    agreger_montants_par_devise,
+    annuler_vente_opportunite,
+    enregistrer_vente_opportunite,
+)
 from .billing import (
     StripeAPIError,
     StripeConfigurationError,
@@ -1311,9 +1315,15 @@ def dashboard(request):
     )
     ventes_confirmees = ventes.filter(statut="confirmee")
     total_ventes = ventes_confirmees.count()
+    chiffre_affaires_realise_par_devise = (
+        agreger_montants_par_devise(
+            ventes_confirmees
+        )
+    )
     chiffre_affaires_realise = (
-        ventes_confirmees.aggregate(total=Sum("montant")).get("total")
-        or Decimal("0")
+        chiffre_affaires_realise_par_devise[0]["total"]
+        if len(chiffre_affaires_realise_par_devise) == 1
+        else None
     )
     ventes_attribuees = (
         ventes_confirmees
@@ -1321,9 +1331,15 @@ def dashboard(request):
         .exclude(utm_campaign_attribution="")
     )
     total_ventes_attribuees = ventes_attribuees.count()
+    chiffre_affaires_attribue_par_devise = (
+        agreger_montants_par_devise(
+            ventes_attribuees
+        )
+    )
     chiffre_affaires_attribue = (
-        ventes_attribuees.aggregate(total=Sum("montant")).get("total")
-        or Decimal("0")
+        chiffre_affaires_attribue_par_devise[0]["total"]
+        if len(chiffre_affaires_attribue_par_devise) == 1
+        else None
     )
     intentions_fortes = predictions.filter(intention="Forte").count()
 
@@ -1563,8 +1579,10 @@ def dashboard(request):
         "total_opportunites": total_opportunites,
         "total_ventes": total_ventes,
         "chiffre_affaires_realise": chiffre_affaires_realise,
+        "chiffre_affaires_realise_par_devise": chiffre_affaires_realise_par_devise,
         "total_ventes_attribuees": total_ventes_attribuees,
         "chiffre_affaires_attribue": chiffre_affaires_attribue,
+        "chiffre_affaires_attribue_par_devise": chiffre_affaires_attribue_par_devise,
         "sessions_mobile": sessions_mobile,
         "sessions_tablette": sessions_tablette,
         "sessions_desktop": sessions_desktop,

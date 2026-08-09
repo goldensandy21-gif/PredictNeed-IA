@@ -61,6 +61,8 @@ Après OAuth Google Ads, PredictNeed IA ne rattache aucun compte automatiquement
 
 La synchronisation Google Ads native interroge par défaut les 30 derniers jours et stocke une mesure par campagne et par date : impressions, clics, conversions et coût. `metrics.cost_micros` est converti dans la devise du compte. Les conversions restent décimales afin de ne pas perdre les conversions fractionnaires attribuées par la régie. Les autres plateformes conservent pour le moment leur rapprochement UTM tant que leur adaptateur API natif n'est pas implémenté.
 
+Les montants commerciaux et publicitaires ne sont jamais additionnés entre devises différentes. Le dashboard regroupe le chiffre d'affaires réel et attribué par code devise. Une campagne publicitaire native ne peut contenir qu'une seule devise dans son historique journalier. Le futur calcul ROAS/ROI devra comparer uniquement des montants exprimés dans la même devise, sauf ajout ultérieur d'un mécanisme explicite de conversion de change.
+
 ## Stripe
 Le code Checkout/webhook existe. La production ne doit être considérée comme prête qu'après configuration et test de `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET`. Ne jamais stocker les secrets dans Git.
 

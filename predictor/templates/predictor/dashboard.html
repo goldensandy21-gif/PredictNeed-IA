@@ -863,7 +863,13 @@
                     <p>Ventes réelles confirmées</p>
                 </div>
                 <div class="stat-card">
-                    <h2>{{ chiffre_affaires_realise|floatformat:2 }} €</h2>
+                    <h2>
+                        {% for montant in chiffre_affaires_realise_par_devise %}
+                            {{ montant.total|floatformat:2 }} {{ montant.devise }}{% if not forloop.last %}<br>{% endif %}
+                        {% empty %}
+                            0,00
+                        {% endfor %}
+                    </h2>
                     <p>Chiffre d'affaires réel</p>
                 </div>
                 <div class="stat-card">
@@ -871,7 +877,13 @@
                     <p>Ventes attribuées à une campagne</p>
                 </div>
                 <div class="stat-card">
-                    <h2>{{ chiffre_affaires_attribue|floatformat:2 }} €</h2>
+                    <h2>
+                        {% for montant in chiffre_affaires_attribue_par_devise %}
+                            {{ montant.total|floatformat:2 }} {{ montant.devise }}{% if not forloop.last %}<br>{% endif %}
+                        {% empty %}
+                            0,00
+                        {% endfor %}
+                    </h2>
                     <p>CA attribué aux campagnes</p>
                 </div>
             </div>
@@ -940,7 +952,7 @@
 
                             <div class="opportunity-form-grid">
                                 <div class="form-group">
-                                    <label>Montant estimé (€)</label>
+                                    <label>Montant estimé</label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -973,7 +985,7 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label>Montant réellement vendu (€)</label>
+                                    <label>Montant réellement vendu</label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -990,6 +1002,8 @@
                                         maxlength="3"
                                         name="devise"
                                         value="{% if opportunite.vente %}{{ opportunite.vente.devise }}{% else %}EUR{% endif %}"
+                                        pattern="[A-Za-z]{3}"
+                                        title="Code devise ISO à 3 lettres, par exemple EUR ou USD"
                                     >
                                 </div>
 
