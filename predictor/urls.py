@@ -77,6 +77,11 @@ urlpatterns = [
         name="connecteur_oauth_callback"
     ),
     path(
+        "connecteurs/google-ads/selectionner-compte/",
+        views.selectionner_compte_google_ads,
+        name="selectionner_compte_google_ads"
+    ),
+    path(
         "connecteurs/<int:compte_id>/synchroniser/",
         views.synchroniser_compte_connecteur,
         name="synchroniser_compte_connecteur"

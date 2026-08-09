@@ -1,0 +1,80 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Choisir un compte Google Ads - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=117">
+</head>
+<body>
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<section class="dashboard module-page">
+    <div class="dashboard-actions">
+        <a
+            href="{% url 'module_connecteurs' %}?site={{ site.id }}"
+            class="btn-secondary"
+        >
+            Retour aux connecteurs
+        </a>
+    </div>
+
+    <h1>Choisir le compte Google Ads</h1>
+    <p class="dashboard-intro">
+        Google a autorisé PredictNeed IA à consulter les comptes accessibles.
+        Sélectionnez explicitement le compte publicitaire à rattacher à
+        <strong>{{ site.nom_site }}</strong>.
+    </p>
+
+    {% if messages %}
+        <div class="module-messages">
+            {% for message in messages %}
+                <p class="module-message {{ message.tags }}">{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" class="dashboard-section">
+        {% csrf_token %}
+        <input type="hidden" name="flow" value="{{ flow_id }}">
+
+        <div class="connector-account-grid">
+            {% for compte in comptes_google_ads %}
+                <label class="connector-account-card">
+                    <div>
+                        <h3>{{ compte.nom }}</h3>
+                        <p>ID client : <strong>{{ compte.customer_id }}</strong></p>
+                        {% if compte.devise %}<p>Devise : {{ compte.devise }}</p>{% endif %}
+                        {% if compte.fuseau_horaire %}<p>Fuseau : {{ compte.fuseau_horaire }}</p>{% endif %}
+                        {% if compte.login_customer_id %}
+                            <p>Compte administrateur : {{ compte.login_customer_id }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="connector-account-actions">
+                        <input
+                            type="radio"
+                            name="customer_id"
+                            value="{{ compte.customer_id }}"
+                            required
+                        >
+                        <span class="module-status">Sélectionner</span>
+                    </div>
+                </label>
+            {% empty %}
+                <p>Aucun compte publicitaire Google Ads disponible.</p>
+            {% endfor %}
+        </div>
+
+        {% if comptes_google_ads %}
+            <button type="submit" class="module-filter-button">
+                Rattacher ce compte au site
+            </button>
+        {% endif %}
+    </form>
+</section>
+
+</body>
+</html>

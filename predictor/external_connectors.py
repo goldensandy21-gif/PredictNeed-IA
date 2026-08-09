@@ -36,12 +36,20 @@ def get_fournisseur(plateforme):
 
 def fournisseur_est_configure(plateforme):
     fournisseur = get_fournisseur(plateforme)
-    return bool(
+    configure = bool(
         fournisseur.get("client_id")
         and fournisseur.get("client_secret")
         and fournisseur.get("auth_url")
         and fournisseur.get("token_url")
     )
+
+    if plateforme == "google_ads":
+        configure = bool(
+            configure
+            and fournisseur.get("developer_token")
+        )
+
+    return configure
 
 
 def statut_configuration_fournisseurs():

@@ -15,6 +15,7 @@ FAKE_CONNECTORS = {
         "description": "Test Google Ads",
         "client_id": "client-test",
         "client_secret": "secret-test",
+        "developer_token": "developer-token-test",
         "auth_url": "https://accounts.example.test/auth",
         "token_url": "https://accounts.example.test/token",
         "scopes": ["ads.read"],
@@ -168,18 +169,33 @@ class MultisiteConnectorSecurityTests(TestCase):
         exchange.assert_not_called()
 
     @patch(
+        "predictor.views.decouvrir_comptes_publicitaires",
+        return_value=[
+            {
+                "customer_id": "1234567890",
+                "nom": "Compte partagé",
+                "devise": "EUR",
+                "fuseau_horaire": "Europe/Paris",
+                "manager": False,
+                "test_account": False,
+                "statut": "ENABLED",
+                "login_customer_id": "",
+            }
+        ],
+    )
+    @patch(
         "predictor.views.echanger_code_contre_token",
         return_value={
-            "account_id": "account-shared",
-            "account_name": "Compte partagé",
             "access_token": "token-test",
             "refresh_token": "refresh-test",
             "token_type": "Bearer",
+            "expires_in": 3600,
         },
     )
     def test_same_external_account_is_kept_separate_for_two_sites(
         self,
         exchange,
+        discovery,
     ):
         for site in (self.site_a, self.site_b):
             response = self.client.get(
@@ -189,15 +205,32 @@ class MultisiteConnectorSecurityTests(TestCase):
                     "state": self._state(site_id=site.id),
                 },
             )
+
+            self.assertEqual(response.status_code, 302)
+            self.assertIn(
+                reverse("selectionner_compte_google_ads"),
+                response["Location"],
+            )
+
+            flow_id = response["Location"].split("flow=", 1)[1]
+
+            selection = self.client.post(
+                reverse("selectionner_compte_google_ads"),
+                {
+                    "flow": flow_id,
+                    "customer_id": "1234567890",
+                },
+            )
+
             self.assertRedirects(
-                response,
+                selection,
                 f"{reverse('module_connecteurs')}?site={site.id}",
             )
 
         accounts = CompteConnecteExterne.objects.filter(
             client=self.client_pro,
             plateforme="google_ads",
-            identifiant_externe="account-shared",
+            identifiant_externe="1234567890",
         )
         self.assertEqual(accounts.count(), 2)
         self.assertSetEqual(
@@ -205,6 +238,7 @@ class MultisiteConnectorSecurityTests(TestCase):
             {self.site_a.id, self.site_b.id},
         )
         self.assertEqual(exchange.call_count, 2)
+        self.assertEqual(discovery.call_count, 2)
 
     def test_database_rejects_duplicate_external_account_on_same_site(self):
         fields = {

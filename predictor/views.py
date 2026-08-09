@@ -27,11 +27,17 @@ from .external_connectors import (
     synchroniser_compte_depuis_utm,
     verifier_state_connecteur,
 )
+from .google_ads_api import (
+    GoogleAdsAPIError,
+    GoogleAdsConfigurationError,
+    decouvrir_comptes_publicitaires,
+)
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
 import re
+import secrets
 from urllib.parse import urlparse
 from django.conf import settings
 from django.contrib import messages
@@ -3642,6 +3648,84 @@ def connecteur_oauth_callback(request, plateforme):
     access_token = token_payload.get("access_token")
     refresh_token = token_payload.get("refresh_token")
 
+    if plateforme == "google_ads":
+        if not access_token:
+            messages.error(
+                request,
+                "Google Ads n'a pas renvoyé de jeton d'accès.",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        try:
+            comptes_google_ads = decouvrir_comptes_publicitaires(
+                access_token
+            )
+        except (
+            GoogleAdsAPIError,
+            GoogleAdsConfigurationError,
+            ValueError,
+        ) as exc:
+            messages.error(
+                request,
+                f"Impossible de lire les comptes Google Ads : {exc}",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        if not comptes_google_ads:
+            messages.error(
+                request,
+                "Aucun compte publicitaire Google Ads accessible n'a été trouvé.",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        flow_id = secrets.token_urlsafe(24)
+        flows = dict(
+            request.session.get(
+                "google_ads_oauth_flows",
+                {},
+            )
+        )
+        now_ts = timezone.now().timestamp()
+
+        flows = {
+            key: value
+            for key, value in flows.items()
+            if (
+                isinstance(value, dict)
+                and now_ts - float(
+                    value.get("created_at", 0)
+                ) <= 15 * 60
+            )
+        }
+
+        flows[flow_id] = {
+            "user_id": request.user.id,
+            "client_id": client.id,
+            "site_id": site.id,
+            "created_at": now_ts,
+            "access_token_signe": signer_token(access_token),
+            "refresh_token_signe": signer_token(refresh_token),
+            "token_type": token_payload.get("token_type", "Bearer"),
+            "expires_in": token_payload.get("expires_in"),
+            "comptes": comptes_google_ads,
+        }
+
+        request.session["google_ads_oauth_flows"] = flows
+        request.session.modified = True
+
+        selection_url = reverse(
+            "selectionner_compte_google_ads"
+        )
+        return redirect(
+            f"{selection_url}?flow={flow_id}"
+        )
+
     compte, _ = CompteConnecteExterne.objects.update_or_create(
         client=client,
         site=site,
@@ -3673,6 +3757,241 @@ def connecteur_oauth_callback(request, plateforme):
     )
     return redirect(
         f"{reverse('module_connecteurs')}?site={site.pk}"
+    )
+
+
+@login_required
+def selectionner_compte_google_ads(request):
+    client = get_client_professionnel_utilisateur(request)
+    flow_id = (
+        request.POST.get("flow")
+        or request.GET.get("flow")
+        or ""
+    ).strip()
+
+    flows = dict(
+        request.session.get(
+            "google_ads_oauth_flows",
+            {},
+        )
+    )
+    pending = flows.get(flow_id)
+
+    site_fallback = None
+    if client is not None:
+        site_fallback = (
+            client.sites
+            .filter(module_connecteurs_actif=True)
+            .order_by("date_creation")
+            .first()
+        )
+
+    def redirect_connecteurs(site=None):
+        if site is not None:
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+        return redirect("module_connecteurs")
+
+    if (
+        not flow_id
+        or not isinstance(pending, dict)
+        or client is None
+    ):
+        messages.error(
+            request,
+            "La sélection Google Ads a expiré. Relancez la connexion.",
+        )
+        return redirect_connecteurs(site_fallback)
+
+    try:
+        created_at = float(pending.get("created_at", 0))
+    except (TypeError, ValueError):
+        created_at = 0
+
+    if (
+        timezone.now().timestamp() - created_at > 15 * 60
+        or pending.get("user_id") != request.user.id
+        or pending.get("client_id") != client.id
+    ):
+        flows.pop(flow_id, None)
+        request.session["google_ads_oauth_flows"] = flows
+        request.session.modified = True
+        messages.error(
+            request,
+            "La sélection Google Ads n'est plus valide.",
+        )
+        return redirect_connecteurs(site_fallback)
+
+    site = (
+        client.sites
+        .filter(
+            pk=pending.get("site_id"),
+            module_connecteurs_actif=True,
+        )
+        .first()
+    )
+
+    if site is None:
+        flows.pop(flow_id, None)
+        request.session["google_ads_oauth_flows"] = flows
+        request.session.modified = True
+        messages.error(
+            request,
+            "Le site associé à cette connexion Google Ads n'est plus disponible.",
+        )
+        return redirect_connecteurs(site_fallback)
+
+    comptes = [
+        compte
+        for compte in pending.get("comptes", [])
+        if (
+            isinstance(compte, dict)
+            and compte.get("customer_id")
+            and not compte.get("manager")
+        )
+    ]
+
+    if request.method == "POST":
+        customer_id = (
+            request.POST.get("customer_id")
+            or ""
+        ).strip()
+
+        selection = next(
+            (
+                compte
+                for compte in comptes
+                if compte.get("customer_id") == customer_id
+            ),
+            None,
+        )
+
+        if selection is None:
+            messages.error(
+                request,
+                "Sélection Google Ads invalide.",
+            )
+        else:
+            existing = (
+                CompteConnecteExterne.objects
+                .filter(
+                    client=client,
+                    site=site,
+                    plateforme="google_ads",
+                    identifiant_externe=customer_id,
+                )
+                .first()
+            )
+
+            refresh_token_signe = (
+                pending.get("refresh_token_signe")
+                or (
+                    existing.refresh_token_signe
+                    if existing is not None
+                    else ""
+                )
+            )
+
+            expires_at = None
+            expires_in = pending.get("expires_in")
+            try:
+                if expires_in:
+                    expires_at = (
+                        timezone.now()
+                        + timedelta(
+                            seconds=int(expires_in)
+                        )
+                    )
+            except (TypeError, ValueError):
+                expires_at = None
+
+            compte, _ = (
+                CompteConnecteExterne.objects
+                .update_or_create(
+                    client=client,
+                    site=site,
+                    plateforme="google_ads",
+                    identifiant_externe=customer_id,
+                    defaults={
+                        "nom_compte": (
+                            selection.get("nom")
+                            or f"Google Ads {customer_id}"
+                        ),
+                        "statut": "connecte",
+                        "scopes": " ".join(
+                            get_fournisseur(
+                                "google_ads"
+                            ).get("scopes", [])
+                        ),
+                        "access_token_signe": pending.get(
+                            "access_token_signe",
+                            "",
+                        ),
+                        "refresh_token_signe": refresh_token_signe,
+                        "token_type": pending.get(
+                            "token_type",
+                            "Bearer",
+                        ),
+                        "expires_at": expires_at,
+                        "configuration": {
+                            "source": "oauth_google_ads",
+                            "customer_id": customer_id,
+                            "login_customer_id": (
+                                selection.get(
+                                    "login_customer_id"
+                                )
+                                or ""
+                            ),
+                            "devise": (
+                                selection.get("devise")
+                                or ""
+                            ),
+                            "fuseau_horaire": (
+                                selection.get(
+                                    "fuseau_horaire"
+                                )
+                                or ""
+                            ),
+                            "test_account": bool(
+                                selection.get(
+                                    "test_account"
+                                )
+                            ),
+                            "statut_google": (
+                                selection.get("statut")
+                                or ""
+                            ),
+                        },
+                        "dernier_message": (
+                            "Compte Google Ads sélectionné et prêt "
+                            "pour l'import natif des campagnes."
+                        ),
+                    },
+                )
+            )
+
+            flows.pop(flow_id, None)
+            request.session["google_ads_oauth_flows"] = flows
+            request.session.modified = True
+
+            messages.success(
+                request,
+                (
+                    f"{compte.nom_compte} est maintenant rattaché "
+                    f"à {site.nom_site}."
+                ),
+            )
+            return redirect_connecteurs(site)
+
+    return render(
+        request,
+        "predictor/google_ads_selection_compte.html",
+        {
+            "site": site,
+            "flow_id": flow_id,
+            "comptes_google_ads": comptes,
+        },
     )
 
 
