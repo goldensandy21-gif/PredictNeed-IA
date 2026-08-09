@@ -378,6 +378,31 @@
         document.body.appendChild(button);
     }
 
+    function appendConsentLink(container, url, label) {
+        if (!url) {
+            return;
+        }
+
+        let parsedUrl = null;
+
+        try {
+            parsedUrl = new URL(url, window.location.href);
+        } catch (error) {
+            return;
+        }
+
+        if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
+            return;
+        }
+
+        const link = document.createElement("a");
+        link.href = parsedUrl.href;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = label;
+        container.appendChild(link);
+    }
+
     function renderConsentBanner() {
         if (!requireConsent) {
             removeConsentUi();
@@ -408,11 +433,12 @@
                 <button type="button" data-choice="customize">Personnaliser</button>
                 <button type="button" data-choice="accept">Tout accepter</button>
             </div>
-            <div class="predictneed-consent-links">
-                ${privacyUrl ? `<a href="${privacyUrl}" target="_blank" rel="noopener">Politique de confidentialité</a>` : ""}
-                ${cookiesUrl ? `<a href="${cookiesUrl}" target="_blank" rel="noopener">Politique de cookies</a>` : ""}
-            </div>
+            <div class="predictneed-consent-links"></div>
         `;
+
+        const links = banner.querySelector(".predictneed-consent-links");
+        appendConsentLink(links, privacyUrl, "Politique de confidentialité");
+        appendConsentLink(links, cookiesUrl, "Politique de cookies");
 
         banner.addEventListener("click", function (event) {
             const button = event.target.closest("button");

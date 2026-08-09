@@ -10,7 +10,7 @@
 - Clé API distincte par site.
 - Modules du dashboard évalués sur le site sélectionné.
 - Connecteurs OAuth rattachés à un site précis ; synchronisation limitée à ce site.
-- Les flux temporaires de sélection de comptes publicitaires sont centralisés : durée 15 minutes, validation utilisateur/client/site, jetons signés côté serveur et conservation rétrocompatible du refresh token existant.
+- Les flux temporaires de sélection de comptes publicitaires sont centralisés : durée 15 minutes, validation utilisateur/client/site, tokens conservés côté serveur et conservation rétrocompatible du refresh token existant.
 - Attribution first-touch par session : source, UTM, identifiant de clic et page d'entrée.
 - Snapshot de l'attribution sur chaque opportunité liée à un lead/session.
 - Vente réelle séparée du montant estimé, avec montant, devise, date, référence et attribution.
@@ -31,7 +31,10 @@
 - Vérification email par token signé valable 7 jours.
 - Réinitialisation du mot de passe par email.
 - Limitation persistante en base sur routes sensibles ; clé hachée SHA-256.
+- Les endpoints publics du tracker exigent la clé API du site, vérifient l'origine HTTP lorsqu'elle est fournie et appliquent une limite persistante par IP/clé API en plus du plafond par session.
 - Django Admin réservé aux superutilisateurs.
+- Les tokens OAuth publicitaires sont chiffrés au repos avec Fernet lorsque `PREDICTNEED_TOKEN_ENCRYPTION_KEY` est défini côté environnement/Fly secret. Les anciennes valeurs uniquement signées par Django restent lisibles pour permettre une migration progressive ; au prochain refresh ou à la prochaine reconnexion, la nouvelle valeur écrite utilise l'enveloppe chiffrée `enc:v1:`. La clé ne doit jamais être committée et sa perte rend les tokens chiffrés indéchiffrables.
+- En production, `DJANGO_ALLOWED_HOSTS` et `DJANGO_CSRF_TRUSTED_ORIGINS` sont lus par `settings.py`, avec compatibilité pour les anciens noms `ALLOWED_HOSTS` et `CSRF_TRUSTED_ORIGINS`.
 
 ## Machine learning
 Commande : `python manage.py entrainer_modeles_ml`
@@ -59,6 +62,13 @@ Cette commande gère les essais, exécute la purge et nettoie les anciennes limi
 Les vues Django gardent les routes publiques et la composition des templates. Les règles réutilisées par plusieurs modules sont extraites vers des services dédiés : attribution, ventes, performance publicitaire, métriques natives, ML, automatisations, paiement, sécurité, connecteurs OAuth et helpers de dashboard multi-site.
 
 Le module `dashboard_helpers.py` centralise le scope multi-site des modules, les filtres de dates/niveaux, les séries journalières et les largeurs de graphiques. Les pages de module consomment ce scope au lieu de reconstruire localement les règles client/site, ce qui réduit le risque de lecture croisée entre sites.
+
+## Tracker et confidentialité technique
+Le script public n'envoie pas d'événement analytique tant que le consentement analytics n'est pas accepté, sauf mode debug explicitement configuré. Le ping d'installation est purement technique et ne crée pas de session visiteur.
+
+L'identifiant de session est stocké en `sessionStorage`. Les choix de consentement sont conservés en `localStorage` pour 180 jours maximum. Les pixels de retargeting ne sont initialisés que lorsque le consentement analytics et offres est actif.
+
+L'attribution est traitée en first-touch côté serveur : source, UTM, click ID, referer et landing page sont renseignés uniquement si le champ de session est encore vide. Les événements ultérieurs ne doivent donc pas écraser la campagne initiale. Les URLs optionnelles de politiques injectées dans le bandeau de consentement sont créées via DOM et limitées aux protocoles `http`/`https`.
 
 ## Données publicitaires natives
 Les campagnes UTM restent distinguées des campagnes alimentées par API native. Les métriques natives sont stockées par campagne et par jour afin de conserver l'historique des impressions, clics, conversions et dépenses. Les totaux de `CampagneExterne` sont recalculés à partir de ces mesures journalières.
@@ -91,7 +101,7 @@ Le module Publicité affiche désormais les résultats financiers campagne par c
 
 L'intégration Meta Ads utilise une version d'API explicite configurable avec `META_ADS_API_VERSION`, par défaut `v25.0`. La découverte des comptes publicitaires passe par le compte utilisateur autorisé et l'edge `/me/adaccounts`. PredictNeed IA conserve l'identifiant publicitaire, le nom, la devise, le fuseau horaire et le statut du compte afin de préparer une sélection explicite du compte publicitaire avant toute synchronisation native. Aucun compte Meta ne doit être choisi automatiquement lorsqu'un utilisateur en possède plusieurs.
 
-La connexion OAuth Meta Ads ne rattache plus automatiquement un compte publicitaire. Après la découverte des comptes accessibles, PredictNeed IA crée un flux temporaire serveur valable 15 minutes et demande au client de sélectionner explicitement le compte à rattacher au site choisi. Le flux vérifie l'utilisateur, le client et le site. Les jetons OAuth restent stockés côté serveur sous forme signée et ne sont pas transmis dans le formulaire de sélection. Lors d'une reconnexion, un jeton de renouvellement déjà enregistré est conservé si Meta n'en renvoie pas un nouveau.
+La connexion OAuth Meta Ads ne rattache plus automatiquement un compte publicitaire. Après la découverte des comptes accessibles, PredictNeed IA crée un flux temporaire serveur valable 15 minutes et demande au client de sélectionner explicitement le compte à rattacher au site choisi. Le flux vérifie l'utilisateur, le client et le site. Les tokens OAuth restent stockés côté serveur, chiffrés au repos lorsque la clé dédiée est configurée, et ne sont pas transmis dans le formulaire de sélection. Lors d'une reconnexion, un jeton de renouvellement déjà enregistré est conservé si Meta n'en renvoie pas un nouveau.
 
 La synchronisation Meta Ads native interroge l'edge `act_{account_id}/insights` au niveau campagne, avec découpage journalier sur les 30 derniers jours. Elle stocke les impressions, clics, conversions disponibles, dépenses, devise et dates dans `MesureCampagneExterne`, puis recalcule les totaux de `CampagneExterne`. Les campagnes Meta sont identifiées par `campaign_id`. La synchronisation est idempotente par campagne et par date. Si le jeton Meta signé est expiré, l'utilisateur doit relancer la connexion du compte ; aucun secret OAuth n'est exposé dans le navigateur.
 
@@ -99,7 +109,7 @@ La synchronisation Meta Ads native interroge l'edge `act_{account_id}/insights` 
 
 L'intégration LinkedIn Ads utilise les endpoints REST Marketing API avec le header `Linkedin-Version`. La version par défaut est `202606` et peut être remplacée avec `LINKEDIN_ADS_API_VERSION`. Les scopes OAuth requis sont `r_ads` et `r_ads_reporting`. LinkedIn peut exiger une validation Marketing Developer Platform pour accorder ces permissions et pour fournir des refresh tokens programmatiques ; cette validation reste une action externe côté compte LinkedIn, mais le code est prêt à exploiter le refresh token lorsqu'il est présent.
 
-Après OAuth LinkedIn Ads, PredictNeed IA découvre les comptes publicitaires accessibles via `/rest/adAccounts`, pagine les résultats et ne rattache aucun compte automatiquement. Le flux temporaire serveur de sélection reste valable 15 minutes, vérifie l'utilisateur, le client et le site, puis stocke uniquement côté serveur les jetons signés, l'identifiant `sponsoredAccount`, l'URN, le nom, la devise, le statut, le type et les informations de service du compte choisi.
+Après OAuth LinkedIn Ads, PredictNeed IA découvre les comptes publicitaires accessibles via `/rest/adAccounts`, pagine les résultats et ne rattache aucun compte automatiquement. Le flux temporaire serveur de sélection reste valable 15 minutes, vérifie l'utilisateur, le client et le site, puis stocke uniquement côté serveur les tokens, l'identifiant `sponsoredAccount`, l'URN, le nom, la devise, le statut, le type et les informations de service du compte choisi.
 
 La synchronisation LinkedIn Ads native lit les campagnes du compte sélectionné puis interroge `/rest/adAnalytics` au pivot campagne, granularité journalière. Elle stocke les impressions, clics de landing page, conversions externes disponibles, coût local, devise et date dans `MesureCampagneExterne`. Les campagnes LinkedIn sont identifiées par `sponsoredCampaign`. La synchronisation est idempotente par campagne et par date. Aucun fallback UTM n'est utilisé pour un compte LinkedIn Ads connecté en natif.
 
@@ -107,7 +117,7 @@ La synchronisation LinkedIn Ads native lit les campagnes du compte sélectionné
 
 L'intégration TikTok Ads utilise l'API for Business v1.3. L'URL d'autorisation est `https://ads.tiktok.com/marketing_api/auth` et l'échange du code utilise un POST JSON vers `/open_api/v1.3/oauth2/access_token/` avec `app_id`, `secret` et `auth_code`. La version par défaut est `v1.3` et peut être remplacée avec `TIKTOK_ADS_API_VERSION`. Les permissions nécessaires côté app TikTok sont au minimum la lecture des campagnes et le reporting consolidé. TikTok peut exiger une revue de l'application et une configuration explicite de l'URL de redirection avant de délivrer un `auth_code`.
 
-Après OAuth TikTok Ads, PredictNeed IA récupère les advertisers accessibles via `/oauth2/advertiser/get/`, ou via la liste `advertiser_ids` renvoyée par l'échange token lorsque TikTok la fournit. Aucun advertiser n'est rattaché automatiquement. Le client choisit explicitement l'advertiser à associer au site ; les jetons restent stockés côté serveur sous forme signée.
+Après OAuth TikTok Ads, PredictNeed IA récupère les advertisers accessibles via `/oauth2/advertiser/get/`, ou via la liste `advertiser_ids` renvoyée par l'échange token lorsque TikTok la fournit. Aucun advertiser n'est rattaché automatiquement. Le client choisit explicitement l'advertiser à associer au site ; les tokens restent stockés côté serveur et chiffrés au repos lorsque `PREDICTNEED_TOKEN_ENCRYPTION_KEY` est présent.
 
 La synchronisation TikTok Ads native lit `/campaign/get/`, puis `/report/integrated/get/` en rapport `BASIC`, niveau `AUCTION_CAMPAIGN`, dimensions `campaign_id` et `stat_time_day`. Elle stocke par jour les impressions, clics, conversions disponibles sous `conversion`, dépenses `spend`, devise du compte et identifiant campagne dans `MesureCampagneExterne`. La synchronisation est idempotente par campagne et par date. Aucun fallback UTM n'est utilisé pour un compte TikTok Ads connecté en natif.
 

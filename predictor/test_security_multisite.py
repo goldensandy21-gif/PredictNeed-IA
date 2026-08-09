@@ -1,6 +1,7 @@
 
 import json
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core import mail
@@ -16,6 +17,7 @@ from .models import (
     SessionVisiteur,
     SiteClient,
 )
+from .security_middleware import PublicRateLimitMiddleware
 
 
 TEST_STORAGES = {
@@ -176,6 +178,71 @@ class SecurityAndMultiSiteTests(TestCase):
             SessionVisiteur.objects.filter(session_id="same-id").count(),
             2,
         )
+
+    def test_tracker_rejects_foreign_origin_for_valid_site_key(self):
+        _, client = self.create_client("tracker-origin")
+        site = SiteClient.objects.create(
+            client=client,
+            nom_site="Site origine",
+            domaine="site.example.com",
+        )
+
+        response = self.client.post(
+            reverse("track_event"),
+            data=json.dumps(
+                {
+                    "api_key": str(site.cle_api),
+                    "session_id": "origin-session",
+                    "type_evenement": "page_vue",
+                    "page": "/",
+                    "consentement_tracking": True,
+                }
+            ),
+            content_type="application/json",
+            HTTP_ORIGIN="https://evil.example.com",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(
+            SessionVisiteur.objects.filter(
+                site=site,
+                session_id="origin-session",
+            ).exists()
+        )
+
+    def test_tracker_event_has_persistent_rate_limit(self):
+        _, client = self.create_client("tracker-rate")
+        site = SiteClient.objects.create(
+            client=client,
+            nom_site="Site rate limit",
+            domaine="rate.example.com",
+        )
+
+        with patch.dict(
+            PublicRateLimitMiddleware.RULES,
+            {"track_event": (2, 300, "api")},
+        ):
+            for index in range(3):
+                response = self.client.post(
+                    reverse("track_event"),
+                    data=json.dumps(
+                        {
+                            "api_key": str(site.cle_api),
+                            "session_id": f"rate-session-{index}",
+                            "type_evenement": "page_vue",
+                            "page": "/",
+                            "consentement_tracking": True,
+                        }
+                    ),
+                    content_type="application/json",
+                    HTTP_ORIGIN="https://rate.example.com",
+                    REMOTE_ADDR="203.0.113.99",
+                )
+
+        self.assertEqual(response.status_code, 429)
+        entry = LimitationSecurite.objects.get(action="track_event")
+        self.assertEqual(len(entry.cle_hachee), 64)
+        self.assertNotIn(str(site.cle_api), entry.cle_hachee)
 
     def test_clean_events_only_affects_selected_site(self):
         user, client = self.create_client("clean")

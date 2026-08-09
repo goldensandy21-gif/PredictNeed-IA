@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.core import signing
 from django.test import RequestFactory, TestCase, override_settings
 from django.utils import timezone
 
@@ -9,7 +10,11 @@ from .connector_oauth_flows import (
     creer_flux_selection_compte,
     upsert_compte_selectionne,
 )
-from .external_connectors import signer_token
+from .external_connectors import (
+    lire_token_signe,
+    signer_token,
+    token_stocke_est_chiffre,
+)
 from .models import ClientProfessionnel, CompteConnecteExterne, SiteClient
 
 
@@ -155,3 +160,19 @@ class ConnectorOAuthFlowTests(TestCase):
         compte.refresh_from_db()
         self.assertEqual(compte.refresh_token_signe, old_refresh)
         self.assertEqual(compte.nom_compte, "Compte mis à jour")
+
+    @override_settings(
+        PREDICTNEED_TOKEN_ENCRYPTION_KEY="unit-test-token-encryption-key"
+    )
+    def test_tokens_are_encrypted_when_key_is_configured_and_legacy_is_readable(self):
+        legacy_signed = signing.dumps(
+            "legacy-token",
+            salt="predictneed-connecteur-token",
+        )
+
+        encrypted = signer_token("secret-token")
+
+        self.assertTrue(token_stocke_est_chiffre(encrypted))
+        self.assertNotIn("secret-token", encrypted)
+        self.assertEqual(lire_token_signe(encrypted), "secret-token")
+        self.assertEqual(lire_token_signe(legacy_signed), "legacy-token")

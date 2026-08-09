@@ -8,8 +8,9 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from django.conf import settings
-from django.core import signing
 from django.utils import timezone
+
+from .external_connectors import lire_token_signe, signer_token
 
 
 class GoogleAdsConfigurationError(Exception):
@@ -433,10 +434,7 @@ def access_token_pour_compte(compte):
     refresh_token = ""
 
     if compte.access_token_signe:
-        access_token = signing.loads(
-            compte.access_token_signe,
-            salt="predictneed-connecteur-token",
-        )
+        access_token = lire_token_signe(compte.access_token_signe)
 
     expiration_proche = (
         compte.expires_at is not None
@@ -448,18 +446,12 @@ def access_token_pour_compte(compte):
         return access_token
 
     if compte.refresh_token_signe:
-        refresh_token = signing.loads(
-            compte.refresh_token_signe,
-            salt="predictneed-connecteur-token",
-        )
+        refresh_token = lire_token_signe(compte.refresh_token_signe)
 
     payload = rafraichir_access_token(refresh_token)
     access_token = payload["access_token"]
 
-    compte.access_token_signe = signing.dumps(
-        access_token,
-        salt="predictneed-connecteur-token",
-    )
+    compte.access_token_signe = signer_token(access_token)
 
     expires_in = payload.get("expires_in")
     try:

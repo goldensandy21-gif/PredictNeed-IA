@@ -36,8 +36,11 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv(
-        "ALLOWED_HOSTS",
-        "predictneed-ia.fly.dev,predictneed-ia.com,www.predictneed-ia.com",
+        "DJANGO_ALLOWED_HOSTS",
+        os.getenv(
+            "ALLOWED_HOSTS",
+            "predictneed-ia.fly.dev,predictneed-ia.com,www.predictneed-ia.com",
+        ),
     ).split(",")
     if host.strip()
 ]
@@ -45,8 +48,11 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
-        "CSRF_TRUSTED_ORIGINS",
-        "https://predictneed-ia.fly.dev,https://predictneed-ia.com,https://www.predictneed-ia.com",
+        "DJANGO_CSRF_TRUSTED_ORIGINS",
+        os.getenv(
+            "CSRF_TRUSTED_ORIGINS",
+            "https://predictneed-ia.fly.dev,https://predictneed-ia.com,https://www.predictneed-ia.com",
+        ),
     ).split(",")
     if origin.strip()
 ]
@@ -245,6 +251,10 @@ DEFAULT_FROM_EMAIL = os.environ.get(
     "PredictNeed IA <no-reply@predictneed.local>"
 )
 PREDICTNEED_CONTACT_EMAIL = os.environ.get("PREDICTNEED_CONTACT_EMAIL", "")
+PREDICTNEED_TOKEN_ENCRYPTION_KEY = os.environ.get(
+    "PREDICTNEED_TOKEN_ENCRYPTION_KEY",
+    "",
+)
 
 PREDICTNEED_EXTERNAL_CONNECTORS = {
     "google_ads": {

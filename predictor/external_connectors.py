@@ -1,3 +1,5 @@
+import base64
+import hashlib
 import json
 from datetime import timedelta
 from urllib.error import HTTPError, URLError
@@ -12,6 +14,12 @@ from django.utils import timezone
 
 from .models import CampagneExterne, JournalSynchronisationConnecteur, SessionVisiteur
 
+try:
+    from cryptography.fernet import Fernet, InvalidToken
+except ImportError:  # pragma: no cover - dépendance présente en environnement cible.
+    Fernet = None
+    InvalidToken = Exception
+
 
 class ConnecteurConfigurationError(Exception):
     pass
@@ -19,6 +27,10 @@ class ConnecteurConfigurationError(Exception):
 
 class ConnecteurOAuthError(Exception):
     pass
+
+
+TOKEN_SIGNATURE_SALT = "predictneed-connecteur-token"
+TOKEN_ENCRYPTION_PREFIX = "enc:v1:"
 
 
 def fournisseurs_connecteurs():
@@ -172,16 +184,83 @@ def echanger_code_contre_token(request, plateforme, code):
         raise ConnecteurOAuthError(str(exc)) from exc
 
 
+def _fernet_key_from_secret(secret):
+    secret = str(secret or "").strip()
+    if not secret:
+        return None
+
+    candidate = secret
+    if candidate.startswith("fernet:"):
+        candidate = candidate.removeprefix("fernet:")
+
+    if Fernet is not None:
+        try:
+            Fernet(candidate.encode("utf-8"))
+            return candidate.encode("utf-8")
+        except Exception:
+            pass
+
+    digest = hashlib.sha256(secret.encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(digest)
+
+
+def _token_fernet():
+    key = _fernet_key_from_secret(
+        getattr(settings, "PREDICTNEED_TOKEN_ENCRYPTION_KEY", "")
+    )
+    if key is None:
+        return None
+    if Fernet is None:
+        raise ConnecteurConfigurationError(
+            "La dépendance cryptography est requise pour chiffrer les tokens OAuth."
+        )
+    return Fernet(key)
+
+
+def chiffrement_tokens_actif():
+    return bool(
+        str(
+            getattr(settings, "PREDICTNEED_TOKEN_ENCRYPTION_KEY", "")
+        ).strip()
+    )
+
+
 def signer_token(token):
     if not token:
         return ""
-    return signing.dumps(token, salt="predictneed-connecteur-token")
+
+    fernet = _token_fernet()
+    if fernet is not None:
+        encrypted = fernet.encrypt(str(token).encode("utf-8")).decode("utf-8")
+        return f"{TOKEN_ENCRYPTION_PREFIX}{encrypted}"
+
+    return signing.dumps(str(token), salt=TOKEN_SIGNATURE_SALT)
 
 
 def lire_token_signe(token_signe):
     if not token_signe:
         return ""
-    return signing.loads(token_signe, salt="predictneed-connecteur-token")
+
+    token_signe = str(token_signe)
+    if token_signe.startswith(TOKEN_ENCRYPTION_PREFIX):
+        fernet = _token_fernet()
+        if fernet is None:
+            raise ConnecteurConfigurationError(
+                "PREDICTNEED_TOKEN_ENCRYPTION_KEY est requis pour lire ce token OAuth chiffré."
+            )
+        payload = token_signe.removeprefix(TOKEN_ENCRYPTION_PREFIX)
+        try:
+            return fernet.decrypt(payload.encode("utf-8")).decode("utf-8")
+        except InvalidToken as exc:
+            raise signing.BadSignature(
+                "Token OAuth chiffré invalide ou clé de chiffrement incorrecte."
+            ) from exc
+
+    return signing.loads(token_signe, salt=TOKEN_SIGNATURE_SALT)
+
+
+def token_stocke_est_chiffre(token_signe):
+    return str(token_signe or "").startswith(TOKEN_ENCRYPTION_PREFIX)
 
 
 def calculer_expiration(token_payload):

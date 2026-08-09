@@ -6,6 +6,7 @@ from django.core import signing
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
+from .external_connectors import lire_token_signe, token_stocke_est_chiffre
 from .google_ads_api import (
     GoogleAdsConfigurationError,
     access_token_pour_compte,
@@ -344,3 +345,61 @@ class GoogleAdsAPITests(TestCase):
 
         self.assertEqual(token, "valid-token")
         refresh_access_token.assert_not_called()
+
+    @override_settings(
+        PREDICTNEED_TOKEN_ENCRYPTION_KEY="unit-test-token-encryption-key"
+    )
+    @patch("predictor.google_ads_api.rafraichir_access_token")
+    def test_refreshed_access_token_is_saved_encrypted_when_key_is_configured(
+        self,
+        refresh_access_token,
+    ):
+        User = get_user_model()
+
+        user = User.objects.create_user(
+            username="google-encrypted-refresh",
+            email="google-encrypted-refresh@example.com",
+            password="MotDePasse-Solide-2026!",
+        )
+        client_pro = ClientProfessionnel.objects.create(
+            utilisateur=user,
+            nom_entreprise="Entreprise Google chiffrement",
+            statut_abonnement="actif",
+        )
+        site = SiteClient.objects.create(
+            client=client_pro,
+            nom_site="Google Site chiffrement",
+            domaine="google-encrypted.example",
+            actif=True,
+        )
+        account = CompteConnecteExterne.objects.create(
+            client=client_pro,
+            site=site,
+            plateforme="google_ads",
+            nom_compte="Google Ads",
+            identifiant_externe="1234567890",
+            statut="connecte",
+            access_token_signe=signing.dumps(
+                "old-token",
+                salt="predictneed-connecteur-token",
+            ),
+            refresh_token_signe=signing.dumps(
+                "refresh-token",
+                salt="predictneed-connecteur-token",
+            ),
+            expires_at=timezone.now() - timedelta(minutes=5),
+        )
+        refresh_access_token.return_value = {
+            "access_token": "new-encrypted-token",
+            "expires_in": 3600,
+        }
+
+        token = access_token_pour_compte(account)
+
+        self.assertEqual(token, "new-encrypted-token")
+        account.refresh_from_db()
+        self.assertTrue(token_stocke_est_chiffre(account.access_token_signe))
+        self.assertEqual(
+            lire_token_signe(account.access_token_signe),
+            "new-encrypted-token",
+        )

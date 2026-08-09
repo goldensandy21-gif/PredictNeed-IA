@@ -15,6 +15,7 @@ class PublicRateLimitMiddleware(MiddlewareMixin):
         "password_reset": (5, 3600, "form"),
         "contact": (5, 3600, "form"),
         "newsletter_inscription": (5, 3600, "form"),
+        "track_event": (600, 300, "api"),
         "capture_lead": (20, 3600, "api"),
         "tracker_installation_ping": (120, 300, "api"),
     }
