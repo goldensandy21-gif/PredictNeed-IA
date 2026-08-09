@@ -50,6 +50,12 @@ from .meta_ads_api import (
     lister_comptes_publicitaires_meta,
 )
 from .meta_ads_sync import synchroniser_compte_meta_ads
+from .linkedin_ads_api import (
+    LinkedInAdsAPIError,
+    LinkedInAdsConfigurationError,
+    lister_comptes_publicitaires_linkedin,
+)
+from .linkedin_ads_sync import synchroniser_compte_linkedin_ads
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -3843,6 +3849,62 @@ def connecteur_oauth_callback(request, plateforme):
             f"{selection_url}?flow={flow_id}"
         )
 
+    if plateforme == "linkedin_ads":
+        if not access_token:
+            messages.error(
+                request,
+                "LinkedIn Ads n'a pas renvoyé de jeton d'accès.",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        try:
+            comptes_linkedin_ads = (
+                lister_comptes_publicitaires_linkedin(
+                    access_token
+                )
+            )
+        except (
+            LinkedInAdsAPIError,
+            LinkedInAdsConfigurationError,
+            ValueError,
+        ) as exc:
+            messages.error(
+                request,
+                f"Impossible de lire les comptes LinkedIn Ads : {exc}",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        if not comptes_linkedin_ads:
+            messages.error(
+                request,
+                "Aucun compte publicitaire LinkedIn Ads accessible n'a été trouvé.",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        flow_id = creer_flux_selection_compte(
+            request,
+            "linkedin_ads",
+            client=client,
+            site=site,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_payload=token_payload,
+            comptes=comptes_linkedin_ads,
+        )
+
+        selection_url = reverse(
+            "selectionner_compte_linkedin_ads"
+        )
+        return redirect(
+            f"{selection_url}?flow={flow_id}"
+        )
+
     compte, _ = CompteConnecteExterne.objects.update_or_create(
         client=client,
         site=site,
@@ -3877,34 +3939,51 @@ def connecteur_oauth_callback(request, plateforme):
     )
 
 
-@login_required
-def selectionner_compte_meta_ads(request):
+def _site_fallback_connecteurs(client):
+    if client is None:
+        return None
+
+    return (
+        client.sites
+        .filter(module_connecteurs_actif=True)
+        .order_by("date_creation")
+        .first()
+    )
+
+
+def _redirect_connecteurs_site(site=None):
+    if site is not None:
+        return redirect(
+            f"{reverse('module_connecteurs')}?site={site.pk}"
+        )
+    return redirect("module_connecteurs")
+
+
+def _selectionner_compte_publicitaire(
+    request,
+    *,
+    plateforme,
+    template_name,
+    context_key,
+    id_key,
+    post_key,
+    nom_plateforme,
+    message_expiration,
+    message_selection_invalide,
+    configuration_selection,
+    compte_filtre=None,
+):
     client = get_client_professionnel_utilisateur(request)
     flow_id = (
         request.POST.get("flow")
         or request.GET.get("flow")
         or ""
     ).strip()
-
-    site_fallback = None
-    if client is not None:
-        site_fallback = (
-            client.sites
-            .filter(module_connecteurs_actif=True)
-            .order_by("date_creation")
-            .first()
-        )
-
-    def redirect_connecteurs(site=None):
-        if site is not None:
-            return redirect(
-                f"{reverse('module_connecteurs')}?site={site.pk}"
-            )
-        return redirect("module_connecteurs")
+    site_fallback = _site_fallback_connecteurs(client)
 
     flux = charger_flux_selection_compte(
         request,
-        "meta_ads",
+        plateforme,
         flow_id,
         client,
     )
@@ -3912,9 +3991,9 @@ def selectionner_compte_meta_ads(request):
     if not flux["ok"]:
         messages.error(
             request,
-            "La sélection Meta Ads a expiré. Relancez la connexion.",
+            message_expiration,
         )
-        return redirect_connecteurs(site_fallback)
+        return _redirect_connecteurs_site(site_fallback)
 
     pending = flux["pending"]
     site = flux["site"]
@@ -3924,13 +4003,17 @@ def selectionner_compte_meta_ads(request):
         for compte in pending.get("comptes", [])
         if (
             isinstance(compte, dict)
-            and compte.get("account_id")
+            and str(compte.get(id_key) or "").strip()
+            and (
+                compte_filtre is None
+                or compte_filtre(compte)
+            )
         )
     ]
 
     if request.method == "POST":
-        account_id = (
-            request.POST.get("account_id")
+        identifiant = (
+            request.POST.get(post_key)
             or ""
         ).strip()
 
@@ -3939,9 +4022,9 @@ def selectionner_compte_meta_ads(request):
                 compte
                 for compte in comptes
                 if str(
-                    compte.get("account_id")
+                    compte.get(id_key)
                     or ""
-                ).strip() == account_id
+                ).strip() == identifiant
             ),
             None,
         )
@@ -3949,49 +4032,32 @@ def selectionner_compte_meta_ads(request):
         if selection is None:
             messages.error(
                 request,
-                "Sélection Meta Ads invalide.",
+                message_selection_invalide,
             )
         else:
-            compte, _ = (
-                upsert_compte_selectionne(
-                    client=client,
-                    site=site,
-                    plateforme="meta_ads",
-                    identifiant_externe=account_id,
-                    nom_compte=(
-                        selection.get("nom")
-                        or f"Meta Ads {account_id}"
-                    ),
-                    pending=pending,
-                    configuration={
-                        "source": "oauth_meta_ads",
-                        "account_id": account_id,
-                        "graph_id": (
-                            selection.get("graph_id")
-                            or f"act_{account_id}"
-                        ),
-                        "devise": (
-                            selection.get("devise")
-                            or ""
-                        ),
-                        "fuseau_horaire": (
-                            selection.get("fuseau_horaire")
-                            or ""
-                        ),
-                        "statut_meta": selection.get(
-                            "statut_meta"
-                        ),
-                    },
-                    dernier_message=(
-                        "Compte Meta Ads sélectionné et prêt "
-                        "pour l'import natif des campagnes."
-                    ),
-                )
+            configuration = configuration_selection(
+                selection,
+                identifiant,
             )
-
+            compte, _ = upsert_compte_selectionne(
+                client=client,
+                site=site,
+                plateforme=plateforme,
+                identifiant_externe=identifiant,
+                nom_compte=(
+                    selection.get("nom")
+                    or f"{nom_plateforme} {identifiant}"
+                ),
+                pending=pending,
+                configuration=configuration,
+                dernier_message=(
+                    f"Compte {nom_plateforme} sélectionné et prêt "
+                    "pour l'import natif des campagnes."
+                ),
+            )
             supprimer_flux_selection_compte(
                 request,
-                "meta_ads",
+                plateforme,
                 flow_id,
                 flows=flux["flows"],
             )
@@ -4003,156 +4069,108 @@ def selectionner_compte_meta_ads(request):
                     f"à {site.nom_site}."
                 ),
             )
-            return redirect_connecteurs(site)
+            return _redirect_connecteurs_site(site)
 
     return render(
         request,
-        "predictor/meta_ads_selection_compte.html",
+        template_name,
         {
             "site": site,
             "flow_id": flow_id,
-            "comptes_meta_ads": comptes,
+            context_key: comptes,
+        },
+    )
+
+
+@login_required
+def selectionner_compte_meta_ads(request):
+    return _selectionner_compte_publicitaire(
+        request,
+        plateforme="meta_ads",
+        template_name="predictor/meta_ads_selection_compte.html",
+        context_key="comptes_meta_ads",
+        id_key="account_id",
+        post_key="account_id",
+        nom_plateforme="Meta Ads",
+        message_expiration=(
+            "La sélection Meta Ads a expiré. Relancez la connexion."
+        ),
+        message_selection_invalide="Sélection Meta Ads invalide.",
+        configuration_selection=lambda selection, account_id: {
+            "source": "oauth_meta_ads",
+            "account_id": account_id,
+            "graph_id": (
+                selection.get("graph_id")
+                or f"act_{account_id}"
+            ),
+            "devise": selection.get("devise") or "",
+            "fuseau_horaire": (
+                selection.get("fuseau_horaire") or ""
+            ),
+            "statut_meta": selection.get("statut_meta"),
         },
     )
 
 
 @login_required
 def selectionner_compte_google_ads(request):
-    client = get_client_professionnel_utilisateur(request)
-    flow_id = (
-        request.POST.get("flow")
-        or request.GET.get("flow")
-        or ""
-    ).strip()
-
-    site_fallback = None
-    if client is not None:
-        site_fallback = (
-            client.sites
-            .filter(module_connecteurs_actif=True)
-            .order_by("date_creation")
-            .first()
-        )
-
-    def redirect_connecteurs(site=None):
-        if site is not None:
-            return redirect(
-                f"{reverse('module_connecteurs')}?site={site.pk}"
-            )
-        return redirect("module_connecteurs")
-
-    flux = charger_flux_selection_compte(
+    return _selectionner_compte_publicitaire(
         request,
-        "google_ads",
-        flow_id,
-        client,
+        plateforme="google_ads",
+        template_name="predictor/google_ads_selection_compte.html",
+        context_key="comptes_google_ads",
+        id_key="customer_id",
+        post_key="customer_id",
+        nom_plateforme="Google Ads",
+        message_expiration=(
+            "La sélection Google Ads a expiré. Relancez la connexion."
+        ),
+        message_selection_invalide="Sélection Google Ads invalide.",
+        compte_filtre=lambda selection: not selection.get("manager"),
+        configuration_selection=lambda selection, customer_id: {
+            "source": "oauth_google_ads",
+            "customer_id": customer_id,
+            "login_customer_id": (
+                selection.get("login_customer_id") or ""
+            ),
+            "devise": selection.get("devise") or "",
+            "fuseau_horaire": (
+                selection.get("fuseau_horaire") or ""
+            ),
+            "test_account": bool(selection.get("test_account")),
+            "statut_google": selection.get("statut") or "",
+        },
     )
 
-    if not flux["ok"]:
-        messages.error(
-            request,
-            "La sélection Google Ads a expiré. Relancez la connexion.",
-        )
-        return redirect_connecteurs(site_fallback)
 
-    pending = flux["pending"]
-    site = flux["site"]
-
-    comptes = [
-        compte
-        for compte in pending.get("comptes", [])
-        if (
-            isinstance(compte, dict)
-            and compte.get("customer_id")
-            and not compte.get("manager")
-        )
-    ]
-
-    if request.method == "POST":
-        customer_id = (
-            request.POST.get("customer_id")
-            or ""
-        ).strip()
-
-        selection = next(
-            (
-                compte
-                for compte in comptes
-                if compte.get("customer_id") == customer_id
-            ),
-            None,
-        )
-
-        if selection is None:
-            messages.error(
-                request,
-                "Sélection Google Ads invalide.",
-            )
-        else:
-            compte, _ = (
-                upsert_compte_selectionne(
-                    client=client,
-                    site=site,
-                    plateforme="google_ads",
-                    identifiant_externe=customer_id,
-                    nom_compte=(
-                        selection.get("nom")
-                        or f"Google Ads {customer_id}"
-                    ),
-                    pending=pending,
-                    configuration={
-                        "source": "oauth_google_ads",
-                        "customer_id": customer_id,
-                        "login_customer_id": (
-                            selection.get("login_customer_id")
-                            or ""
-                        ),
-                        "devise": (
-                            selection.get("devise")
-                            or ""
-                        ),
-                        "fuseau_horaire": (
-                            selection.get("fuseau_horaire")
-                            or ""
-                        ),
-                        "test_account": bool(
-                            selection.get("test_account")
-                        ),
-                        "statut_google": (
-                            selection.get("statut")
-                            or ""
-                        ),
-                    },
-                    dernier_message=(
-                        "Compte Google Ads sélectionné et prêt "
-                        "pour l'import natif des campagnes."
-                    ),
-                )
-            )
-
-            supprimer_flux_selection_compte(
-                request,
-                "google_ads",
-                flow_id,
-                flows=flux["flows"],
-            )
-
-            messages.success(
-                request,
-                (
-                    f"{compte.nom_compte} est maintenant rattaché "
-                    f"à {site.nom_site}."
-                ),
-            )
-            return redirect_connecteurs(site)
-
-    return render(
+@login_required
+def selectionner_compte_linkedin_ads(request):
+    return _selectionner_compte_publicitaire(
         request,
-        "predictor/google_ads_selection_compte.html",
-        {
-            "site": site,
-            "flow_id": flow_id,
-            "comptes_google_ads": comptes,
+        plateforme="linkedin_ads",
+        template_name="predictor/linkedin_ads_selection_compte.html",
+        context_key="comptes_linkedin_ads",
+        id_key="account_id",
+        post_key="account_id",
+        nom_plateforme="LinkedIn Ads",
+        message_expiration=(
+            "La sélection LinkedIn Ads a expiré. Relancez la connexion."
+        ),
+        message_selection_invalide="Sélection LinkedIn Ads invalide.",
+        configuration_selection=lambda selection, account_id: {
+            "source": "oauth_linkedin_ads",
+            "account_id": account_id,
+            "urn": (
+                selection.get("urn")
+                or f"urn:li:sponsoredAccount:{account_id}"
+            ),
+            "devise": selection.get("devise") or "",
+            "statut_linkedin": selection.get("statut") or "",
+            "type": selection.get("type") or "",
+            "test_account": bool(selection.get("test_account")),
+            "serving_statuses": (
+                selection.get("serving_statuses") or []
+            ),
         },
     )
 
@@ -4240,6 +4258,33 @@ def synchroniser_compte_connecteur(request, compte_id):
             request,
             (
                 f"{resultat['campagnes']} campagne(s) Meta Ads "
+                f"et {resultat['mesures']} mesure(s) journalière(s) "
+                "synchronisées."
+            ),
+        )
+    elif compte.plateforme == "linkedin_ads":
+        try:
+            resultat = synchroniser_compte_linkedin_ads(
+                compte,
+                periode="LAST_30_DAYS",
+            )
+        except (
+            LinkedInAdsAPIError,
+            LinkedInAdsConfigurationError,
+            ValueError,
+        ) as exc:
+            messages.error(
+                request,
+                f"Synchronisation LinkedIn Ads impossible : {exc}",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        messages.success(
+            request,
+            (
+                f"{resultat['campagnes']} campagne(s) LinkedIn Ads "
                 f"et {resultat['mesures']} mesure(s) journalière(s) "
                 "synchronisées."
             ),

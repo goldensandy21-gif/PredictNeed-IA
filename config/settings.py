@@ -305,9 +305,13 @@ PREDICTNEED_EXTERNAL_CONNECTORS = {
         "description": "Connexion OAuth pour lire les campagnes LinkedIn autorisées.",
         "client_id": os.environ.get("LINKEDIN_ADS_CLIENT_ID", ""),
         "client_secret": os.environ.get("LINKEDIN_ADS_CLIENT_SECRET", ""),
+        "api_version": os.environ.get("LINKEDIN_ADS_API_VERSION", "202606"),
         "variables_requises": [
             "LINKEDIN_ADS_CLIENT_ID",
             "LINKEDIN_ADS_CLIENT_SECRET",
+        ],
+        "variables_optionnelles": [
+            "LINKEDIN_ADS_API_VERSION",
         ],
         "auth_url": "https://www.linkedin.com/oauth/v2/authorization",
         "token_url": "https://www.linkedin.com/oauth/v2/accessToken",

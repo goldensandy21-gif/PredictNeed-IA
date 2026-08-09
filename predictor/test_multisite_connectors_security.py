@@ -271,11 +271,11 @@ class MultisiteConnectorSecurityTests(TestCase):
         "predictor.views.synchroniser_compte_depuis_utm",
         return_value=0,
     )
-    def test_sync_is_limited_to_connector_site(self, sync):
+    def test_utm_sync_is_limited_to_connector_site(self, sync):
         account = CompteConnecteExterne.objects.create(
             client=self.client_pro,
             site=self.site_b,
-            plateforme="linkedin_ads",
+            plateforme="tiktok_ads",
             identifiant_externe="site-b-account",
             nom_compte="Compte B",
         )

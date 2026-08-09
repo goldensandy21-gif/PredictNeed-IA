@@ -87,6 +87,11 @@ urlpatterns = [
         name="selectionner_compte_meta_ads"
     ),
     path(
+        "connecteurs/linkedin-ads/selectionner-compte/",
+        views.selectionner_compte_linkedin_ads,
+        name="selectionner_compte_linkedin_ads"
+    ),
+    path(
         "connecteurs/<int:compte_id>/synchroniser/",
         views.synchroniser_compte_connecteur,
         name="synchroniser_compte_connecteur"

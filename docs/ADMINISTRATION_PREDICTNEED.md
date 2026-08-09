@@ -60,7 +60,7 @@ Le client REST Google Ads est séparé du flux OAuth générique. Il sait lister
 
 Après OAuth Google Ads, PredictNeed IA ne rattache aucun compte automatiquement. Les comptes publicitaires accessibles sont conservés temporairement côté session pendant 15 minutes, sans exposer les jetons OAuth dans le navigateur. Le client choisit explicitement le `customer_id` à associer au site. Le `login_customer_id` du compte administrateur est conservé lorsqu'il est nécessaire. `GOOGLE_ADS_DEVELOPER_TOKEN` est requis pour activer le bouton Google Ads.
 
-La synchronisation Google Ads native interroge par défaut les 30 derniers jours et stocke une mesure par campagne et par date : impressions, clics, conversions et coût. `metrics.cost_micros` est converti dans la devise du compte. Les conversions restent décimales afin de ne pas perdre les conversions fractionnaires attribuées par la régie. LinkedIn Ads et TikTok Ads conservent pour le moment leur rapprochement UTM tant que leur adaptateur API natif n'est pas implémenté.
+La synchronisation Google Ads native interroge par défaut les 30 derniers jours et stocke une mesure par campagne et par date : impressions, clics, conversions et coût. `metrics.cost_micros` est converti dans la devise du compte. Les conversions restent décimales afin de ne pas perdre les conversions fractionnaires attribuées par la régie. TikTok Ads conserve pour le moment son rapprochement UTM tant que son adaptateur API natif n'est pas implémenté.
 
 Les montants commerciaux et publicitaires ne sont jamais additionnés entre devises différentes. Le dashboard regroupe le chiffre d'affaires réel et attribué par code devise. Une campagne publicitaire native ne peut contenir qu'une seule devise dans son historique journalier. Le futur calcul ROAS/ROI devra comparer uniquement des montants exprimés dans la même devise, sauf ajout ultérieur d'un mécanisme explicite de conversion de change.
 
@@ -77,6 +77,14 @@ L'intégration Meta Ads utilise une version d'API explicite configurable avec `M
 La connexion OAuth Meta Ads ne rattache plus automatiquement un compte publicitaire. Après la découverte des comptes accessibles, PredictNeed IA crée un flux temporaire serveur valable 15 minutes et demande au client de sélectionner explicitement le compte à rattacher au site choisi. Le flux vérifie l'utilisateur, le client et le site. Les jetons OAuth restent stockés côté serveur sous forme signée et ne sont pas transmis dans le formulaire de sélection. Lors d'une reconnexion, un jeton de renouvellement déjà enregistré est conservé si Meta n'en renvoie pas un nouveau.
 
 La synchronisation Meta Ads native interroge l'edge `act_{account_id}/insights` au niveau campagne, avec découpage journalier sur les 30 derniers jours. Elle stocke les impressions, clics, conversions disponibles, dépenses, devise et dates dans `MesureCampagneExterne`, puis recalcule les totaux de `CampagneExterne`. Les campagnes Meta sont identifiées par `campaign_id`. La synchronisation est idempotente par campagne et par date. Si le jeton Meta signé est expiré, l'utilisateur doit relancer la connexion du compte ; aucun secret OAuth n'est exposé dans le navigateur.
+
+### LinkedIn Ads
+
+L'intégration LinkedIn Ads utilise les endpoints REST Marketing API avec le header `Linkedin-Version`. La version par défaut est `202606` et peut être remplacée avec `LINKEDIN_ADS_API_VERSION`. Les scopes OAuth requis sont `r_ads` et `r_ads_reporting`. LinkedIn peut exiger une validation Marketing Developer Platform pour accorder ces permissions et pour fournir des refresh tokens programmatiques ; cette validation reste une action externe côté compte LinkedIn, mais le code est prêt à exploiter le refresh token lorsqu'il est présent.
+
+Après OAuth LinkedIn Ads, PredictNeed IA découvre les comptes publicitaires accessibles via `/rest/adAccounts`, pagine les résultats et ne rattache aucun compte automatiquement. Le flux temporaire serveur de sélection reste valable 15 minutes, vérifie l'utilisateur, le client et le site, puis stocke uniquement côté serveur les jetons signés, l'identifiant `sponsoredAccount`, l'URN, le nom, la devise, le statut, le type et les informations de service du compte choisi.
+
+La synchronisation LinkedIn Ads native lit les campagnes du compte sélectionné puis interroge `/rest/adAnalytics` au pivot campagne, granularité journalière. Elle stocke les impressions, clics de landing page, conversions externes disponibles, coût local, devise et date dans `MesureCampagneExterne`. Les campagnes LinkedIn sont identifiées par `sponsoredCampaign`. La synchronisation est idempotente par campagne et par date. Aucun fallback UTM n'est utilisé pour un compte LinkedIn Ads connecté en natif.
 
 
 
