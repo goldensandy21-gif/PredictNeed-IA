@@ -6,8 +6,11 @@ from .meta_ads_api import (
     MetaAdsAPIError,
     MetaAdsConfigurationError,
     _configuration_meta_ads,
+    _extraire_conversions_meta,
     _normaliser_compte_meta,
     lister_comptes_publicitaires_meta,
+    lister_performances_campagnes_meta,
+    normaliser_account_id_meta,
 )
 
 
@@ -84,6 +87,43 @@ class MetaAdsAPITests(SimpleTestCase):
                 "name": "Sans identifiant",
             })
         )
+
+    def test_meta_account_id_is_normalized(self):
+        self.assertEqual(
+            normaliser_account_id_meta("act_123456"),
+            "123456",
+        )
+
+    def test_invalid_meta_account_id_is_rejected(self):
+        with self.assertRaises(ValueError):
+            normaliser_account_id_meta("act_abc")
+
+    def test_conversions_use_conversions_field_when_available(self):
+        total = _extraire_conversions_meta({
+            "conversions": [
+                {"action_type": "lead", "value": "2.5"},
+                {"action_type": "purchase", "value": "1"},
+            ],
+            "actions": [
+                {"action_type": "link_click", "value": "99"},
+            ],
+        })
+
+        self.assertEqual(str(total), "3.5")
+
+    def test_conversion_actions_are_filtered(self):
+        total = _extraire_conversions_meta({
+            "actions": [
+                {"action_type": "link_click", "value": "99"},
+                {"action_type": "lead", "value": "3"},
+                {
+                    "action_type": "offsite_conversion.fb_pixel_purchase",
+                    "value": "2",
+                },
+            ],
+        })
+
+        self.assertEqual(str(total), "5")
 
     @patch("predictor.meta_ads_api._requete_graph")
     def test_account_discovery_paginates(
@@ -189,3 +229,68 @@ class MetaAdsAPITests(SimpleTestCase):
             lister_comptes_publicitaires_meta(
                 "token-test"
             )
+
+    @patch("predictor.meta_ads_api._requete_graph")
+    def test_campaign_insights_use_daily_campaign_level(
+        self,
+        graph_request,
+    ):
+        graph_request.return_value = {
+            "data": [
+                {
+                    "campaign_id": "100",
+                    "campaign_name": "Campagne Meta",
+                    "date_start": "2026-08-08",
+                    "impressions": "1000",
+                }
+            ]
+        }
+
+        rows = lister_performances_campagnes_meta(
+            "token-test",
+            "act_123456",
+            periode="LAST_30_DAYS",
+        )
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(
+            graph_request.call_args.args[0],
+            "/act_123456/insights",
+        )
+        params = graph_request.call_args.kwargs["params"]
+        self.assertEqual(params["level"], "campaign")
+        self.assertEqual(params["date_preset"], "last_30d")
+        self.assertEqual(params["time_increment"], 1)
+        self.assertIn("campaign_id", params["fields"])
+        self.assertIn("spend", params["fields"])
+        self.assertIn("actions", params["fields"])
+
+    @patch("predictor.meta_ads_api._requete_graph")
+    def test_campaign_insights_paginate(
+        self,
+        graph_request,
+    ):
+        graph_request.side_effect = [
+            {
+                "data": [{"campaign_id": "100"}],
+                "paging": {
+                    "cursors": {"after": "CURSOR-1"},
+                    "next": "https://graph.facebook.com/next",
+                },
+            },
+            {"data": [{"campaign_id": "200"}]},
+        ]
+
+        rows = lister_performances_campagnes_meta(
+            "token-test",
+            "123456",
+        )
+
+        self.assertEqual(
+            [row["campaign_id"] for row in rows],
+            ["100", "200"],
+        )
+        self.assertEqual(
+            graph_request.call_args_list[1].kwargs["params"]["after"],
+            "CURSOR-1",
+        )

@@ -43,6 +43,7 @@ from .meta_ads_api import (
     MetaAdsConfigurationError,
     lister_comptes_publicitaires_meta,
 )
+from .meta_ads_sync import synchroniser_compte_meta_ads
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -4481,6 +4482,33 @@ def synchroniser_compte_connecteur(request, compte_id):
             request,
             (
                 f"{resultat['campagnes']} campagne(s) Google Ads "
+                f"et {resultat['mesures']} mesure(s) journalière(s) "
+                "synchronisées."
+            ),
+        )
+    elif compte.plateforme == "meta_ads":
+        try:
+            resultat = synchroniser_compte_meta_ads(
+                compte,
+                periode="LAST_30_DAYS",
+            )
+        except (
+            MetaAdsAPIError,
+            MetaAdsConfigurationError,
+            ValueError,
+        ) as exc:
+            messages.error(
+                request,
+                f"Synchronisation Meta Ads impossible : {exc}",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        messages.success(
+            request,
+            (
+                f"{resultat['campagnes']} campagne(s) Meta Ads "
                 f"et {resultat['mesures']} mesure(s) journalière(s) "
                 "synchronisées."
             ),

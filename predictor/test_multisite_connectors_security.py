@@ -275,7 +275,7 @@ class MultisiteConnectorSecurityTests(TestCase):
         account = CompteConnecteExterne.objects.create(
             client=self.client_pro,
             site=self.site_b,
-            plateforme="meta_ads",
+            plateforme="linkedin_ads",
             identifiant_externe="site-b-account",
             nom_compte="Compte B",
         )

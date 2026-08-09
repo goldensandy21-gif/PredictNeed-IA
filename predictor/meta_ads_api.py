@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from decimal import Decimal, InvalidOperation
 import re
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -15,6 +16,28 @@ class MetaAdsConfigurationError(Exception):
 
 class MetaAdsAPIError(Exception):
     pass
+
+
+PERIODES_META_ADS = {
+    "TODAY": "today",
+    "YESTERDAY": "yesterday",
+    "LAST_7_DAYS": "last_7d",
+    "LAST_14_DAYS": "last_14d",
+    "LAST_30_DAYS": "last_30d",
+    "THIS_MONTH": "this_month",
+    "LAST_MONTH": "last_month",
+}
+
+ACTION_TYPES_CONVERSION = {
+    "lead",
+    "onsite_conversion.lead_grouped",
+    "onsite_conversion.messaging_conversation_started_7d",
+    "offsite_conversion.fb_pixel_lead",
+    "offsite_conversion.fb_pixel_complete_registration",
+    "offsite_conversion.fb_pixel_purchase",
+    "purchase",
+    "complete_registration",
+}
 
 
 def _configuration_meta_ads():
@@ -127,6 +150,20 @@ def _requete_graph(
     return payload
 
 
+def normaliser_account_id_meta(value):
+    account_id = str(value or "").strip()
+
+    if account_id.startswith("act_"):
+        account_id = account_id[4:]
+
+    if not account_id or not re.fullmatch(r"\d+", account_id):
+        raise ValueError(
+            "L'identifiant de compte Meta Ads doit être numérique."
+        )
+
+    return account_id
+
+
 def _normaliser_compte_meta(item):
     if not isinstance(item, dict):
         return None
@@ -162,6 +199,54 @@ def _normaliser_compte_meta(item):
         ).strip(),
         "statut_meta": item.get("account_status"),
     }
+
+
+def _decimal_meta(value):
+    try:
+        nombre = Decimal(str(value or "0"))
+    except (InvalidOperation, TypeError, ValueError):
+        nombre = Decimal("0")
+
+    if nombre < 0:
+        return Decimal("0")
+
+    return nombre
+
+
+def _extraire_conversions_meta(row):
+    conversions = row.get("conversions")
+
+    if isinstance(conversions, list):
+        total = Decimal("0")
+
+        for item in conversions:
+            if not isinstance(item, dict):
+                continue
+            total += _decimal_meta(item.get("value"))
+
+        return total
+
+    actions = row.get("actions")
+    if not isinstance(actions, list):
+        return Decimal("0")
+
+    total = Decimal("0")
+
+    for item in actions:
+        if not isinstance(item, dict):
+            continue
+
+        action_type = str(
+            item.get("action_type") or ""
+        ).strip()
+
+        if (
+            action_type in ACTION_TYPES_CONVERSION
+            or action_type.startswith("offsite_conversion.")
+        ):
+            total += _decimal_meta(item.get("value"))
+
+    return total
 
 
 def lister_comptes_publicitaires_meta(access_token):
@@ -227,3 +312,75 @@ def lister_comptes_publicitaires_meta(access_token):
             break
 
     return comptes
+
+
+def lister_performances_campagnes_meta(
+    access_token,
+    account_id,
+    *,
+    periode="LAST_30_DAYS",
+):
+    if periode not in PERIODES_META_ADS:
+        raise ValueError("Période Meta Ads non autorisée.")
+
+    account_id = normaliser_account_id_meta(account_id)
+    lignes = []
+    after = None
+
+    while True:
+        params = {
+            "level": "campaign",
+            "fields": (
+                "campaign_id,campaign_name,date_start,date_stop,"
+                "impressions,clicks,spend,account_currency,"
+                "actions,conversions"
+            ),
+            "date_preset": PERIODES_META_ADS[periode],
+            "time_increment": 1,
+            "limit": 100,
+        }
+
+        if after:
+            params["after"] = after
+
+        payload = _requete_graph(
+            f"/act_{account_id}/insights",
+            access_token=access_token,
+            params=params,
+        )
+
+        data = payload.get("data", [])
+        if not isinstance(data, list):
+            raise MetaAdsAPIError(
+                "Liste d'insights Meta Ads invalide."
+            )
+
+        lignes.extend(
+            item
+            for item in data
+            if isinstance(item, dict)
+        )
+
+        paging = payload.get("paging") or {}
+        cursors = (
+            paging.get("cursors")
+            if isinstance(paging, dict)
+            else {}
+        ) or {}
+        next_url = (
+            paging.get("next")
+            if isinstance(paging, dict)
+            else None
+        )
+
+        after = (
+            cursors.get("after")
+            if isinstance(cursors, dict)
+            and next_url
+            else None
+        )
+
+        if not after:
+            break
+
+    return lignes
