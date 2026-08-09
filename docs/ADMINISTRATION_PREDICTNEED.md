@@ -63,6 +63,8 @@ La synchronisation Google Ads native interroge par défaut les 30 derniers jours
 
 Les montants commerciaux et publicitaires ne sont jamais additionnés entre devises différentes. Le dashboard regroupe le chiffre d'affaires réel et attribué par code devise. Une campagne publicitaire native ne peut contenir qu'une seule devise dans son historique journalier. Le futur calcul ROAS/ROI devra comparer uniquement des montants exprimés dans la même devise, sauf ajout ultérieur d'un mécanisme explicite de conversion de change.
 
+Les mutations du dashboard liées aux leads, opportunités, automatisations et suppressions techniques sont limitées au site explicitement sélectionné. Posséder plusieurs sites dans un même compte n'autorise pas une action déclenchée depuis le site A à modifier une ressource du site B.
+
 ## Stripe
 Le code Checkout/webhook existe. La production ne doit être considérée comme prête qu'après configuration et test de `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET`. Ne jamais stocker les secrets dans Git.
 

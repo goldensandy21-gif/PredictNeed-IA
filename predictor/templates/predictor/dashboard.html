@@ -704,6 +704,7 @@
                             class="automation-card"
                         >
                             {% csrf_token %}
+                            <input type="hidden" name="site" value="{{ selected_site_id }}">
 
                         <div class="automation-card-header">
                             <div>
@@ -1163,6 +1164,7 @@
         document.addEventListener("DOMContentLoaded", function () {
             const buttons = document.querySelectorAll(".lead-status-button");
             const csrfToken = "{{ csrf_token }}";
+            const selectedSiteId = "{{ selected_site_id }}";
 
             buttons.forEach(function (button) {
                 button.dataset.originalText = button.textContent.trim();
@@ -1175,13 +1177,18 @@
                     button.disabled = true;
                     button.textContent = "Mise à jour...";
 
+                    const requestBody = new URLSearchParams();
+                    requestBody.append("site", selectedSiteId);
+
                     fetch(url, {
                         method: "POST",
                         credentials: "same-origin",
                         headers: {
                             "X-CSRFToken": csrfToken,
-                            "X-Requested-With": "XMLHttpRequest"
-                        }
+                            "X-Requested-With": "XMLHttpRequest",
+                            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+                        },
+                        body: requestBody.toString()
                     })
                     .then(function (response) {
                         if (!response.ok) {

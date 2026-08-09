@@ -1935,28 +1935,59 @@ def modifier_automatisation_email(request, automatisation_id):
         return redirect("dashboard")
 
     client = getattr(request.user, "client_professionnel", None)
+    site = _site_selectionne_pour_mutation(request, client)
+
+    if site is None:
+        messages.error(
+            request,
+            "Sélectionnez un site valide avant de modifier une automatisation.",
+        )
+        return redirect("dashboard")
 
     if request.user.is_superuser and client is None:
-        automatisation = AutomatisationEmail.objects.filter(id=automatisation_id).first()
+        automatisation = AutomatisationEmail.objects.filter(
+            id=automatisation_id,
+            site=site,
+        ).first()
 
     elif client is not None:
         automatisation = AutomatisationEmail.objects.filter(
             id=automatisation_id,
-            client=client
+            client=client,
+            site=site,
         ).first()
 
     else:
         automatisation = None
 
     if automatisation is None:
-        return redirect("dashboard")
+        messages.error(
+            request,
+            "Cette automatisation n'appartient pas au site sélectionné.",
+        )
+        return redirect(
+            f"{reverse('dashboard')}?site={site.pk}&scroll=automatisations"
+        )
 
-    automatisation.nom = request.POST.get("nom", automatisation.nom).strip() or automatisation.nom
-    automatisation.sujet = request.POST.get("sujet", automatisation.sujet).strip() or automatisation.sujet
-    automatisation.contenu = request.POST.get("contenu", automatisation.contenu).strip() or automatisation.contenu
+    automatisation.nom = (
+        request.POST.get("nom", automatisation.nom).strip()
+        or automatisation.nom
+    )
+    automatisation.sujet = (
+        request.POST.get("sujet", automatisation.sujet).strip()
+        or automatisation.sujet
+    )
+    automatisation.contenu = (
+        request.POST.get("contenu", automatisation.contenu).strip()
+        or automatisation.contenu
+    )
     automatisation.actif = request.POST.get("actif") == "on"
-    automatisation.envoyer_copie_interne = request.POST.get("envoyer_copie_interne") == "on"
-    automatisation.email_copie = (request.POST.get("email_copie") or "").strip() or None
+    automatisation.envoyer_copie_interne = (
+        request.POST.get("envoyer_copie_interne") == "on"
+    )
+    automatisation.email_copie = (
+        request.POST.get("email_copie") or ""
+    ).strip() or None
     automatisation.save(
         update_fields=[
             "nom",
@@ -1968,18 +1999,38 @@ def modifier_automatisation_email(request, automatisation_id):
             "date_mise_a_jour",
         ]
     )
+
     ensure_default_automation_steps(automatisation)
 
     for etape in automatisation.etapes.all():
         prefix = f"etape_{etape.id}_"
-        etape.nom = request.POST.get(prefix + "nom", etape.nom).strip() or etape.nom
-        etape.sujet = request.POST.get(prefix + "sujet", etape.sujet).strip() or etape.sujet
-        etape.contenu = request.POST.get(prefix + "contenu", etape.contenu).strip() or etape.contenu
+        etape.nom = (
+            request.POST.get(prefix + "nom", etape.nom).strip()
+            or etape.nom
+        )
+        etape.sujet = (
+            request.POST.get(prefix + "sujet", etape.sujet).strip()
+            or etape.sujet
+        )
+        etape.contenu = (
+            request.POST.get(prefix + "contenu", etape.contenu).strip()
+            or etape.contenu
+        )
         etape.actif = request.POST.get(prefix + "actif") == "on"
-        etape.stopper_si_lead_traite = request.POST.get(prefix + "stopper_si_lead_traite") == "on"
+        etape.stopper_si_lead_traite = (
+            request.POST.get(prefix + "stopper_si_lead_traite") == "on"
+        )
 
         try:
-            etape.delai_jours = max(0, int(request.POST.get(prefix + "delai_jours", etape.delai_jours)))
+            etape.delai_jours = max(
+                0,
+                int(
+                    request.POST.get(
+                        prefix + "delai_jours",
+                        etape.delai_jours,
+                    )
+                ),
+            )
         except (TypeError, ValueError):
             pass
 
@@ -1995,8 +2046,9 @@ def modifier_automatisation_email(request, automatisation_id):
             ]
         )
 
-    return redirect("/dashboard/?scroll=automatisations")
-
+    return redirect(
+        f"{reverse('dashboard')}?site={site.pk}&scroll=automatisations"
+    )
 
 @login_required
 @require_POST
@@ -2051,25 +2103,27 @@ def changer_statut_lead(request, lead_id, nouveau_statut):
         }, status=400)
 
     client = getattr(request.user, "client_professionnel", None)
+    site = _site_selectionne_pour_mutation(request, client)
 
-    if request.user.is_superuser and client is None:
-        lead = LeadCapture.objects.filter(id=lead_id).first()
+    if site is None:
+        return JsonResponse({
+            "success": False,
+            "error": "Site sélectionné invalide ou manquant"
+        }, status=400)
 
-    elif client is not None:
-        sites = client.sites.all()
-        lead = LeadCapture.objects.filter(id=lead_id, site__in=sites).first()
-
-    else:
-        lead = None
+    lead = LeadCapture.objects.filter(
+        id=lead_id,
+        site=site,
+    ).first()
 
     if lead is None:
         return JsonResponse({
             "success": False,
-            "error": "Lead introuvable"
+            "error": "Lead introuvable pour le site sélectionné"
         }, status=404)
 
     lead.statut_suivi = nouveau_statut
-    lead.save()
+    lead.save(update_fields=["statut_suivi"])
 
     return JsonResponse({
         "success": True,
