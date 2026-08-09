@@ -262,16 +262,16 @@ def envoyer_relances_dues(now=None):
 
     automatisations = (
         AutomatisationEmail.objects
-        .filter(actif=True)
+        # Les anciennes automatisations globales (site=NULL) restent en base
+        # pour audit, mais le scheduler n'envoie que des relances rattachées
+        # explicitement à un site.
+        .filter(actif=True, site__isnull=False)
         .prefetch_related("etapes")
         .select_related("site", "client")
     )
 
     for automatisation in automatisations:
-        if automatisation.site:
-            leads = LeadCapture.objects.filter(site=automatisation.site)
-        else:
-            leads = LeadCapture.objects.filter(site__client=automatisation.client)
+        leads = LeadCapture.objects.filter(site=automatisation.site)
 
         for etape in automatisation.etapes.filter(actif=True).order_by("ordre"):
             date_limite = now - timedelta(days=etape.delai_jours)

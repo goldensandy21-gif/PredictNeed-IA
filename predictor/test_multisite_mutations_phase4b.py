@@ -1,10 +1,16 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
+from .automations import envoyer_relances_dues
 from .models import (
     AutomatisationEmail,
     ClientProfessionnel,
+    EmailAutomatise,
+    EtapeAutomatisationEmail,
     LeadCapture,
     SessionVisiteur,
     SiteClient,
@@ -21,7 +27,10 @@ TEST_STORAGES = {
 }
 
 
-@override_settings(STORAGES=TEST_STORAGES)
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    STORAGES=TEST_STORAGES,
+)
 class MultiSiteMutationSafetyTests(TestCase):
 
     def setUp(self):
@@ -198,4 +207,68 @@ class MultiSiteMutationSafetyTests(TestCase):
                 '<input type="hidden" name="site" '
                 f'value="{self.site_a.id}">'
             ),
+        )
+
+    def test_legacy_global_automation_is_not_sent_by_scheduler(self):
+        legacy_auto = AutomatisationEmail.objects.create(
+            client=self.pro,
+            site=None,
+            nom="Ancienne automatisation globale",
+            sujet="Global",
+            contenu="Global",
+            actif=True,
+        )
+        EtapeAutomatisationEmail.objects.create(
+            automatisation=legacy_auto,
+            ordre=1,
+            nom="Relance legacy",
+            delai_jours=0,
+            sujet="Relance globale",
+            contenu="Bonjour {nom}",
+            actif=True,
+        )
+        self.lead_a.date_creation = timezone.now() - timedelta(days=1)
+        self.lead_a.save(update_fields=["date_creation"])
+
+        resultat = envoyer_relances_dues()
+
+        self.assertEqual(resultat, {"envoyes": 0, "ignores": 0})
+        self.assertFalse(
+            EmailAutomatise.objects.filter(
+                automatisation=legacy_auto,
+                lead=self.lead_a,
+            ).exists()
+        )
+
+    def test_site_automation_scheduler_stays_on_its_site(self):
+        EtapeAutomatisationEmail.objects.create(
+            automatisation=self.auto_a,
+            ordre=1,
+            nom="Relance site A",
+            delai_jours=0,
+            sujet="Relance {site}",
+            contenu="Bonjour {email}",
+            actif=True,
+        )
+        self.lead_a.date_creation = timezone.now() - timedelta(days=1)
+        self.lead_a.save(update_fields=["date_creation"])
+        self.lead_b.date_creation = timezone.now() - timedelta(days=1)
+        self.lead_b.save(update_fields=["date_creation"])
+
+        resultat = envoyer_relances_dues()
+
+        self.assertEqual(resultat, {"envoyes": 1, "ignores": 0})
+        self.assertTrue(
+            EmailAutomatise.objects.filter(
+                automatisation=self.auto_a,
+                lead=self.lead_a,
+                site=self.site_a,
+                statut="envoye",
+            ).exists()
+        )
+        self.assertFalse(
+            EmailAutomatise.objects.filter(
+                automatisation=self.auto_a,
+                lead=self.lead_b,
+            ).exists()
         )
