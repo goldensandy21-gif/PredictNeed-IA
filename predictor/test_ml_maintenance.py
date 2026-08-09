@@ -1,4 +1,5 @@
 
+import math
 from datetime import timedelta
 from io import StringIO
 
@@ -185,6 +186,50 @@ class MachineLearningMaintenanceTests(TestCase):
         _, labels, session_ids = _dataset_for_site(self.site)
         labels_by_session = dict(zip(session_ids, labels))
         self.assertEqual(labels_by_session[session.pk], 0)
+
+    def test_training_features_stop_at_lead_creation(self):
+        now = timezone.now()
+        session = SessionVisiteur.objects.create(
+            site=self.site,
+            session_id="future-leakage",
+            nombre_pages_vues=10,
+            nombre_clics=8,
+            temps_total_secondes=600,
+            est_rebond=False,
+        )
+        before = EvenementUtilisateur.objects.create(
+            session=session,
+            type_evenement="page_vue",
+            page="/accueil/",
+        )
+        before.date_creation = now - timedelta(minutes=2)
+        before.save(update_fields=["date_creation"])
+
+        lead = LeadCapture.objects.create(
+            site=self.site,
+            session=session,
+            email="future-leakage@example.com",
+            consentement=True,
+            statut_suivi="converti",
+        )
+        lead.date_creation = now
+        lead.save(update_fields=["date_creation"])
+
+        after = EvenementUtilisateur.objects.create(
+            session=session,
+            type_evenement="page_vue",
+            page="/prix/",
+        )
+        after.date_creation = now + timedelta(minutes=2)
+        after.save(update_fields=["date_creation"])
+
+        matrix, labels, session_ids = _dataset_for_site(self.site)
+        row = matrix[session_ids.index(session.pk)]
+
+        self.assertEqual(labels, [1])
+        self.assertAlmostEqual(row[0], math.log1p(1.0))
+        self.assertEqual(row[1], 0.0)
+        self.assertEqual(row[7], 0.0)
 
     def test_rules_are_used_without_active_model(self):
         session = SessionVisiteur.objects.create(

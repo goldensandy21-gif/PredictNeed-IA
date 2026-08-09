@@ -3,7 +3,7 @@ import math
 import random
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from types import SimpleNamespace
 
 from django.db import transaction
 from django.db.models import Prefetch, Q
@@ -196,7 +196,7 @@ def _resolved_leads_for_site(site, *, include_events=False):
         .select_related("session")
         .prefetch_related("opportunites")
         .distinct()
-        .order_by("session_id", "-date_creation")
+        .order_by("session_id", "date_creation")
     )
 
     if include_events:
@@ -209,6 +209,59 @@ def _resolved_leads_for_site(site, *, include_events=False):
         )
 
     return queryset
+
+
+def _entier_temps_evenement(value):
+    chiffres = "".join(c for c in str(value or "") if c.isdigit())
+    if not chiffres:
+        return 0
+    return min(int(chiffres), 86400)
+
+
+def _session_snapshot_pour_lead(lead):
+    session = lead.session
+    evenements = [
+        evenement
+        for evenement in getattr(
+            session,
+            "ml_evenements",
+            session.evenements.all(),
+        )
+        if evenement.date_creation <= lead.date_creation
+    ]
+
+    pages_vues = sum(
+        1 for evenement in evenements
+        if evenement.type_evenement == "page_vue"
+    )
+    clics = sum(
+        1 for evenement in evenements
+        if evenement.type_evenement == "clic"
+    )
+    temps_total_secondes = min(
+        sum(
+            _entier_temps_evenement(evenement.valeur)
+            for evenement in evenements
+            if evenement.type_evenement == "temps"
+        ),
+        86400,
+    )
+
+    return SimpleNamespace(
+        nombre_pages_vues=pages_vues,
+        nombre_clics=clics,
+        temps_total_secondes=temps_total_secondes,
+        est_rebond=(
+            pages_vues <= 1
+            and clics == 0
+            and temps_total_secondes < 10
+        ),
+        est_mobile=session.est_mobile,
+        est_tablette=session.est_tablette,
+        utm_source=session.utm_source,
+        utm_campaign=session.utm_campaign,
+        ml_evenements=evenements,
+    )
 
 
 def compter_resultats_resolus(site):
@@ -240,7 +293,10 @@ def _dataset_for_site(site):
         label = _resolved_label(lead)
         if label is None:
             continue
-        samples[lead.session_id] = (lead.session, label)
+        samples[lead.session_id] = (
+            _session_snapshot_pour_lead(lead),
+            label,
+        )
 
     matrix = []
     labels = []
@@ -369,7 +425,8 @@ def entrainer_site(
                 **metrics,
                 "quality_threshold": minimum_balanced_accuracy,
                 "quality_ok": quality_ok,
-                "trained_at": datetime.now().isoformat(),
+                "trained_at": timezone.now().isoformat(),
+                "feature_cutoff": "lead_date_creation",
             },
             nombre_echantillons=len(labels),
             nombre_positifs=positives,

@@ -42,6 +42,8 @@ Le modèle est une régression logistique supervisée séparée par site. Le sco
 
 Les exemples d'entraînement utilisent uniquement des résultats commerciaux résolus : lead `converti` ou `perdu`, ou opportunité liée `gagne` ou `perdu`. Lorsqu'une opportunité liée possède un résultat final, ce résultat est prioritaire sur le statut du lead. Un lead encore `contacte` peut donc être utilisable si son opportunité est déjà gagnée ou perdue.
 
+Les caractéristiques d'entraînement sont figées à la date de création du lead résolu. Les événements et compteurs de session postérieurs au lead ne sont pas utilisés dans le dataset afin d'éviter une fuite temporelle. Un seul modèle actif peut exister par site ; sans modèle actif validé, le scoring à règles reste le moteur de repli.
+
 ## Conservation
 Simulation : `python manage.py purge_donnees_rgpd`
 
