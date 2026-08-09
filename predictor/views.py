@@ -38,6 +38,11 @@ from .google_ads_api import (
     decouvrir_comptes_publicitaires,
 )
 from .google_ads_sync import synchroniser_compte_google_ads
+from .meta_ads_api import (
+    MetaAdsAPIError,
+    MetaAdsConfigurationError,
+    lister_comptes_publicitaires_meta,
+)
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -3800,6 +3805,102 @@ def connecteur_oauth_callback(request, plateforme):
             f"{selection_url}?flow={flow_id}"
         )
 
+    if plateforme == "meta_ads":
+        if not access_token:
+            messages.error(
+                request,
+                "Meta Ads n'a pas renvoyé de jeton d'accès.",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        try:
+            comptes_meta_ads = (
+                lister_comptes_publicitaires_meta(
+                    access_token
+                )
+            )
+        except (
+            MetaAdsAPIError,
+            MetaAdsConfigurationError,
+            ValueError,
+        ) as exc:
+            messages.error(
+                request,
+                f"Impossible de lire les comptes Meta Ads : {exc}",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        if not comptes_meta_ads:
+            messages.error(
+                request,
+                "Aucun compte publicitaire Meta Ads accessible n'a été trouvé.",
+            )
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+
+        flow_id = secrets.token_urlsafe(24)
+        flows = dict(
+            request.session.get(
+                "meta_ads_oauth_flows",
+                {},
+            )
+        )
+        now_ts = timezone.now().timestamp()
+        flows_valides = {}
+
+        for key, value in flows.items():
+            if not isinstance(value, dict):
+                continue
+
+            try:
+                created_at = float(
+                    value.get("created_at", 0)
+                )
+            except (TypeError, ValueError):
+                continue
+
+            age = now_ts - created_at
+            if 0 <= age <= 15 * 60:
+                flows_valides[key] = value
+
+        flows_valides[flow_id] = {
+            "user_id": request.user.id,
+            "client_id": client.id,
+            "site_id": site.id,
+            "created_at": now_ts,
+            "access_token_signe": signer_token(
+                access_token
+            ),
+            "refresh_token_signe": signer_token(
+                refresh_token
+            ),
+            "token_type": token_payload.get(
+                "token_type",
+                "Bearer",
+            ),
+            "expires_in": token_payload.get(
+                "expires_in"
+            ),
+            "comptes": comptes_meta_ads,
+        }
+
+        request.session[
+            "meta_ads_oauth_flows"
+        ] = flows_valides
+        request.session.modified = True
+
+        selection_url = reverse(
+            "selectionner_compte_meta_ads"
+        )
+        return redirect(
+            f"{selection_url}?flow={flow_id}"
+        )
+
     compte, _ = CompteConnecteExterne.objects.update_or_create(
         client=client,
         site=site,
@@ -3831,6 +3932,261 @@ def connecteur_oauth_callback(request, plateforme):
     )
     return redirect(
         f"{reverse('module_connecteurs')}?site={site.pk}"
+    )
+
+
+@login_required
+def selectionner_compte_meta_ads(request):
+    client = get_client_professionnel_utilisateur(request)
+    flow_id = (
+        request.POST.get("flow")
+        or request.GET.get("flow")
+        or ""
+    ).strip()
+
+    flows = dict(
+        request.session.get(
+            "meta_ads_oauth_flows",
+            {},
+        )
+    )
+    pending = flows.get(flow_id)
+
+    site_fallback = None
+    if client is not None:
+        site_fallback = (
+            client.sites
+            .filter(module_connecteurs_actif=True)
+            .order_by("date_creation")
+            .first()
+        )
+
+    def redirect_connecteurs(site=None):
+        if site is not None:
+            return redirect(
+                f"{reverse('module_connecteurs')}?site={site.pk}"
+            )
+        return redirect("module_connecteurs")
+
+    if (
+        not flow_id
+        or not isinstance(pending, dict)
+        or client is None
+    ):
+        messages.error(
+            request,
+            "La sélection Meta Ads a expiré. Relancez la connexion.",
+        )
+        return redirect_connecteurs(site_fallback)
+
+    try:
+        created_at = float(
+            pending.get("created_at", 0)
+        )
+    except (TypeError, ValueError):
+        created_at = 0
+
+    age = timezone.now().timestamp() - created_at
+
+    if (
+        age < 0
+        or age > 15 * 60
+        or pending.get("user_id") != request.user.id
+        or pending.get("client_id") != client.id
+    ):
+        flows.pop(flow_id, None)
+        request.session[
+            "meta_ads_oauth_flows"
+        ] = flows
+        request.session.modified = True
+        messages.error(
+            request,
+            "La sélection Meta Ads n'est plus valide.",
+        )
+        return redirect_connecteurs(site_fallback)
+
+    site = (
+        client.sites
+        .filter(
+            pk=pending.get("site_id"),
+            module_connecteurs_actif=True,
+        )
+        .first()
+    )
+
+    if site is None:
+        flows.pop(flow_id, None)
+        request.session[
+            "meta_ads_oauth_flows"
+        ] = flows
+        request.session.modified = True
+        messages.error(
+            request,
+            "Le site associé à cette connexion Meta Ads n'est plus disponible.",
+        )
+        return redirect_connecteurs(site_fallback)
+
+    comptes = [
+        compte
+        for compte in pending.get("comptes", [])
+        if (
+            isinstance(compte, dict)
+            and compte.get("account_id")
+        )
+    ]
+
+    if request.method == "POST":
+        account_id = (
+            request.POST.get("account_id")
+            or ""
+        ).strip()
+
+        selection = next(
+            (
+                compte
+                for compte in comptes
+                if str(
+                    compte.get("account_id")
+                    or ""
+                ).strip() == account_id
+            ),
+            None,
+        )
+
+        if selection is None:
+            messages.error(
+                request,
+                "Sélection Meta Ads invalide.",
+            )
+        else:
+            existing = (
+                CompteConnecteExterne.objects
+                .filter(
+                    client=client,
+                    site=site,
+                    plateforme="meta_ads",
+                    identifiant_externe=account_id,
+                )
+                .first()
+            )
+
+            refresh_token_signe = (
+                pending.get(
+                    "refresh_token_signe"
+                )
+                or (
+                    existing.refresh_token_signe
+                    if existing is not None
+                    else ""
+                )
+            )
+
+            expires_at = None
+            expires_in = pending.get(
+                "expires_in"
+            )
+
+            try:
+                if expires_in:
+                    expires_at = (
+                        timezone.now()
+                        + timedelta(
+                            seconds=int(expires_in)
+                        )
+                    )
+            except (TypeError, ValueError):
+                expires_at = None
+
+            compte, _ = (
+                CompteConnecteExterne.objects
+                .update_or_create(
+                    client=client,
+                    site=site,
+                    plateforme="meta_ads",
+                    identifiant_externe=account_id,
+                    defaults={
+                        "nom_compte": (
+                            selection.get("nom")
+                            or f"Meta Ads {account_id}"
+                        ),
+                        "statut": "connecte",
+                        "scopes": " ".join(
+                            get_fournisseur(
+                                "meta_ads"
+                            ).get("scopes", [])
+                        ),
+                        "access_token_signe": pending.get(
+                            "access_token_signe",
+                            "",
+                        ),
+                        "refresh_token_signe": (
+                            refresh_token_signe
+                        ),
+                        "token_type": pending.get(
+                            "token_type",
+                            "Bearer",
+                        ),
+                        "expires_at": expires_at,
+                        "configuration": {
+                            "source": (
+                                "oauth_meta_ads"
+                            ),
+                            "account_id": account_id,
+                            "graph_id": (
+                                selection.get(
+                                    "graph_id"
+                                )
+                                or f"act_{account_id}"
+                            ),
+                            "devise": (
+                                selection.get(
+                                    "devise"
+                                )
+                                or ""
+                            ),
+                            "fuseau_horaire": (
+                                selection.get(
+                                    "fuseau_horaire"
+                                )
+                                or ""
+                            ),
+                            "statut_meta": (
+                                selection.get(
+                                    "statut_meta"
+                                )
+                            ),
+                        },
+                        "dernier_message": (
+                            "Compte Meta Ads sélectionné et prêt "
+                            "pour l'import natif des campagnes."
+                        ),
+                    },
+                )
+            )
+
+            flows.pop(flow_id, None)
+            request.session[
+                "meta_ads_oauth_flows"
+            ] = flows
+            request.session.modified = True
+
+            messages.success(
+                request,
+                (
+                    f"{compte.nom_compte} est maintenant rattaché "
+                    f"à {site.nom_site}."
+                ),
+            )
+            return redirect_connecteurs(site)
+
+    return render(
+        request,
+        "predictor/meta_ads_selection_compte.html",
+        {
+            "site": site,
+            "flow_id": flow_id,
+            "comptes_meta_ads": comptes,
+        },
     )
 
 

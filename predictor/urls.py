@@ -82,6 +82,11 @@ urlpatterns = [
         name="selectionner_compte_google_ads"
     ),
     path(
+        "connecteurs/meta-ads/selectionner-compte/",
+        views.selectionner_compte_meta_ads,
+        name="selectionner_compte_meta_ads"
+    ),
+    path(
         "connecteurs/<int:compte_id>/synchroniser/",
         views.synchroniser_compte_connecteur,
         name="synchroniser_compte_connecteur"

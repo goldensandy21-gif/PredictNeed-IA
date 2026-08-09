@@ -73,6 +73,9 @@ Le module Publicité affiche désormais les résultats financiers campagne par c
 
 L'intégration Meta Ads utilise une version d'API explicite configurable avec `META_ADS_API_VERSION`, par défaut `v25.0`. La découverte des comptes publicitaires passe par le compte utilisateur autorisé et l'edge `/me/adaccounts`. PredictNeed IA conserve l'identifiant publicitaire, le nom, la devise, le fuseau horaire et le statut du compte afin de préparer une sélection explicite du compte publicitaire avant toute synchronisation native. Aucun compte Meta ne doit être choisi automatiquement lorsqu'un utilisateur en possède plusieurs.
 
+La connexion OAuth Meta Ads ne rattache plus automatiquement un compte publicitaire. Après la découverte des comptes accessibles, PredictNeed IA crée un flux temporaire serveur valable 15 minutes et demande au client de sélectionner explicitement le compte à rattacher au site choisi. Le flux vérifie l'utilisateur, le client et le site. Les jetons OAuth restent stockés côté serveur sous forme signée et ne sont pas transmis dans le formulaire de sélection. Lors d'une reconnexion, un jeton de renouvellement déjà enregistré est conservé si Meta n'en renvoie pas un nouveau.
+
+
 
 
 
