@@ -39,3 +39,5 @@ db.sqlite3.backup-*
 .phase2a-backup-*/
 .phase2b-backup-*/
 .phase3-backup-*/
+
+.predeploy-*/

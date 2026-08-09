@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 
 from .ml import FEATURE_NAMES, vecteur_caracteristiques
@@ -185,24 +185,53 @@ def _resolved_label(lead):
     return None
 
 
-def _dataset_for_site(site):
-    leads = (
+def _resolved_leads_for_site(site, *, include_events=False):
+    queryset = (
         LeadCapture.objects
+        .filter(site=site)
         .filter(
-            site=site,
-            statut_suivi__in=["converti", "perdu"],
+            Q(statut_suivi__in=["converti", "perdu"])
+            | Q(opportunites__etape__in=["gagne", "perdu"])
         )
         .select_related("session")
-        .prefetch_related(
-            "opportunites",
+        .prefetch_related("opportunites")
+        .distinct()
+        .order_by("session_id", "-date_creation")
+    )
+
+    if include_events:
+        queryset = queryset.prefetch_related(
             Prefetch(
                 "session__evenements",
                 queryset=EvenementUtilisateur.objects.order_by("date_creation"),
                 to_attr="ml_evenements",
             ),
         )
-        .order_by("session_id", "-date_creation")
-    )
+
+    return queryset
+
+
+def compter_resultats_resolus(site):
+    samples = {}
+    for lead in _resolved_leads_for_site(site):
+        if lead.session_id in samples:
+            continue
+        label = _resolved_label(lead)
+        if label is None:
+            continue
+        samples[lead.session_id] = int(label)
+
+    positives = sum(samples.values())
+    negatives = len(samples) - positives
+    return {
+        "total": len(samples),
+        "positives": positives,
+        "negatives": negatives,
+    }
+
+
+def _dataset_for_site(site):
+    leads = _resolved_leads_for_site(site, include_events=True)
 
     samples = {}
     for lead in leads:

@@ -9,6 +9,7 @@
 - Session unique par `(site, session_id)`.
 - Clé API distincte par site.
 - Modules du dashboard évalués sur le site sélectionné.
+- Connecteurs OAuth rattachés à un site précis ; synchronisation limitée à ce site.
 
 ## Migrations importantes
 - `0015_essai_gratuit_sans_carte` : essai 60 jours.
@@ -29,6 +30,8 @@ Commande : `python manage.py entrainer_modeles_ml`
 Valeurs par défaut : 40 sessions résolues, 10 conversions, 10 pertes, balanced accuracy minimale 0,55, rappel minimal 0,40 et spécificité minimale 0,40.
 
 Le modèle est une régression logistique supervisée séparée par site. Le scoring à règles reste le moteur de repli. Les prédictions ML enregistrent le moteur, la probabilité et la version du modèle.
+
+Les exemples d'entraînement utilisent uniquement des résultats commerciaux résolus : lead `converti` ou `perdu`, ou opportunité liée `gagne` ou `perdu`. Lorsqu'une opportunité liée possède un résultat final, ce résultat est prioritaire sur le statut du lead. Un lead encore `contacte` peut donc être utilisable si son opportunité est déjà gagnée ou perdue.
 
 ## Conservation
 Simulation : `python manage.py purge_donnees_rgpd`

@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from .analyse import analyser_session_automatique
 from .ml import predire_probabilite
-from .ml_training import entrainer_site
+from .ml_training import _dataset_for_site, compter_resultats_resolus, entrainer_site
 from .models import (
     ClientProfessionnel,
     EvenementUtilisateur,
@@ -17,6 +17,7 @@ from .models import (
     LeadCapture,
     ModeleMachineLearning,
     PredictionBesoin,
+    OpportuniteCRM,
     SessionVisiteur,
     SiteClient,
 )
@@ -106,6 +107,84 @@ class MachineLearningMaintenanceTests(TestCase):
             statut_suivi="converti" if positive else "perdu",
         )
         return session
+
+    def test_opportunity_outcomes_are_used_as_supervised_labels(self):
+        positive_session = SessionVisiteur.objects.create(
+            site=self.site,
+            session_id="opportunity-won",
+            nombre_pages_vues=4,
+            nombre_clics=3,
+            temps_total_secondes=120,
+        )
+        positive_lead = LeadCapture.objects.create(
+            site=self.site,
+            session=positive_session,
+            email="won@example.com",
+            consentement=True,
+            statut_suivi="contacte",
+        )
+        OpportuniteCRM.objects.create(
+            site=self.site,
+            lead=positive_lead,
+            titre="Vente gagnée",
+            etape="gagne",
+        )
+
+        negative_session = SessionVisiteur.objects.create(
+            site=self.site,
+            session_id="opportunity-lost",
+            nombre_pages_vues=2,
+            nombre_clics=1,
+            temps_total_secondes=30,
+        )
+        negative_lead = LeadCapture.objects.create(
+            site=self.site,
+            session=negative_session,
+            email="lost@example.com",
+            consentement=True,
+            statut_suivi="contacte",
+        )
+        OpportuniteCRM.objects.create(
+            site=self.site,
+            lead=negative_lead,
+            titre="Vente perdue",
+            etape="perdu",
+        )
+
+        matrix, labels, session_ids = _dataset_for_site(self.site)
+
+        self.assertEqual(len(matrix), 2)
+        labels_by_session = dict(zip(session_ids, labels))
+        self.assertEqual(labels_by_session[positive_session.pk], 1)
+        self.assertEqual(labels_by_session[negative_session.pk], 0)
+
+        counts = compter_resultats_resolus(self.site)
+        self.assertEqual(counts["total"], 2)
+        self.assertEqual(counts["positives"], 1)
+        self.assertEqual(counts["negatives"], 1)
+
+    def test_opportunity_outcome_takes_priority_over_lead_status(self):
+        session = SessionVisiteur.objects.create(
+            site=self.site,
+            session_id="opportunity-priority",
+        )
+        lead = LeadCapture.objects.create(
+            site=self.site,
+            session=session,
+            email="priority@example.com",
+            consentement=True,
+            statut_suivi="converti",
+        )
+        OpportuniteCRM.objects.create(
+            site=self.site,
+            lead=lead,
+            titre="Finalement perdue",
+            etape="perdu",
+        )
+
+        _, labels, session_ids = _dataset_for_site(self.site)
+        labels_by_session = dict(zip(session_ids, labels))
+        self.assertEqual(labels_by_session[session.pk], 0)
 
     def test_rules_are_used_without_active_model(self):
         session = SessionVisiteur.objects.create(

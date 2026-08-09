@@ -1455,16 +1455,12 @@ def dashboard(request):
             .order_by("-date_entrainement")
             .first()
         )
-        leads_resolus = leads.filter(statut_suivi__in=["converti", "perdu"])
-        ml_sessions_resolues = leads_resolus.values("session_id").distinct().count()
-        ml_conversions = (
-            leads_resolus.filter(statut_suivi="converti")
-            .values("session_id").distinct().count()
-        )
-        ml_pertes = (
-            leads_resolus.filter(statut_suivi="perdu")
-            .values("session_id").distinct().count()
-        )
+        from .ml_training import compter_resultats_resolus
+
+        resultats_ml = compter_resultats_resolus(selected_site)
+        ml_sessions_resolues = resultats_ml["total"]
+        ml_conversions = resultats_ml["positives"]
+        ml_pertes = resultats_ml["negatives"]
 
     return render(request, "predictor/dashboard.html", {
         "nom_client": nom_client,
@@ -3359,17 +3355,46 @@ def module_historique(request):
 
 @login_required
 def demarrer_oauth_connecteur(request, plateforme):
-    site_id = request.GET.get("site") or None
+    client = get_client_professionnel_utilisateur(request)
+    site_id = (request.GET.get("site") or "").strip()
+
+    if client is None:
+        messages.error(
+            request,
+            "La connexion OAuth doit être lancée depuis un espace client.",
+        )
+        return redirect("module_connecteurs")
+
+    if not site_id:
+        messages.error(
+            request,
+            "Sélectionnez un site avant de connecter un compte externe.",
+        )
+        return redirect("module_connecteurs")
+
+    site = (
+        client.sites
+        .filter(pk=site_id, module_connecteurs_actif=True)
+        .first()
+    )
+    if site is None:
+        messages.error(
+            request,
+            "Ce site n'est pas accessible ou son module Connecteurs est inactif.",
+        )
+        return redirect("module_connecteurs")
 
     try:
         url_autorisation = construire_url_autorisation(
             request,
             plateforme,
-            site_id=site_id,
+            site_id=site.pk,
         )
     except ConnecteurConfigurationError as exc:
         messages.error(request, str(exc))
-        return redirect("module_connecteurs")
+        return redirect(
+            f"{reverse('module_connecteurs')}?site={site.pk}"
+        )
 
     return redirect(url_autorisation)
 
@@ -3406,19 +3431,45 @@ def connecteur_oauth_callback(request, plateforme):
         messages.error(request, "Connexion externe refusée : plateforme invalide.")
         return redirect("module_connecteurs")
 
+    client = get_client_professionnel_utilisateur(request)
+    if client is None:
+        messages.error(
+            request,
+            "Connexion externe refusée : espace client introuvable.",
+        )
+        return redirect("module_connecteurs")
+
+    if state_payload.get("client_id") != client.id:
+        messages.error(
+            request,
+            "Connexion externe refusée : espace client invalide.",
+        )
+        return redirect("module_connecteurs")
+
+    site_id = state_payload.get("site_id")
+    site = None
+    if site_id:
+        site = (
+            client.sites
+            .filter(pk=site_id, module_connecteurs_actif=True)
+            .first()
+        )
+
+    if site is None:
+        messages.error(
+            request,
+            "Connexion externe refusée : site invalide ou module Connecteurs inactif.",
+        )
+        return redirect("module_connecteurs")
+
     try:
         fournisseur = get_fournisseur(plateforme)
         token_payload = echanger_code_contre_token(request, plateforme, code)
     except (ConnecteurConfigurationError, ConnecteurOAuthError) as exc:
         messages.error(request, f"Connexion impossible : {exc}")
-        return redirect("module_connecteurs")
-
-    client = request.user.client_professionnel
-    site = None
-    site_id = state_payload.get("site_id")
-
-    if site_id:
-        site = SiteClient.objects.filter(client=client, id=site_id).first()
+        return redirect(
+            f"{reverse('module_connecteurs')}?site={site.pk}"
+        )
 
     nom_compte = token_payload.get("account_name") or fournisseur["nom"]
     identifiant_externe = (
@@ -3431,10 +3482,10 @@ def connecteur_oauth_callback(request, plateforme):
 
     compte, _ = CompteConnecteExterne.objects.update_or_create(
         client=client,
+        site=site,
         plateforme=plateforme,
         identifiant_externe=identifiant_externe,
         defaults={
-            "site": site,
             "nom_compte": nom_compte,
             "statut": "connecte" if access_token else "erreur",
             "scopes": " ".join(fournisseur.get("scopes", [])),
@@ -3458,40 +3509,69 @@ def connecteur_oauth_callback(request, plateforme):
         request,
         f"{compte.get_plateforme_display()} est connecté à PredictNeed IA."
     )
-    return redirect("module_connecteurs")
+    return redirect(
+        f"{reverse('module_connecteurs')}?site={site.pk}"
+    )
 
 
 @login_required
 @require_POST
 def synchroniser_compte_connecteur(request, compte_id):
-    client = request.user.client_professionnel
+    client = get_client_professionnel_utilisateur(request)
+    if client is None:
+        return redirect("module_connecteurs")
+
     compte = get_object_or_404(
         CompteConnecteExterne,
         id=compte_id,
         client=client,
+        site__isnull=False,
+        site__client=client,
+        site__module_connecteurs_actif=True,
     )
-    sites = SiteClient.objects.filter(client=client, actif=True)
 
-    if compte.site:
-        sites = sites.filter(id=compte.site_id)
+    site = compte.site
+    sites = SiteClient.objects.filter(
+        id=site.id,
+        client=client,
+        actif=True,
+        module_connecteurs_actif=True,
+    )
+
+    if not sites.exists():
+        messages.error(
+            request,
+            "La synchronisation est impossible pour ce site inactif.",
+        )
+        return redirect(
+            f"{reverse('module_connecteurs')}?site={site.pk}"
+        )
 
     total = synchroniser_compte_depuis_utm(compte, sites)
     messages.success(
         request,
         f"{total} campagne(s) rapprochée(s) avec les données PredictNeed IA."
     )
-    return redirect("module_connecteurs")
+    return redirect(
+        f"{reverse('module_connecteurs')}?site={site.pk}"
+    )
 
 
 @login_required
 @require_POST
 def deconnecter_compte_connecteur(request, compte_id):
-    client = request.user.client_professionnel
+    client = get_client_professionnel_utilisateur(request)
+    if client is None:
+        return redirect("module_connecteurs")
+
     compte = get_object_or_404(
         CompteConnecteExterne,
         id=compte_id,
         client=client,
+        site__isnull=False,
+        site__client=client,
     )
+    site = compte.site
     compte.statut = "deconnecte"
     compte.access_token_signe = ""
     compte.refresh_token_signe = ""
@@ -3506,7 +3586,9 @@ def deconnecter_compte_connecteur(request, compte_id):
         ]
     )
     messages.success(request, "Compte externe déconnecté.")
-    return redirect("module_connecteurs")
+    return redirect(
+        f"{reverse('module_connecteurs')}?site={site.pk}"
+    )
 
 
 def nettoyer_identifiant_retargeting(valeur, longueur_max=120):
@@ -3551,7 +3633,10 @@ def generer_script_installation_site(base_url, site):
 @login_required
 @require_POST
 def mettre_a_jour_retargeting_site(request, site_id):
-    site = get_object_or_404(get_sites_utilisateur(request), id=site_id)
+    site = get_object_or_404(
+        get_sites_utilisateur(request).filter(module_connecteurs_actif=True),
+        id=site_id,
+    )
 
     champs = {
         "meta_pixel_id": 80,

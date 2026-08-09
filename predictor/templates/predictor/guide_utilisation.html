@@ -64,7 +64,7 @@
         <h2>Scoring et machine learning supervisé</h2>
         <div class="guide-definition-list">
             <div><h3>Scoring immédiat</h3><p>Sans modèle ML actif, PredictNeed IA applique des règles explicables à partir des signaux de session.</p></div>
-            <div><h3>Données d'apprentissage</h3><p>L'entraînement utilise uniquement les sessions du site liées à des leads marqués <strong>Converti</strong> ou <strong>Perdu</strong>. Les sites ne sont pas mélangés dans un même modèle.</p></div>
+            <div><h3>Données d'apprentissage</h3><p>L'entraînement utilise uniquement les sessions du site dont le résultat commercial est connu : lead marqué <strong>Converti</strong> ou <strong>Perdu</strong>, ou opportunité liée marquée <strong>Gagné</strong> ou <strong>Perdu</strong>. Lorsqu'une opportunité possède un résultat final, ce résultat est prioritaire. Les sites ne sont pas mélangés dans un même modèle.</p></div>
             <div><h3>Minimum requis</h3><p>Il faut au moins 40 sessions résolues, dont au moins 10 conversions et 10 pertes. En dessous, aucun modèle n'est utilisé.</p></div>
             <div><h3>Contrôle qualité</h3><p>Le modèle est une régression logistique supervisée. Il est évalué sur un échantillon séparé et n'est activé que si les seuils de qualité configurés sont atteints.</p></div>
             <div><h3>Traçabilité</h3><p>Le moteur, la probabilité et la version du modèle sont enregistrés avec les prédictions produites par le ML.</p></div>
@@ -103,7 +103,7 @@
     <section id="connecteurs" class="legal-section guide-section">
         <h2>Installation, connecteurs et Retargeting</h2>
         <p>Le script contient la clé API propre au site. Le serveur refuse les clés invalides et vérifie le domaine lorsque l'origine est disponible.</p>
-        <p>Les connexions OAuth ne sont affichées que lorsque leur configuration serveur officielle est disponible. Les secrets restent côté serveur.</p>
+        <p>Les connexions OAuth ne sont affichées que lorsque leur configuration serveur officielle est disponible. Chaque connexion externe est rattachée à un site précis : une synchronisation ne mélange jamais les campagnes de plusieurs sites. Les secrets restent côté serveur.</p>
         <p>Les pixels Meta, Google Ads, TikTok, LinkedIn ou Pinterest ne sont chargés que si le retargeting est activé, qu'un identifiant existe et que le choix de confidentialité l'autorise.</p>
     </section>
 
@@ -131,7 +131,7 @@
             <div><h3>Machine learning supervisé</h3><p>Modèle appris à partir d'exemples dont le résultat est connu.</p></div>
             <div><h3>Probabilité</h3><p>Estimation produite par le modèle ; elle ne garantit pas une conversion.</p></div>
             <div><h3>Scoring à règles</h3><p>Calcul explicable utilisé immédiatement et comme solution de repli.</p></div>
-            <div><h3>Session résolue</h3><p>Session liée à un lead finalement marqué converti ou perdu.</p></div>
+            <div><h3>Session résolue</h3><p>Session dont le résultat commercial est connu via un lead converti/perdu ou une opportunité gagnée/perdue.</p></div>
             <div><h3>UTM</h3><p>Paramètres d'URL permettant d'identifier une source ou une campagne.</p></div>
         </div>
     </section>

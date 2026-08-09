@@ -703,6 +703,21 @@ class CompteConnecteExterne(models.Model):
 
     class Meta:
         ordering = ["plateforme", "-date_mise_a_jour"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "client",
+                    "site",
+                    "plateforme",
+                    "identifiant_externe",
+                ],
+                condition=models.Q(
+                    site__isnull=False,
+                    identifiant_externe__isnull=False,
+                ),
+                name="connecteur_externe_unique_par_site",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.get_plateforme_display()} - {self.nom_compte}"
