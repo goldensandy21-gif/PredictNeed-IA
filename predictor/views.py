@@ -92,8 +92,16 @@ from django.core import signing
 from decimal import Decimal, InvalidOperation
 from datetime import timedelta
 from functools import wraps
+from uuid import UUID
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+
+
+def _normaliser_cle_api_uuid(value):
+    try:
+        return UUID(str(value).strip())
+    except (ValueError, TypeError, AttributeError):
+        return None
 
 
 def _add_tracker_cors_headers(response):
@@ -2254,9 +2262,16 @@ def tracker_installation_ping(request):
             status=400,
         )
 
+    api_key_uuid = _normaliser_cle_api_uuid(api_key)
+    if api_key_uuid is None:
+        return JsonResponse(
+            {"success": False, "error": "Format de clé API invalide"},
+            status=400,
+        )
+
     try:
         site = SiteClient.objects.get(
-            cle_api=api_key,
+            cle_api=api_key_uuid,
             actif=True,
         )
     except SiteClient.DoesNotExist:
@@ -2326,6 +2341,14 @@ def track_event(request):
 
     if not api_key:
         return JsonResponse({"success": False, "error": "Clé API manquante"}, status=400)
+
+    api_key_uuid = _normaliser_cle_api_uuid(api_key)
+    if api_key_uuid is None:
+        return JsonResponse(
+            {"success": False, "error": "Format de clé API invalide"},
+            status=400,
+        )
+
     if not valid_session_id(session_id):
         return JsonResponse({"success": False, "error": "Session visiteur invalide"}, status=400)
     if type_evenement not in allowed_event_types:
@@ -2336,7 +2359,7 @@ def track_event(request):
         return JsonResponse({"success": False, "error": "Consentement tracking obligatoire"}, status=400)
 
     try:
-        site = SiteClient.objects.get(cle_api=api_key, actif=True)
+        site = SiteClient.objects.get(cle_api=api_key_uuid, actif=True)
     except SiteClient.DoesNotExist:
         return JsonResponse({"success": False, "error": "Clé API invalide"}, status=403)
 
@@ -2803,6 +2826,14 @@ def capture_lead(request):
 
     if not api_key:
         return JsonResponse({"success": False, "error": "Clé API manquante"}, status=400)
+
+    api_key_uuid = _normaliser_cle_api_uuid(api_key)
+    if api_key_uuid is None:
+        return JsonResponse(
+            {"success": False, "error": "Format de clé API invalide"},
+            status=400,
+        )
+
     if not valid_session_id(session_id):
         return JsonResponse({"success": False, "error": "Session visiteur invalide"}, status=400)
     if not email and not telephone:
@@ -2818,7 +2849,7 @@ def capture_lead(request):
         return JsonResponse({"success": False, "error": "Consentement obligatoire"}, status=400)
 
     try:
-        site = SiteClient.objects.get(cle_api=api_key, actif=True)
+        site = SiteClient.objects.get(cle_api=api_key_uuid, actif=True)
     except SiteClient.DoesNotExist:
         return JsonResponse({"success": False, "error": "Clé API invalide"}, status=403)
 
