@@ -12,6 +12,23 @@ class PublicLaunchTests(TestCase):
         text = self.client.get(reverse("sitemap_xml")).content.decode()
         self.assertIn("https://predictneed-ia.com/", text)
         self.assertNotIn("<lastmod>", text)
+    def test_robots_points_to_canonical_sitemap_and_blocks_private_routes(self):
+        text = self.client.get(reverse("robots_txt")).content.decode()
+        self.assertIn("Sitemap: https://predictneed-ia.com/sitemap.xml", text)
+        self.assertIn("Disallow: /dashboard/", text)
+        self.assertIn("Disallow: /api/", text)
+        self.assertIn("Disallow: /stripe/", text)
+    def test_public_home_has_canonical_domain(self):
+        self.assertContains(
+            self.client.get(reverse("accueil")),
+            'rel="canonical" href="https://predictneed-ia.com/"',
+        )
+    @override_settings(GOOGLE_SITE_VERIFICATION="google-test-token")
+    def test_google_site_verification_meta_is_optional(self):
+        self.assertContains(
+            self.client.get(reverse("accueil")),
+            'name="google-site-verification" content="google-test-token"',
+        )
     def test_login_is_noindex(self):
         self.assertContains(self.client.get(reverse("connexion")), 'content="noindex,follow"')
     def test_newsletter_double_confirmation(self):

@@ -58,6 +58,10 @@ Maintenance : `python manage.py maintenance_quotidienne`
 
 Cette commande gère les essais, exécute la purge et nettoie les anciennes limitations de sécurité. Chaque exécution est journalisée.
 
+Audit legacy pré-production : `python manage.py auditer_donnees_legacy`
+
+Mode bloquant pour une pipeline ou une revue stricte : `python manage.py auditer_donnees_legacy --fail-on-issues`. La commande est en lecture seule et remonte notamment les connecteurs ou automatisations sans site, les incohérences site/compte des campagnes et mesures, les devises invalides, les ventes non positives, les essais sans dates et les modèles ML actifs sans échantillon.
+
 ## Essai gratuit et Stripe
 L'inscription crée un essai gratuit de `PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS` jours, 60 jours par défaut, sans carte bancaire ni session Stripe. L'utilisateur, le site et les paramètres restent actifs pendant l'essai, même tant que l'email n'est pas confirmé ; la confirmation est en revanche requise avant l'ajout d'un autre site et avant l'activation d'un abonnement payant.
 
@@ -135,7 +139,12 @@ La synchronisation TikTok Ads native lit `/campaign/get/`, puis `/report/integra
 
 
 ## Stripe
-Le code Checkout/webhook existe. La production ne doit être considérée comme prête qu'après configuration et test de `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET`. Ne jamais stocker les secrets dans Git.
+Le code Checkout/webhook est prêt côté application et couvert par des tests mockés. La production ne doit être considérée comme prête qu'après configuration réelle de `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET` via secrets d'environnement, puis test d'un Checkout et d'un webhook Stripe en mode approprié. Ne jamais stocker les secrets dans Git.
+
+## SEO public et Search Console
+Le domaine canonique applicatif est `https://predictneed-ia.com`. Le middleware redirige `predictneed-ia.fly.dev` et `www.predictneed-ia.com` vers cette base, sauf `/healthz/`. `robots.txt` bloque les routes privées (`/admin/`, `/dashboard/`, `/api/`, `/stripe/`) et pointe vers le sitemap canonique. Les pages publiques reçoivent une balise canonical construite depuis `PREDICTNEED_SITE_URL`.
+
+La meta Google Search Console est injectée seulement lorsque `GOOGLE_SITE_VERIFICATION` est défini côté environnement. La validation de propriété dans Search Console reste une action externe côté compte Google ; le code expose le point de configuration sans inventer de token.
 
 ## Avant déploiement
 `python manage.py check`
