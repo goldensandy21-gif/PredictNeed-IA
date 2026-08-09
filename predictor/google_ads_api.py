@@ -339,6 +339,7 @@ def decouvrir_comptes_publicitaires(access_token):
         root = decrire_compte(
             access_token,
             root_id,
+            login_customer_id=root_id,
         )
 
         if not root["manager"]:
