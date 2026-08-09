@@ -69,6 +69,11 @@ Le moteur de performance publicitaire rapproche uniquement les ventes confirmée
 
 Le module Publicité affiche désormais les résultats financiers campagne par campagne à partir du moteur de performance : dépense, conversions de la régie, ventes confirmées attribuées, chiffre d'affaires attribué, ROAS, ROI publicitaire et recommandation explicable. Les filtres de dates du module s'appliquent aussi aux mesures journalières et aux ventes utilisées dans ces calculs. Une campagne dont l'attribution n'est pas observable, dont la dépense manque ou dont les devises sont incompatibles reste visible mais sans ratio financier inventé.
 
+### Meta Ads
+
+L'intégration Meta Ads utilise une version d'API explicite configurable avec `META_ADS_API_VERSION`, par défaut `v25.0`. La découverte des comptes publicitaires passe par le compte utilisateur autorisé et l'edge `/me/adaccounts`. PredictNeed IA conserve l'identifiant publicitaire, le nom, la devise, le fuseau horaire et le statut du compte afin de préparer une sélection explicite du compte publicitaire avant toute synchronisation native. Aucun compte Meta ne doit être choisi automatiquement lorsqu'un utilisateur en possède plusieurs.
+
+
 
 
 ## Stripe

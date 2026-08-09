@@ -274,22 +274,27 @@ PREDICTNEED_EXTERNAL_CONNECTORS = {
     },
     "meta_ads": {
         "nom": "Meta Ads",
-        "description": "Connexion OAuth pour rapprocher Facebook Ads et Instagram Ads des leads.",
+        "description": "Connexion OAuth pour lire les comptes et performances Meta Ads autorisés.",
         "client_id": os.environ.get("META_ADS_CLIENT_ID", ""),
         "client_secret": os.environ.get("META_ADS_CLIENT_SECRET", ""),
+        "api_version": os.environ.get(
+            "META_ADS_API_VERSION",
+            "v25.0",
+        ),
         "auth_url": os.environ.get(
             "META_ADS_AUTH_URL",
-            "https://www.facebook.com/v20.0/dialog/oauth",
+            "https://www.facebook.com/v25.0/dialog/oauth",
         ),
         "token_url": os.environ.get(
             "META_ADS_TOKEN_URL",
-            "https://graph.facebook.com/v20.0/oauth/access_token",
+            "https://graph.facebook.com/v25.0/oauth/access_token",
         ),
         "variables_requises": [
             "META_ADS_CLIENT_ID",
             "META_ADS_CLIENT_SECRET",
         ],
         "variables_optionnelles": [
+            "META_ADS_API_VERSION",
             "META_ADS_AUTH_URL",
             "META_ADS_TOKEN_URL",
         ],
