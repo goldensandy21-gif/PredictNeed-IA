@@ -53,6 +53,11 @@ Maintenance : `python manage.py maintenance_quotidienne`
 
 Cette commande gère les essais, exécute la purge et nettoie les anciennes limitations de sécurité. Chaque exécution est journalisée.
 
+## Architecture applicative
+Les vues Django gardent les routes publiques et la composition des templates. Les règles réutilisées par plusieurs modules sont extraites vers des services dédiés : attribution, ventes, performance publicitaire, métriques natives, ML, automatisations, paiement, sécurité, connecteurs OAuth et helpers de dashboard multi-site.
+
+Le module `dashboard_helpers.py` centralise le scope multi-site des modules, les filtres de dates/niveaux, les séries journalières et les largeurs de graphiques. Les pages de module consomment ce scope au lieu de reconstruire localement les règles client/site, ce qui réduit le risque de lecture croisée entre sites.
+
 ## Données publicitaires natives
 Les campagnes UTM restent distinguées des campagnes alimentées par API native. Les métriques natives sont stockées par campagne et par jour afin de conserver l'historique des impressions, clics, conversions et dépenses. Les totaux de `CampagneExterne` sont recalculés à partir de ces mesures journalières.
 
