@@ -207,6 +207,15 @@ def sources_reconnues_pour_plateforme(plateforme):
 
 
 def synchroniser_compte_depuis_utm(compte, sites):
+    if compte.site_id is None:
+        raise ValueError(
+            "Un rapprochement UTM doit être rattaché au site du compte."
+        )
+
+    sites = sites.filter(
+        pk=compte.site_id,
+        client=compte.client,
+    )
     sources_reconnues = sources_reconnues_pour_plateforme(compte.plateforme)
     sessions = SessionVisiteur.objects.filter(site__in=sites).exclude(utm_campaign="")
 

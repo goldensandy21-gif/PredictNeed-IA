@@ -214,3 +214,48 @@ class MesuresRegiesPhase4BTests(TestCase):
                 campagne=campagne,
             ).exists()
         )
+
+    def test_rapprochement_utm_ignore_les_autres_sites_du_queryset(self):
+        autre_site = SiteClient.objects.create(
+            client=self.client_pro,
+            nom_site="Autre site UTM",
+            domaine="autre-utm.example",
+            actif=True,
+        )
+        SessionVisiteur.objects.create(
+            site=self.site,
+            session_id="utm-site-compte",
+            utm_source="google",
+            utm_medium="cpc",
+            utm_campaign="campagne-site-compte",
+        )
+        SessionVisiteur.objects.create(
+            site=autre_site,
+            session_id="utm-autre-site",
+            utm_source="google",
+            utm_medium="cpc",
+            utm_campaign="campagne-autre-site",
+        )
+
+        total = synchroniser_compte_depuis_utm(
+            self.compte,
+            SiteClient.objects.filter(
+                pk__in=[self.site.pk, autre_site.pk],
+            ),
+        )
+
+        self.assertEqual(total, 1)
+        self.assertTrue(
+            CampagneExterne.objects.filter(
+                compte=self.compte,
+                site=self.site,
+                utm_campaign="campagne-site-compte",
+            ).exists()
+        )
+        self.assertFalse(
+            CampagneExterne.objects.filter(
+                compte=self.compte,
+                site=autre_site,
+                utm_campaign="campagne-autre-site",
+            ).exists()
+        )

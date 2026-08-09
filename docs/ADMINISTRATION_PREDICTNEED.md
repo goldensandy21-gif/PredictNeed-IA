@@ -61,6 +61,8 @@ Le module `dashboard_helpers.py` centralise le scope multi-site des modules, les
 ## Données publicitaires natives
 Les campagnes UTM restent distinguées des campagnes alimentées par API native. Les métriques natives sont stockées par campagne et par jour afin de conserver l'historique des impressions, clics, conversions et dépenses. Les totaux de `CampagneExterne` sont recalculés à partir de ces mesures journalières.
 
+Le rapprochement UTM historique reste disponible comme fallback technique, mais il est borné au `site` et au `client` du compte connecté avant toute lecture de sessions. Un queryset de sites trop large ne peut donc pas créer de campagne UTM sur un autre site.
+
 Le client REST Google Ads est séparé du flux OAuth générique. Il sait lister les comptes accessibles, parcourir les hiérarchies de comptes administrateurs, ne proposer que les comptes publicitaires non managers, paginer les requêtes GAQL et actualiser un jeton d'accès à partir du refresh token. La version d'API par défaut est `v25` et peut être remplacée avec `GOOGLE_ADS_API_VERSION`.
 
 Après OAuth Google Ads, PredictNeed IA ne rattache aucun compte automatiquement. Les comptes publicitaires accessibles sont conservés temporairement côté session pendant 15 minutes, sans exposer les jetons OAuth dans le navigateur. Le client choisit explicitement le `customer_id` à associer au site. Le `login_customer_id` du compte administrateur est conservé lorsqu'il est nécessaire. `GOOGLE_ADS_DEVELOPER_TOKEN` est requis pour activer le bouton Google Ads.
