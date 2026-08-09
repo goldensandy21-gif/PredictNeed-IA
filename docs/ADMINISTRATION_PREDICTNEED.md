@@ -65,6 +65,9 @@ Les montants commerciaux et publicitaires ne sont jamais additionnés entre devi
 
 Les mutations du dashboard liées aux leads, opportunités, automatisations et suppressions techniques sont limitées au site explicitement sélectionné. Posséder plusieurs sites dans un même compte n'autorise pas une action déclenchée depuis le site A à modifier une ressource du site B.
 
+Le moteur de performance publicitaire rapproche uniquement les ventes confirmées qui disposent d'une attribution déterministe vers la campagne. Pour une campagne native, l'identifiant externe peut être rapproché via `utm_id` ou via un `utm_campaign` contenant explicitement cet identifiant. Pour une campagne UTM, la campagne, la source et le medium sont comparés lorsqu'ils sont renseignés. Le ROAS correspond au chiffre d'affaires attribué divisé par la dépense publicitaire. Le ROI publicitaire correspond à `(CA attribué - dépense publicitaire) / dépense publicitaire`. Aucun ratio n'est calculé si la dépense est absente, si l'attribution n'est pas observable ou si les devises sont incompatibles. Ce ROI publicitaire n'intègre pas les coûts produits, salaires, logistique ou autres charges.
+
+
 ## Stripe
 Le code Checkout/webhook existe. La production ne doit être considérée comme prête qu'après configuration et test de `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET`. Ne jamais stocker les secrets dans Git.
 
