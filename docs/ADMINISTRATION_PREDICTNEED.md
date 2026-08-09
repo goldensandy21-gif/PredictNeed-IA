@@ -55,6 +55,8 @@ Cette commande gère les essais, exécute la purge et nettoie les anciennes limi
 ## Données publicitaires natives
 Les campagnes UTM restent distinguées des campagnes alimentées par API native. Les métriques natives sont stockées par campagne et par jour afin de conserver l'historique des impressions, clics, conversions et dépenses. Les totaux de `CampagneExterne` sont recalculés à partir de ces mesures journalières.
 
+Le client REST Google Ads est séparé du flux OAuth générique. Il sait lister les comptes accessibles, parcourir les hiérarchies de comptes administrateurs, ne proposer que les comptes publicitaires non managers, paginer les requêtes GAQL et actualiser un jeton d'accès à partir du refresh token. La version d'API par défaut est `v25` et peut être remplacée avec `GOOGLE_ADS_API_VERSION`.
+
 ## Stripe
 Le code Checkout/webhook existe. La production ne doit être considérée comme prête qu'après configuration et test de `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET`. Ne jamais stocker les secrets dans Git.
 

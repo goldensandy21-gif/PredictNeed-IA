@@ -254,6 +254,7 @@ PREDICTNEED_EXTERNAL_CONNECTORS = {
         "client_secret": os.environ.get("GOOGLE_ADS_CLIENT_SECRET", ""),
         "developer_token": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN", ""),
         "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", ""),
+        "api_version": os.environ.get("GOOGLE_ADS_API_VERSION", "v25"),
         "variables_requises": [
             "GOOGLE_ADS_CLIENT_ID",
             "GOOGLE_ADS_CLIENT_SECRET",
@@ -261,6 +262,7 @@ PREDICTNEED_EXTERNAL_CONNECTORS = {
         "variables_optionnelles": [
             "GOOGLE_ADS_DEVELOPER_TOKEN",
             "GOOGLE_ADS_LOGIN_CUSTOMER_ID",
+            "GOOGLE_ADS_API_VERSION",
         ],
         "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
         "token_url": "https://oauth2.googleapis.com/token",
