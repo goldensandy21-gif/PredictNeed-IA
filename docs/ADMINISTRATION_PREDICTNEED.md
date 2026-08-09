@@ -67,6 +67,9 @@ Les mutations du dashboard liées aux leads, opportunités, automatisations et s
 
 Le moteur de performance publicitaire rapproche uniquement les ventes confirmées qui disposent d'une attribution déterministe vers la campagne. Pour une campagne native, l'identifiant externe peut être rapproché via `utm_id` ou via un `utm_campaign` contenant explicitement cet identifiant. Pour une campagne UTM, la campagne, la source et le medium sont comparés lorsqu'ils sont renseignés. Le ROAS correspond au chiffre d'affaires attribué divisé par la dépense publicitaire. Le ROI publicitaire correspond à `(CA attribué - dépense publicitaire) / dépense publicitaire`. Aucun ratio n'est calculé si la dépense est absente, si l'attribution n'est pas observable ou si les devises sont incompatibles. Ce ROI publicitaire n'intègre pas les coûts produits, salaires, logistique ou autres charges.
 
+Le module Publicité affiche désormais les résultats financiers campagne par campagne à partir du moteur de performance : dépense, conversions de la régie, ventes confirmées attribuées, chiffre d'affaires attribué, ROAS, ROI publicitaire et recommandation explicable. Les filtres de dates du module s'appliquent aussi aux mesures journalières et aux ventes utilisées dans ces calculs. Une campagne dont l'attribution n'est pas observable, dont la dépense manque ou dont les devises sont incompatibles reste visible mais sans ratio financier inventé.
+
+
 
 ## Stripe
 Le code Checkout/webhook existe. La production ne doit être considérée comme prête qu'après configuration et test de `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` et `STRIPE_WEBHOOK_SECRET`. Ne jamais stocker les secrets dans Git.

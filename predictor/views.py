@@ -4,6 +4,7 @@ from .analyse import analyser_besoin, analyser_session_automatique
 from .models import ClientProfessionnel, SiteClient, SessionVisiteur, EvenementUtilisateur, PredictionBesoin, LeadCapture, OpportuniteCRM, Vente, AutomatisationEmail, EtapeAutomatisationEmail, EmailAutomatise, CompteConnecteExterne, CampagneExterne
 from .automations import ensure_default_automation_steps, envoyer_confirmation_lead, get_or_create_lead_confirmation_automation
 from .attribution import appliquer_attribution_opportunite
+from .ad_performance import calculer_performance_campagne
 from .sales import (
     agreger_montants_par_devise,
     annuler_vente_opportunite,
@@ -4502,6 +4503,7 @@ def module_publicite(request):
         .annotate(total=Count("id"))
         .order_by("-total")[:10]
     )
+
     client_connecte = get_client_professionnel_utilisateur(request)
     sites_selectionnes = scope["sites_filtres"]
 
@@ -4529,10 +4531,63 @@ def module_publicite(request):
         campagnes_externes = CampagneExterne.objects.none()
 
     comptes_externes = comptes_externes.select_related("site")
-    campagnes_externes = campagnes_externes.select_related(
-        "compte",
-        "site"
-    )[:12]
+
+    campagnes_externes = list(
+        campagnes_externes
+        .select_related("compte", "site")[:12]
+    )
+
+    date_debut_obj = (
+        parse_date(date_debut)
+        if date_debut
+        else None
+    )
+    date_fin_obj = (
+        parse_date(date_fin)
+        if date_fin
+        else None
+    )
+
+    performances_campagnes = []
+
+    for campagne_externe in campagnes_externes:
+        try:
+            performance = calculer_performance_campagne(
+                campagne_externe,
+                date_debut=date_debut_obj,
+                date_fin=date_fin_obj,
+            )
+        except ValueError as exc:
+            performance = {
+                "campagne": campagne_externe,
+                "depense": None,
+                "devise": (
+                    str(campagne_externe.devise or "")
+                    .strip()
+                    .upper()
+                ),
+                "conversions_regie": None,
+                "ventes_attribuees": 0,
+                "chiffre_affaires_attribue": None,
+                "roas": None,
+                "roi_publicitaire": None,
+                "statut_calcul": "donnees_incoherentes",
+                "recommandation": (
+                    f"Données incohérentes : {exc}"
+                ),
+            }
+
+        performances_campagnes.append(performance)
+
+    campagnes_financieres_calculables = sum(
+        1
+        for performance in performances_campagnes
+        if performance["statut_calcul"] == "calculable"
+    )
+    campagnes_financieres_a_verifier = (
+        len(performances_campagnes)
+        - campagnes_financieres_calculables
+    )
 
     return render(request, "predictor/module_publicite.html", {
         "sites": scope["sites_actifs"],
@@ -4547,6 +4602,13 @@ def module_publicite(request):
         "campagnes": campagnes,
         "comptes_externes": comptes_externes,
         "campagnes_externes": campagnes_externes,
+        "performances_campagnes": performances_campagnes,
+        "campagnes_financieres_calculables": (
+            campagnes_financieres_calculables
+        ),
+        "campagnes_financieres_a_verifier": (
+            campagnes_financieres_a_verifier
+        ),
     })
 
 @login_required

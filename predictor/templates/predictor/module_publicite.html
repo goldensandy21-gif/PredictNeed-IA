@@ -18,7 +18,10 @@
     </div>
 
     <h1>Intégrations publicitaires</h1>
-    <p class="dashboard-intro">Analyse des sessions identifiées comme publicitaires à partir des paramètres UTM.</p>
+    <p class="dashboard-intro">
+        Analyse des campagnes publicitaires, de leurs dépenses et des ventes
+        réellement attribuables aux parcours suivis par PredictNeed IA.
+    </p>
 
     <form method="get" class="module-filters">
         <div class="filter-group">
@@ -39,13 +42,16 @@
         <div class="stat-card"><h2>{{ sessions_publicitaires }}</h2><p>Sessions publicitaires</p></div>
         <div class="stat-card"><h2>{{ leads_publicitaires }}</h2><p>Leads publicitaires</p></div>
         <div class="stat-card"><h2>{{ intentions_fortes_publicitaires }}</h2><p>Intentions fortes</p></div>
+        <div class="stat-card"><h2>{{ campagnes_financieres_calculables }}</h2><p>Campagnes avec ROAS calculable</p></div>
+        <div class="stat-card"><h2>{{ campagnes_financieres_a_verifier }}</h2><p>Campagnes à vérifier</p></div>
     </div>
 
     <div class="dashboard-section">
         <h2>Comptes publicitaires reliés</h2>
         <p class="section-description">
-            Les comptes reliés servent à rapprocher les campagnes externes avec les
-            sessions, leads et intentions détectées par le script PredictNeed IA.
+            Les comptes reliés servent à importer les données disponibles auprès
+            des régies et à les rapprocher des sessions, leads et ventes suivis
+            par PredictNeed IA.
         </p>
 
         <div class="connector-account-grid compact">
@@ -62,7 +68,7 @@
     </div>
 
     <div class="dashboard-section">
-        <h2>Campagnes détectées</h2>
+        <h2>Campagnes détectées dans les visites</h2>
         <div class="module-table-wrapper">
             <table class="module-table">
                 <thead>
@@ -83,7 +89,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="4">Aucune campagne publicitaire détectée.</td>
+                            <td colspan="4">Aucune campagne publicitaire détectée dans les visites.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -92,33 +98,85 @@
     </div>
 
     <div class="dashboard-section">
-        <h2>Campagnes externes rapprochées</h2>
+        <h2>Performance financière par campagne</h2>
+        <p class="section-description">
+            ROAS = chiffre d'affaires attribué / dépense publicitaire.
+            Le ROI affiché ici est uniquement publicitaire :
+            (CA attribué - dépense publicitaire) / dépense publicitaire.
+            Il n'intègre pas les coûts produits, salaires, logistique ou autres charges.
+        </p>
+
         <div class="module-table-wrapper">
             <table class="module-table">
                 <thead>
                     <tr>
                         <th>Plateforme</th>
                         <th>Campagne</th>
-                        <th>UTM source</th>
-                        <th>UTM medium</th>
-                        <th>Sessions rapprochées</th>
+                        <th>Source des données</th>
+                        <th>Dépense</th>
+                        <th>Conversions régie</th>
+                        <th>Ventes attribuées</th>
+                        <th>CA attribué</th>
+                        <th>ROAS</th>
+                        <th>ROI publicitaire</th>
+                        <th>Recommandation</th>
                         <th>Dernière synchro</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for campagne in campagnes_externes %}
+                    {% for performance in performances_campagnes %}
                         <tr>
-                            <td>{{ campagne.get_plateforme_display }}</td>
-                            <td>{{ campagne.nom }}</td>
-                            <td>{{ campagne.utm_source|default:"-" }}</td>
-                            <td>{{ campagne.utm_medium|default:"-" }}</td>
-                            <td>{{ campagne.clics }}</td>
-                            <td>{{ campagne.derniere_synchro|date:"d/m/Y H:i"|default:"-" }}</td>
+                            <td>{{ performance.campagne.get_plateforme_display }}</td>
+                            <td>{{ performance.campagne.nom }}</td>
+                            <td>{{ performance.campagne.get_source_donnees_display }}</td>
+                            <td>
+                                {% if performance.depense != None %}
+                                    {{ performance.depense|floatformat:2 }} {{ performance.devise }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if performance.conversions_regie != None %}
+                                    {{ performance.conversions_regie|floatformat:4 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ performance.ventes_attribuees }}</td>
+                            <td>
+                                {% if performance.statut_calcul == "attribution_insuffisante" %}
+                                    Attribution insuffisante
+                                {% elif performance.statut_calcul == "devise_incompatible" %}
+                                    Devises incompatibles
+                                {% elif performance.chiffre_affaires_attribue != None %}
+                                    {{ performance.chiffre_affaires_attribue|floatformat:2 }} {{ performance.devise }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if performance.statut_calcul == "calculable" %}
+                                    {{ performance.roas|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if performance.statut_calcul == "calculable" %}
+                                    {{ performance.roi_publicitaire|floatformat:1 }} %
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ performance.recommandation }}</td>
+                            <td>{{ performance.campagne.derniere_synchro|date:"d/m/Y H:i"|default:"-" }}</td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6">
-                                Aucune campagne externe rapprochée. Connectez un compte puis lancez une synchronisation.
+                            <td colspan="11">
+                                Aucune campagne externe disponible. Connectez un compte
+                                puis lancez une synchronisation.
                             </td>
                         </tr>
                     {% endfor %}
