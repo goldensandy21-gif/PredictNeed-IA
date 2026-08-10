@@ -77,13 +77,51 @@ def _decode_http_error(exc):
         payload = None
 
     message = "Erreur Google Ads API."
+    details_google = []
+
     if isinstance(payload, dict):
         error = payload.get("error") or {}
+
         if isinstance(error, dict):
             message = str(error.get("message") or message)
 
+            status = str(error.get("status") or "").strip()
+            if status:
+                details_google.append(f"status={status}")
+
+            for detail in error.get("details") or []:
+                if not isinstance(detail, dict):
+                    continue
+
+                for google_error in detail.get("errors") or []:
+                    if not isinstance(google_error, dict):
+                        continue
+
+                    error_code = google_error.get("errorCode") or {}
+                    if isinstance(error_code, dict):
+                        for categorie, code in error_code.items():
+                            details_google.append(
+                                f"{categorie}={code}"
+                            )
+
+                    detail_message = str(
+                        google_error.get("message") or ""
+                    ).strip()
+
+                    if detail_message and detail_message != message:
+                        details_google.append(detail_message)
+
+    details_google = list(dict.fromkeys(details_google))
+
+    if details_google:
+        message = (
+            f"{message} | Détail Google : "
+            + " ; ".join(details_google)
+        )
+
     if request_id:
         message = f"{message} Request ID : {request_id}."
+
     return message
 
 
