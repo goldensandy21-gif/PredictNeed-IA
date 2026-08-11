@@ -40,6 +40,7 @@ def enregistrer_mesure_campagne_native(
     depense=0,
     devise="EUR",
     donnees_brutes=None,
+    recalculer=True,
 ):
     if campagne.site_id is None:
         raise ValueError(
@@ -97,7 +98,9 @@ def enregistrer_mesure_campagne_native(
         },
     )
 
-    recalculer_totaux_campagne(campagne)
+    if recalculer:
+        recalculer_totaux_campagne(campagne)
+
     return mesure
 
 

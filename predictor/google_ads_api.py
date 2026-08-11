@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import timedelta
+from datetime import date, timedelta
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -594,6 +594,72 @@ def lister_performances_campagnes(
         "metrics.cost_micros "
         "FROM campaign "
         f"WHERE segments.date DURING {periode} "
+        "ORDER BY segments.date, campaign.id"
+    )
+
+    return rechercher(
+        access_token,
+        customer_id,
+        query,
+        login_customer_id=login_customer_id,
+    )
+
+
+def lister_performances_campagnes_intervalle(
+    access_token,
+    customer_id,
+    *,
+    login_customer_id="",
+    date_debut,
+    date_fin,
+):
+    """
+    Récupère les performances journalières Google Ads
+    sur une plage de dates explicite.
+    """
+
+    if not isinstance(date_debut, date):
+        try:
+            date_debut = date.fromisoformat(str(date_debut))
+        except ValueError as exc:
+            raise ValueError(
+                "Date de début Google Ads invalide."
+            ) from exc
+
+    if not isinstance(date_fin, date):
+        try:
+            date_fin = date.fromisoformat(str(date_fin))
+        except ValueError as exc:
+            raise ValueError(
+                "Date de fin Google Ads invalide."
+            ) from exc
+
+    if date_debut > date_fin:
+        raise ValueError(
+            "La date de début Google Ads doit précéder la date de fin."
+        )
+
+    query = (
+        "SELECT "
+        "segments.date, "
+        "campaign.id, "
+        "campaign.name, "
+        "campaign.status, "
+        "campaign.advertising_channel_type, "
+        "metrics.impressions, "
+        "metrics.clicks, "
+        "metrics.ctr, "
+        "metrics.average_cpc, "
+        "metrics.conversions, "
+        "metrics.conversions_value, "
+        "metrics.all_conversions, "
+        "metrics.all_conversions_value, "
+        "metrics.cost_per_conversion, "
+        "metrics.cost_micros "
+        "FROM campaign "
+        f"WHERE segments.date BETWEEN "
+        f"'{date_debut.isoformat()}' "
+        f"AND '{date_fin.isoformat()}' "
         "ORDER BY segments.date, campaign.id"
     )
 

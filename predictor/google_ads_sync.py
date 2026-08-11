@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from datetime import date
+from calendar import monthrange
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
 
-from .ad_metrics import enregistrer_mesure_campagne_native
+from .ad_metrics import (
+    enregistrer_mesure_campagne_native,
+    recalculer_totaux_campagne,
+)
 from .ad_sync_utils import (
     decimal_depuis,
     decimal_non_negatif,
@@ -18,10 +22,36 @@ from .google_ads_api import (
     access_token_pour_compte,
     lister_campagnes_google_ads,
     lister_performances_campagnes,
+    lister_performances_campagnes_intervalle,
     normaliser_customer_id,
 )
 from .models import CampagneExterne
 
+
+
+def _reculer_mois(jour, nombre_mois):
+    """
+    Recule une date d'un nombre exact de mois sans dépendance externe.
+    """
+    total = (
+        jour.year * 12
+        + (jour.month - 1)
+        - nombre_mois
+    )
+
+    annee, mois_zero = divmod(total, 12)
+    mois = mois_zero + 1
+
+    dernier_jour = monthrange(
+        annee,
+        mois,
+    )[1]
+
+    return date(
+        annee,
+        mois,
+        min(jour.day, dernier_jour),
+    )
 
 def _depense_depuis_micros(value):
     micros = decimal_depuis(value)
@@ -221,14 +251,54 @@ def synchroniser_compte_google_ads(
         # Elle ne signifie plus "aucune campagne".
         # ----------------------------------------------------
 
-        rows = lister_performances_campagnes(
-            access_token,
-            customer_id,
-            login_customer_id=login_customer_id,
-            periode=periode,
+        historique_initial = not bool(
+            configuration.get(
+                "google_ads_historique_37_mois_importe"
+            )
         )
 
+        if historique_initial:
+            date_fin_historique = (
+                timezone.localdate()
+                - timedelta(days=1)
+            )
+
+            date_debut_historique = (
+                _reculer_mois(
+                    date_fin_historique,
+                    37,
+                )
+                + timedelta(days=1)
+            )
+
+            rows = (
+                lister_performances_campagnes_intervalle(
+                    access_token,
+                    customer_id,
+                    login_customer_id=login_customer_id,
+                    date_debut=date_debut_historique,
+                    date_fin=date_fin_historique,
+                )
+            )
+
+            periode_effective = (
+                "HISTORIQUE_37_MOIS "
+                f"{date_debut_historique.isoformat()} "
+                f"au {date_fin_historique.isoformat()}"
+            )
+
+        else:
+            rows = lister_performances_campagnes(
+                access_token,
+                customer_id,
+                login_customer_id=login_customer_id,
+                periode=periode,
+            )
+
+            periode_effective = periode
+
         mesures_total = 0
+        campagnes_mesurees = set()
 
         for row in rows:
             campaign = row.get("campaign") or {}
@@ -289,6 +359,7 @@ def synchroniser_compte_google_ads(
                     metrics.get("costMicros")
                 ),
                 devise=devise,
+                recalculer=False,
                 donnees_brutes={
                     "provider": "google_ads",
                     "customer_id": customer_id,
@@ -343,12 +414,41 @@ def synchroniser_compte_google_ads(
             )
 
             mesures_total += 1
+            campagnes_mesurees.add(campagne.id)
+
+        # Recalcul une seule fois par campagne, même si plusieurs
+        # centaines de journées viennent d'être importées.
+        for campagne in CampagneExterne.objects.filter(
+            id__in=campagnes_mesurees
+        ):
+            recalculer_totaux_campagne(campagne)
+
+        if historique_initial:
+            configuration[
+                "google_ads_historique_37_mois_importe"
+            ] = True
+
+            configuration[
+                "google_ads_historique_37_mois_debut"
+            ] = date_debut_historique.isoformat()
+
+            configuration[
+                "google_ads_historique_37_mois_fin"
+            ] = date_fin_historique.isoformat()
+
+            compte.configuration = configuration
+            compte.save(
+                update_fields=[
+                    "configuration",
+                    "date_mise_a_jour",
+                ]
+            )
 
         finaliser_synchronisation_native(
             compte=compte,
             label="Google Ads",
             source="google_ads_api",
-            periode=periode,
+            periode=periode_effective,
             campagnes=len(campagnes_ids),
             mesures=mesures_total,
             maintenant=maintenant,
@@ -357,5 +457,5 @@ def synchroniser_compte_google_ads(
     return {
         "campagnes": len(campagnes_ids),
         "mesures": mesures_total,
-        "periode": periode,
+        "periode": periode_effective,
     }
