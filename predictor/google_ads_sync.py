@@ -554,13 +554,32 @@ def synchroniser_compte_google_ads(
                 - timedelta(days=1)
             )
 
-            date_debut_historique = (
+            limite_detail_historique = (
                 _reculer_mois(
                     date_fin_historique,
                     37,
                 )
                 + timedelta(days=1)
             )
+
+            # On ne mélange jamais une fraction de mois
+            # mensuelle avec des mesures journalières.
+            # Le détail commence donc au premier mois
+            # calendaire complet disponible.
+            if limite_detail_historique.day == 1:
+                date_debut_historique = limite_detail_historique
+            elif limite_detail_historique.month == 12:
+                date_debut_historique = date(
+                    limite_detail_historique.year + 1,
+                    1,
+                    1,
+                )
+            else:
+                date_debut_historique = date(
+                    limite_detail_historique.year,
+                    limite_detail_historique.month + 1,
+                    1,
+                )
 
             rows = (
                 lister_performances_campagnes_intervalle(

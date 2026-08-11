@@ -577,7 +577,7 @@ class GoogleAdsNativeSyncTests(TestCase):
 
         configuration[
             "google_ads_historique_37_mois_debut"
-        ] = "2023-07-11"
+        ] = "2023-08-01"
 
         configuration.pop(
             "google_ads_historique_mensuel_11_ans_importe",
@@ -602,6 +602,12 @@ class GoogleAdsNativeSyncTests(TestCase):
 
         mensuel.assert_called_once()
         recent.assert_not_called()
+
+        appel_mensuel = mensuel.call_args.kwargs
+        self.assertEqual(
+            appel_mensuel["date_fin"],
+            date(2023, 7, 1),
+        )
 
         self.compte.refresh_from_db()
 
