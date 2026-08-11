@@ -7,8 +7,9 @@
     <title>Publicité - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
     <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
+    <link rel="stylesheet" href="{% static 'predictor/dashboard_overrides.css' %}?v=1">
 </head>
-<body>
+<body class="publicite-page">
 
 {% include "predictor/includes/dashboard_header.html" %}
 
@@ -17,7 +18,7 @@
         <a href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}" class="btn-secondary">Retour au dashboard</a>
     </div>
 
-    <h1>Intégrations publicitaires</h1>
+    <h1>Performances publicitaires</h1>
     <p class="dashboard-intro">
         Analyse des campagnes publicitaires, de leurs dépenses et des ventes
         réellement attribuables aux parcours suivis par PredictNeed IA.
@@ -43,7 +44,7 @@
         <div class="stat-card"><h2>{{ leads_publicitaires }}</h2><p>Leads publicitaires</p></div>
         <div class="stat-card"><h2>{{ intentions_fortes_publicitaires }}</h2><p>Intentions fortes</p></div>
         <div class="stat-card"><h2>{{ campagnes_financieres_calculables }}</h2><p>Campagnes avec ROAS calculable</p></div>
-        <div class="stat-card"><h2>{{ campagnes_financieres_a_verifier }}</h2><p>Campagnes à vérifier</p></div>
+        <div class="stat-card"><h2>{{ campagnes_financieres_a_verifier }}</h2><p>Campagnes sans ROAS calculable</p></div>
     </div>
 
     <div class="dashboard-section">
@@ -98,92 +99,228 @@
     </div>
 
     <div class="dashboard-section">
-        <h2>Performance financière par campagne</h2>
-        <p class="section-description">
-            ROAS = chiffre d'affaires attribué / dépense publicitaire.
-            Le ROI affiché ici est uniquement publicitaire :
-            (CA attribué - dépense publicitaire) / dépense publicitaire.
-            Il n'intègre pas les coûts produits, salaires, logistique ou autres charges.
-        </p>
+        <div class="ads-section-heading">
+            <div>
+                <h2>Performances publicitaires par campagne</h2>
+                <p class="section-description">
+                    Données de la régie publicitaire et attribution PredictNeed IA
+                    sont présentées séparément afin de distinguer la performance
+                    de l'annonce de son impact réel sur le site et les ventes.
+                </p>
+            </div>
+        </div>
 
-        <div class="module-table-wrapper">
-            <table class="module-table">
-                <thead>
-                    <tr>
-                        <th>Plateforme</th>
-                        <th>Campagne</th>
-                        <th>Source des données</th>
-                        <th>Dépense</th>
-                        <th>Conversions régie</th>
-                        <th>Ventes attribuées</th>
-                        <th>CA attribué</th>
-                        <th>ROAS</th>
-                        <th>ROI publicitaire</th>
-                        <th>Recommandation</th>
-                        <th>Dernière synchro</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for performance in performances_campagnes %}
-                        <tr>
-                            <td>{{ performance.campagne.get_plateforme_display }}</td>
-                            <td>{{ performance.campagne.nom }}</td>
-                            <td>{{ performance.campagne.get_source_donnees_display }}</td>
-                            <td>
-                                {% if performance.depense != None %}
-                                    {{ performance.depense|floatformat:2 }} {{ performance.devise }}
+        <div class="ads-campaign-grid">
+            {% for performance in performances_campagnes %}
+                <article class="ads-campaign-card">
+                    <div class="ads-campaign-card-header">
+                        <div>
+                            <p class="ads-platform-label">
+                                {{ performance.campagne.get_plateforme_display }}
+                            </p>
+
+                            <h3>
+                                {{ performance.campagne.nom }}
+                            </h3>
+                        </div>
+
+                        <span
+                            class="ads-status-badge
+                            {% if performance.statut_google == 'ENABLED' %}
+                                status-enabled
+                            {% elif performance.statut_google == 'PAUSED' %}
+                                status-paused
+                            {% elif performance.statut_google == 'REMOVED' %}
+                                status-removed
+                            {% endif %}"
+                        >
+                            {{ performance.statut_google_label }}
+                        </span>
+                    </div>
+
+                    <div class="ads-campaign-meta">
+                        <div class="ads-meta-item">
+                            <span>Type de campagne</span>
+                            <strong>
+                                {{ performance.type_campagne_label }}
+                            </strong>
+                        </div>
+
+                        <div class="ads-meta-item">
+                            <span>Budget Google Ads</span>
+                            <strong>
+                                {% if performance.budget %}
+                                    {{ performance.budget }}
+                                    {{ performance.devise }}
+                                {% else %}
+                                    Non disponible
+                                {% endif %}
+                            </strong>
+                        </div>
+
+                        <div class="ads-meta-item">
+                            <span>Stratégie d'enchères</span>
+                            <strong>
+                                {{ performance.strategie_encheres|default:"Non disponible" }}
+                            </strong>
+                        </div>
+
+                        <div class="ads-meta-item">
+                            <span>Dernière synchronisation</span>
+                            <strong>
+                                {{ performance.campagne.derniere_synchro|date:"d/m/Y H:i"|default:"-" }}
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div class="ads-metrics-grid">
+                        <div class="ads-metric">
+                            <span>Impressions</span>
+                            <strong>
+                                {{ performance.impressions }}
+                            </strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>Clics</span>
+                            <strong>
+                                {{ performance.clics }}
+                            </strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>CTR</span>
+                            <strong>
+                                {% if performance.ctr != None %}
+                                    {{ performance.ctr|floatformat:1 }} %
                                 {% else %}
                                     -
                                 {% endif %}
-                            </td>
-                            <td>
+                            </strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>CPC moyen</span>
+                            <strong>
+                                {% if performance.cpc_moyen != None %}
+                                    {{ performance.cpc_moyen|floatformat:2 }}
+                                    {{ performance.devise }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>Dépenses</span>
+                            <strong>
+                                {% if performance.depense != None %}
+                                    {{ performance.depense|floatformat:2 }}
+                                    {{ performance.devise }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>Conversions régie</span>
+                            <strong>
                                 {% if performance.conversions_regie != None %}
                                     {{ performance.conversions_regie|floatformat:4 }}
                                 {% else %}
                                     -
                                 {% endif %}
-                            </td>
-                            <td>{{ performance.ventes_attribuees }}</td>
-                            <td>
-                                {% if performance.statut_calcul == "attribution_insuffisante" %}
-                                    Attribution insuffisante
-                                {% elif performance.statut_calcul == "devise_incompatible" %}
-                                    Devises incompatibles
-                                {% elif performance.chiffre_affaires_attribue != None %}
-                                    {{ performance.chiffre_affaires_attribue|floatformat:2 }} {{ performance.devise }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if performance.statut_calcul == "calculable" %}
-                                    {{ performance.roas|floatformat:2 }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if performance.statut_calcul == "calculable" %}
-                                    {{ performance.roi_publicitaire|floatformat:1 }} %
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td>{{ performance.recommandation }}</td>
-                            <td>{{ performance.campagne.derniere_synchro|date:"d/m/Y H:i"|default:"-" }}</td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="11">
-                                Aucune campagne externe disponible. Connectez un compte
-                                puis lancez une synchronisation.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div class="ads-attribution-panel">
+                        <h4>Attribution PredictNeed IA</h4>
+
+                        <div class="ads-attribution-grid">
+                            <div>
+                                <span>Ventes attribuées</span>
+                                <strong>
+                                    {{ performance.ventes_attribuees }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>CA attribué</span>
+                                <strong>
+                                    {% if performance.statut_calcul == "attribution_insuffisante" %}
+                                        Attribution insuffisante
+                                    {% elif performance.statut_calcul == "devise_incompatible" %}
+                                        Devises incompatibles
+                                    {% elif performance.chiffre_affaires_attribue != None %}
+                                        {{ performance.chiffre_affaires_attribue|floatformat:2 }}
+                                        {{ performance.devise }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>ROAS</span>
+                                <strong>
+                                    {% if performance.statut_calcul == "calculable" %}
+                                        {{ performance.roas|floatformat:2 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>ROI publicitaire</span>
+                                <strong>
+                                    {% if performance.statut_calcul == "calculable" %}
+                                        {{ performance.roi_publicitaire|floatformat:1 }} %
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ads-analysis-panel">
+                        <h4>Analyse PredictNeed IA</h4>
+
+                        <p class="ads-analysis-regie">
+                            {% if performance.depense > 0 %}
+                                La régie rapporte
+                                {{ performance.clics }} clic(s),
+                                {{ performance.conversions_regie|floatformat:4 }}
+                                conversion(s) et
+                                {{ performance.depense|floatformat:2 }}
+                                {{ performance.devise }} de dépenses
+                                sur les données actuellement synchronisées.
+                            {% else %}
+                                Cette campagne est connue de Google Ads,
+                                mais aucune dépense exploitable n'est disponible
+                                dans les données actuellement synchronisées.
+                            {% endif %}
+                        </p>
+
+                        <p class="ads-analysis-predictneed">
+                            {{ performance.recommandation }}
+                        </p>
+                    </div>
+                </article>
+
+            {% empty %}
+                <div class="ads-empty-state">
+                    Aucune campagne externe disponible.
+                    Connectez un compte publicitaire puis lancez
+                    une synchronisation.
+                </div>
+            {% endfor %}
         </div>
     </div>
+
 </section>
 
 {% include "predictor/includes/footer.html" %}

@@ -1,0 +1,252 @@
+/* =========================================================
+   Correctifs dashboard + performances publicitaires
+========================================================= */
+
+/* ---------- Moteur de prédiction ---------- */
+
+body.dashboard-page .dashboard-overview > #moteur-prediction {
+    grid-column: 1 / -1 !important;
+    order: 5 !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    display: block !important;
+    padding: clamp(1.35rem, 2vw, 1.8rem) !important;
+}
+
+body.dashboard-page #moteur-prediction h2,
+body.dashboard-page #moteur-prediction p,
+body.dashboard-page #moteur-prediction strong,
+body.dashboard-page #moteur-prediction a {
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    hyphens: none !important;
+}
+
+body.dashboard-page #moteur-prediction h2 {
+    width: 100% !important;
+    max-width: 100% !important;
+    line-height: 1.2 !important;
+    margin: 0 0 0.9rem !important;
+}
+
+body.dashboard-page #moteur-prediction p {
+    width: 100% !important;
+    max-width: 980px !important;
+    line-height: 1.65 !important;
+    margin: 0 0 0.8rem !important;
+}
+
+body.dashboard-page #moteur-prediction .btn-secondary {
+    display: inline-flex !important;
+    width: auto !important;
+    margin-top: 0.35rem !important;
+}
+
+
+/* ---------- Page Publicité ---------- */
+
+body.publicite-page .ads-section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+}
+
+body.publicite-page .ads-section-heading h2 {
+    margin: 0 !important;
+}
+
+body.publicite-page .ads-section-heading p {
+    margin: 0;
+    max-width: 760px;
+}
+
+body.publicite-page .ads-campaign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 1.2rem;
+}
+
+body.publicite-page .ads-campaign-card {
+    background: #ffffff;
+    border: 1px solid #dbe5f1;
+    border-radius: 18px;
+    padding: 1.25rem;
+    min-width: 0;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+body.publicite-page .ads-campaign-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+body.publicite-page .ads-campaign-card-header h3 {
+    margin: 0.25rem 0 0;
+    color: #0f172a;
+    font-size: 1.15rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+body.publicite-page .ads-platform-label {
+    margin: 0;
+    color: #53657d;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body.publicite-page .ads-status-badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: #eef4fb;
+    color: #334155;
+    font-size: 0.8rem;
+    font-weight: 850;
+}
+
+body.publicite-page .ads-status-badge.status-enabled {
+    background: #dcfce7;
+    color: #166534;
+}
+
+body.publicite-page .ads-status-badge.status-paused {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+body.publicite-page .ads-status-badge.status-removed {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+body.publicite-page .ads-campaign-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+}
+
+body.publicite-page .ads-meta-item,
+body.publicite-page .ads-metric {
+    background: #f8fafc;
+    border: 1px solid #e7edf5;
+    border-radius: 12px;
+    padding: 0.72rem 0.8rem;
+    min-width: 0;
+}
+
+body.publicite-page .ads-meta-item span,
+body.publicite-page .ads-metric span {
+    display: block;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 750;
+    margin-bottom: 0.25rem;
+}
+
+body.publicite-page .ads-meta-item strong,
+body.publicite-page .ads-metric strong {
+    display: block;
+    color: #0f172a;
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+}
+
+body.publicite-page .ads-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+
+body.publicite-page .ads-attribution-panel {
+    background: #f5f3ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 14px;
+    padding: 0.95rem;
+    margin-top: 1rem;
+}
+
+body.publicite-page .ads-attribution-panel h4,
+body.publicite-page .ads-analysis-panel h4 {
+    margin: 0 0 0.65rem;
+    color: #0f172a;
+    font-size: 0.95rem;
+}
+
+body.publicite-page .ads-attribution-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+
+body.publicite-page .ads-attribution-grid span {
+    display: block;
+    color: #6b7280;
+    font-size: 0.72rem;
+    margin-bottom: 0.2rem;
+}
+
+body.publicite-page .ads-attribution-grid strong {
+    color: #111827;
+    overflow-wrap: anywhere;
+}
+
+body.publicite-page .ads-analysis-panel {
+    border-top: 1px solid #e5e7eb;
+    margin-top: 1rem;
+    padding-top: 0.95rem;
+}
+
+body.publicite-page .ads-analysis-panel p {
+    margin: 0.4rem 0 0;
+    color: #334155;
+    line-height: 1.55;
+}
+
+body.publicite-page .ads-analysis-predictneed {
+    color: #5b21b6 !important;
+}
+
+body.publicite-page .ads-empty-state {
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    padding: 1.2rem;
+    color: #475569;
+}
+
+@media (max-width: 900px) {
+    body.publicite-page .ads-metrics-grid,
+    body.publicite-page .ads-attribution-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    body.publicite-page .ads-campaign-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.publicite-page .ads-campaign-card-header {
+        flex-direction: column;
+    }
+
+    body.publicite-page .ads-metrics-grid,
+    body.publicite-page .ads-attribution-grid {
+        grid-template-columns: 1fr;
+    }
+}

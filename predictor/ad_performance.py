@@ -300,6 +300,82 @@ def calculer_performance_campagne(
     roas = None
     roi_publicitaire = None
 
+    ctr = None
+    if impressions > 0:
+        ctr = _percent(
+            Decimal(clics)
+            / Decimal(impressions)
+            * Decimal("100")
+        )
+
+    cpc_moyen = None
+    if clics > 0:
+        cpc_moyen = _money(
+            depense / Decimal(clics)
+        )
+
+    donnees_google = dict(
+        campagne.donnees_brutes or {}
+    )
+
+    statut_google = str(
+        donnees_google.get("status")
+        or campagne.statut
+        or ""
+    ).strip().upper()
+
+    statut_labels = {
+        "ENABLED": "Active",
+        "PAUSED": "Suspendue",
+        "REMOVED": "Supprimée",
+        "UNKNOWN": "Statut inconnu",
+        "UNSPECIFIED": "Statut non précisé",
+    }
+
+    statut_google_label = statut_labels.get(
+        statut_google,
+        statut_google.replace("_", " ").title()
+        if statut_google
+        else "Non renseigné",
+    )
+
+    type_campagne = str(
+        donnees_google.get(
+            "advertising_channel_type"
+        )
+        or ""
+    ).strip().upper()
+
+    type_labels = {
+        "PERFORMANCE_MAX": "Performance Max",
+        "SEARCH": "Réseau de recherche",
+        "DISPLAY": "Display",
+        "SHOPPING": "Shopping",
+        "VIDEO": "Vidéo",
+        "LOCAL": "Local",
+        "LOCAL_SERVICES": "Services locaux",
+        "DEMAND_GEN": "Demand Gen",
+        "MULTI_CHANNEL": "Multi-canal",
+    }
+
+    type_campagne_label = type_labels.get(
+        type_campagne,
+        type_campagne.replace("_", " ").title()
+        if type_campagne
+        else "Non renseigné",
+    )
+
+    budget = donnees_google.get(
+        "budget_amount"
+    )
+
+    strategie_encheres = str(
+        donnees_google.get(
+            "bidding_strategy_type"
+        )
+        or ""
+    ).replace("_", " ").strip().title()
+
     if depense <= 0:
         statut_calcul = "depense_indisponible"
     elif ventes_devise_incompatible:
@@ -327,8 +403,22 @@ def calculer_performance_campagne(
         "site_id": site_id,
         "impressions": impressions,
         "clics": clics,
+        "ctr": ctr,
+        "cpc_moyen": cpc_moyen,
         "conversions_regie": conversions,
         "depense": depense,
+        "statut_google": statut_google,
+        "statut_google_label": statut_google_label,
+        "type_campagne": type_campagne,
+        "type_campagne_label": type_campagne_label,
+        "budget": budget,
+        "strategie_encheres": strategie_encheres,
+        "date_debut_google": donnees_google.get(
+            "start_date_time"
+        ) or "",
+        "date_fin_google": donnees_google.get(
+            "end_date_time"
+        ) or "",
         "devise": devise,
         "ventes_attribuees": len(
             ventes_correspondantes
