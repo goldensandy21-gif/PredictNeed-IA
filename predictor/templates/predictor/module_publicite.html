@@ -120,7 +120,7 @@
                             </p>
 
                             <h3>
-                                {{ performance.campagne.nom }}
+                                {{ performance.nom_affiche }}
                             </h3>
                         </div>
 
@@ -147,7 +147,7 @@
                         </div>
 
                         <div class="ads-meta-item">
-                            <span>Budget Google Ads</span>
+                            <span>{{ performance.budget_label }}</span>
                             <strong>
                                 {% if performance.budget %}
                                     {{ performance.budget }}
@@ -233,6 +233,48 @@
                                 {% endif %}
                             </strong>
                         </div>
+
+                        <div class="ads-metric">
+                            <span>Valeur conversions Google</span>
+                            <strong>
+                                {{ performance.valeur_conversions_regie|floatformat:2 }}
+                                {{ performance.devise }}
+                            </strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>CPA Google</span>
+                            <strong>
+                                {% if performance.cout_par_conversion_regie != None %}
+                                    {{ performance.cout_par_conversion_regie|floatformat:2 }}
+                                    {{ performance.devise }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>Taux de conversion</span>
+                            <strong>
+                                {% if performance.taux_conversion_regie != None %}
+                                    {{ performance.taux_conversion_regie|floatformat:1 }} %
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>ROAS Google Ads</span>
+                            <strong>
+                                {% if performance.roas_regie != None %}
+                                    {{ performance.roas_regie|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </strong>
+                        </div>
                     </div>
 
                     <div class="ads-attribution-panel">
@@ -263,7 +305,7 @@
                             </div>
 
                             <div>
-                                <span>ROAS</span>
+                                <span>ROAS PredictNeed</span>
                                 <strong>
                                     {% if performance.statut_calcul == "calculable" %}
                                         {{ performance.roas|floatformat:2 }}
@@ -290,19 +332,7 @@
                         <h4>Analyse PredictNeed IA</h4>
 
                         <p class="ads-analysis-regie">
-                            {% if performance.depense > 0 %}
-                                La régie rapporte
-                                {{ performance.clics }} clic(s),
-                                {{ performance.conversions_regie|floatformat:4 }}
-                                conversion(s) et
-                                {{ performance.depense|floatformat:2 }}
-                                {{ performance.devise }} de dépenses
-                                sur les données actuellement synchronisées.
-                            {% else %}
-                                Cette campagne est connue de Google Ads,
-                                mais aucune dépense exploitable n'est disponible
-                                dans les données actuellement synchronisées.
-                            {% endif %}
+                            {{ performance.analyse_regie }}
                         </p>
 
                         <p class="ads-analysis-predictneed">

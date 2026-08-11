@@ -98,6 +98,7 @@ def _donnees_campagne_google(
             campaign.get("biddingStrategySystemStatus") or ""
         ),
         "budget_status": budget.get("status") or "",
+        "budget_period": budget.get("period") or "",
         "budget_amount_micros": (
             str(budget_micros)
             if budget_micros is not None

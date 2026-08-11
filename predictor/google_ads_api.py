@@ -542,6 +542,7 @@ def lister_campagnes_google_ads(
         "campaign.bidding_strategy_system_status, "
         "campaign_budget.amount_micros, "
         "campaign_budget.total_amount_micros, "
+        "campaign_budget.period, "
         "campaign_budget.status "
         "FROM campaign "
         "ORDER BY campaign.id"

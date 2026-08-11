@@ -251,6 +251,83 @@ def calculer_performance_campagne(
             campagne.devise or ""
         ).strip().upper()
 
+    # --------------------------------------------------------
+    # Métriques supplémentaires fournies par la régie.
+    #
+    # Elles sont volontairement séparées de l'attribution
+    # PredictNeed IA : une conversion Google Ads n'est pas
+    # automatiquement une vente attribuée par PredictNeed.
+    # --------------------------------------------------------
+
+    valeur_conversions_regie = Decimal("0")
+    toutes_conversions_regie = Decimal("0")
+    valeur_toutes_conversions_regie = Decimal("0")
+
+    for mesure in mesures:
+        donnees_mesure = dict(
+            mesure.donnees_brutes or {}
+        )
+
+        valeur_conversions_regie += _decimal(
+            donnees_mesure.get(
+                "conversions_value"
+            )
+        )
+
+        toutes_conversions_regie += _decimal(
+            donnees_mesure.get(
+                "all_conversions"
+            )
+        )
+
+        valeur_toutes_conversions_regie += _decimal(
+            donnees_mesure.get(
+                "all_conversions_value"
+            )
+        )
+
+    valeur_conversions_regie = (
+        valeur_conversions_regie.quantize(
+            Decimal("0.0001")
+        )
+    )
+
+    toutes_conversions_regie = (
+        toutes_conversions_regie.quantize(
+            Decimal("0.0001")
+        )
+    )
+
+    valeur_toutes_conversions_regie = (
+        valeur_toutes_conversions_regie.quantize(
+            Decimal("0.0001")
+        )
+    )
+
+    cout_par_conversion_regie = None
+
+    if conversions > 0:
+        cout_par_conversion_regie = _money(
+            depense / conversions
+        )
+
+    taux_conversion_regie = None
+
+    if clics > 0:
+        taux_conversion_regie = _percent(
+            conversions
+            / Decimal(clics)
+            * Decimal("100")
+        )
+
+    roas_regie = None
+
+    if depense > 0:
+        roas_regie = _ratio(
+            valeur_conversions_regie
+            / depense
+        )
+
     ventes_base = Vente.objects.filter(
         site_id=site_id,
         statut="confirmee",
@@ -365,16 +442,110 @@ def calculer_performance_campagne(
         else "Non renseigné",
     )
 
-    budget = donnees_google.get(
-        "budget_amount"
+    nom_affiche = str(
+        campagne.nom or ""
+    ).strip()
+
+    if nom_affiche.startswith(
+        "LocalServicesCampaign:SystemGenerated:"
+    ):
+        nom_affiche = (
+            "Campagne Services locaux "
+            "(générée automatiquement par Google)"
+        )
+
+    budget_period = str(
+        donnees_google.get(
+            "budget_period"
+        )
+        or ""
+    ).strip().upper()
+
+    budget_total = donnees_google.get(
+        "budget_total_amount"
     )
 
-    strategie_encheres = str(
+    if (
+        budget_period == "CUSTOM_PERIOD"
+        or (
+            budget_total
+            and not donnees_google.get(
+                "budget_amount"
+            )
+        )
+    ):
+        budget = budget_total
+        budget_label = "Budget total"
+    else:
+        budget = donnees_google.get(
+            "budget_amount"
+        )
+        budget_label = "Budget moyen / jour"
+
+    strategie_code = str(
         donnees_google.get(
             "bidding_strategy_type"
         )
         or ""
-    ).replace("_", " ").strip().title()
+    ).strip().upper()
+
+    strategie_labels = {
+        "MAXIMIZE_CONVERSIONS": (
+            "Maximiser les conversions"
+        ),
+        "MAXIMIZE_CONVERSION_VALUE": (
+            "Maximiser la valeur de conversion"
+        ),
+        "TARGET_CPA": "CPA cible",
+        "TARGET_ROAS": "ROAS cible",
+        "TARGET_SPEND": "Dépenses cibles",
+        "MANUAL_CPC": "CPC manuel",
+        "MANUAL_CPM": "CPM manuel",
+        "MANUAL_CPV": "CPV manuel",
+        "PERCENT_CPC": "CPC en pourcentage",
+    }
+
+    strategie_encheres = strategie_labels.get(
+        strategie_code,
+        strategie_code.replace(
+            "_",
+            " ",
+        ).title()
+        if strategie_code
+        else "",
+    )
+
+    if depense <= 0:
+        analyse_regie = (
+            "Cette campagne est connue de Google Ads, "
+            "mais aucune dépense exploitable n'est "
+            "disponible dans les données synchronisées."
+        )
+    elif conversions <= 0:
+        analyse_regie = (
+            f"Google Ads rapporte {clics} clic(s) et "
+            f"{depense:.2f} {devise} de dépenses, "
+            "sans conversion enregistrée."
+        )
+    else:
+        analyse_regie = (
+            f"Google Ads rapporte {conversions} conversion(s), "
+            f"{depense:.2f} {devise} de dépenses"
+        )
+
+        if cout_par_conversion_regie is not None:
+            analyse_regie += (
+                f", soit {cout_par_conversion_regie:.2f} "
+                f"{devise} par conversion"
+            )
+
+        if roas_regie is not None:
+            analyse_regie += (
+                f". Le ROAS déclaré par Google Ads "
+                f"est de {roas_regie:.2f}"
+            )
+
+        analyse_regie += "."
 
     if depense <= 0:
         statut_calcul = "depense_indisponible"
@@ -411,8 +582,27 @@ def calculer_performance_campagne(
         "statut_google_label": statut_google_label,
         "type_campagne": type_campagne,
         "type_campagne_label": type_campagne_label,
+        "nom_affiche": nom_affiche,
         "budget": budget,
+        "budget_label": budget_label,
         "strategie_encheres": strategie_encheres,
+        "valeur_conversions_regie": (
+            valeur_conversions_regie
+        ),
+        "toutes_conversions_regie": (
+            toutes_conversions_regie
+        ),
+        "valeur_toutes_conversions_regie": (
+            valeur_toutes_conversions_regie
+        ),
+        "cout_par_conversion_regie": (
+            cout_par_conversion_regie
+        ),
+        "taux_conversion_regie": (
+            taux_conversion_regie
+        ),
+        "roas_regie": roas_regie,
+        "analyse_regie": analyse_regie,
         "date_debut_google": donnees_google.get(
             "start_date_time"
         ) or "",
