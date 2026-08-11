@@ -513,6 +513,48 @@ def access_token_pour_compte(compte):
 
     return access_token
 
+def lister_campagnes_google_ads(
+    access_token,
+    customer_id,
+    *,
+    login_customer_id="",
+):
+    """
+    Récupère l'inventaire des campagnes indépendamment
+    de leur activité récente.
+
+    Les campagnes ENABLED, PAUSED et REMOVED peuvent ainsi
+    être connues de PredictNeed IA.
+    """
+    query = (
+        "SELECT "
+        "campaign.id, "
+        "campaign.name, "
+        "campaign.status, "
+        "campaign.primary_status, "
+        "campaign.serving_status, "
+        "campaign.advertising_channel_type, "
+        "campaign.advertising_channel_sub_type, "
+        "campaign.start_date_time, "
+        "campaign.end_date_time, "
+        "campaign.optimization_score, "
+        "campaign.bidding_strategy_type, "
+        "campaign.bidding_strategy_system_status, "
+        "campaign_budget.amount_micros, "
+        "campaign_budget.total_amount_micros, "
+        "campaign_budget.status "
+        "FROM campaign "
+        "ORDER BY campaign.id"
+    )
+
+    return rechercher(
+        access_token,
+        customer_id,
+        query,
+        login_customer_id=login_customer_id,
+    )
+
+
 def lister_performances_campagnes(
     access_token,
     customer_id,
@@ -529,6 +571,7 @@ def lister_performances_campagnes(
         "THIS_MONTH",
         "LAST_MONTH",
     }
+
     if periode not in periodes_autorisees:
         raise ValueError("Période Google Ads non autorisée.")
 
@@ -541,13 +584,19 @@ def lister_performances_campagnes(
         "campaign.advertising_channel_type, "
         "metrics.impressions, "
         "metrics.clicks, "
+        "metrics.ctr, "
+        "metrics.average_cpc, "
         "metrics.conversions, "
+        "metrics.conversions_value, "
+        "metrics.all_conversions, "
+        "metrics.all_conversions_value, "
+        "metrics.cost_per_conversion, "
         "metrics.cost_micros "
         "FROM campaign "
         f"WHERE segments.date DURING {periode} "
-        "AND campaign.status != 'REMOVED' "
         "ORDER BY segments.date, campaign.id"
     )
+
     return rechercher(
         access_token,
         customer_id,

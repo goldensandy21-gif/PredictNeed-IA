@@ -8,7 +8,10 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from .google_ads_api import lister_performances_campagnes
+from .google_ads_api import (
+    lister_campagnes_google_ads,
+    lister_performances_campagnes,
+)
 from .google_ads_sync import synchroniser_compte_google_ads
 from .models import (
     CampagneExterne,
@@ -85,6 +88,18 @@ class GoogleAdsNativeSyncTests(TestCase):
                 "login_customer_id": "9999999999",
                 "devise": "EUR",
             },
+        )
+
+
+        self.campaign_inventory_patcher = patch(
+            "predictor.google_ads_sync.lister_campagnes_google_ads",
+            return_value=[],
+        )
+        self.campaign_inventory = (
+            self.campaign_inventory_patcher.start()
+        )
+        self.addCleanup(
+            self.campaign_inventory_patcher.stop
         )
 
     @patch("predictor.google_ads_api.rechercher")
@@ -253,3 +268,126 @@ class GoogleAdsNativeSyncTests(TestCase):
         self.assertEqual(journal.statut, "succes")
         self.assertEqual(journal.details["source"], "google_ads_api")
         self.assertIn("Google Ads", self.compte.dernier_message)
+
+
+    @patch("predictor.google_ads_api.rechercher")
+    def test_campaign_inventory_is_independent_from_metrics(
+        self,
+        rechercher,
+    ):
+        rechercher.return_value = []
+
+        lister_campagnes_google_ads(
+            "access-token",
+            "1234567890",
+            login_customer_id="9999999999",
+        )
+
+        query = rechercher.call_args.args[2]
+
+        self.assertIn("campaign.id", query)
+        self.assertIn("campaign.name", query)
+        self.assertIn("campaign.status", query)
+        self.assertIn("campaign.primary_status", query)
+        self.assertIn("campaign.serving_status", query)
+        self.assertIn(
+            "campaign.advertising_channel_type",
+            query,
+        )
+        self.assertIn(
+            "campaign_budget.amount_micros",
+            query,
+        )
+
+        self.assertNotIn("segments.date", query)
+        self.assertNotIn("metrics.", query)
+        self.assertNotIn(
+            "campaign.status != 'REMOVED'",
+            query,
+        )
+
+
+    @patch(
+        "predictor.google_ads_sync."
+        "lister_performances_campagnes"
+    )
+    def test_sync_imports_campaign_without_daily_metrics(
+        self,
+        report,
+    ):
+        self.campaign_inventory.return_value = [{
+            "campaign": {
+                "id": "777001",
+                "name": "Ancienne Performance Max",
+                "status": "REMOVED",
+                "primaryStatus": "REMOVED",
+                "servingStatus": "NONE",
+                "advertisingChannelType": "PERFORMANCE_MAX",
+                "advertisingChannelSubType": "",
+                "startDateTime": "2024-01-01 00:00:00",
+                "endDateTime": "2024-06-30 23:59:59",
+                "optimizationScore": None,
+                "biddingStrategyType": (
+                    "MAXIMIZE_CONVERSION_VALUE"
+                ),
+                "biddingStrategySystemStatus": "PAUSED",
+            },
+            "campaignBudget": {
+                "amountMicros": "1000000",
+                "status": "ENABLED",
+            },
+        }]
+
+        report.return_value = []
+
+        resultat = synchroniser_compte_google_ads(
+            self.compte
+        )
+
+        self.assertEqual(resultat["campagnes"], 1)
+        self.assertEqual(resultat["mesures"], 0)
+
+        campagne = CampagneExterne.objects.get(
+            compte=self.compte,
+            identifiant_externe="777001",
+        )
+
+        self.assertEqual(
+            campagne.nom,
+            "Ancienne Performance Max",
+        )
+        self.assertEqual(
+            campagne.statut,
+            "REMOVED",
+        )
+        self.assertEqual(
+            campagne.impressions,
+            0,
+        )
+        self.assertEqual(
+            campagne.clics,
+            0,
+        )
+        self.assertEqual(
+            campagne.depense,
+            Decimal("0.00"),
+        )
+
+        brut = campagne.donnees_brutes
+
+        self.assertEqual(
+            brut["primary_status"],
+            "REMOVED",
+        )
+        self.assertEqual(
+            brut["serving_status"],
+            "NONE",
+        )
+        self.assertEqual(
+            brut["advertising_channel_type"],
+            "PERFORMANCE_MAX",
+        )
+        self.assertEqual(
+            brut["budget_amount"],
+            "1.00",
+        )
