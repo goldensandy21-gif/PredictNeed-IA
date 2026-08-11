@@ -7,7 +7,7 @@
     <title>Publicité - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
     <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
-    <link rel="stylesheet" href="{% static 'predictor/dashboard_overrides.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'predictor/dashboard_overrides.css' %}?v=2">
 </head>
 <body class="publicite-page">
 
@@ -24,20 +24,100 @@
         réellement attribuables aux parcours suivis par PredictNeed IA.
     </p>
 
-    <form method="get" class="module-filters">
+    <form method="get" class="module-filters ads-site-filter">
         <div class="filter-group">
-            <label for="site">Site</label>
+            <label for="site">Site analysé</label>
             <select name="site" id="site">
-                <option value="all">Tous les sites actifs</option>
                 {% for site in sites %}
-                    <option value="{{ site.id }}" {% if selected_site_id == site.id|stringformat:"s" %}selected{% endif %}>{{ site.nom_site }}</option>
+                    <option
+                        value="{{ site.id }}"
+                        {% if selected_site_id == site.id|stringformat:"s" %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ site.nom_site }}
+                    </option>
                 {% endfor %}
             </select>
         </div>
-        <div class="filter-group"><label for="date_debut">Début</label><input type="date" name="date_debut" id="date_debut" value="{{ date_debut }}"></div>
-        <div class="filter-group"><label for="date_fin">Fin</label><input type="date" name="date_fin" id="date_fin" value="{{ date_fin }}"></div>
-        <button type="submit" class="module-filter-button">Filtrer</button>
+
+        <input
+            type="hidden"
+            name="periode_pub"
+            value="{{ periode_pub }}"
+        >
+
+        <button
+            type="submit"
+            class="module-filter-button"
+        >
+            Afficher ce site
+        </button>
     </form>
+
+    <div class="ads-period-panel">
+        <div class="ads-period-selector" aria-label="Période d'analyse publicitaire">
+            {% for option in periode_options %}
+                <a
+                    href="?site={{ selected_site_id }}&periode_pub={{ option.cle }}"
+                    class="ads-period-button {% if periode_pub == option.cle %}active{% endif %}"
+                >
+                    {{ option.label }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <form method="get" class="ads-custom-period-form">
+        <input
+            type="hidden"
+            name="site"
+            value="{{ selected_site_id }}"
+        >
+
+        <div class="filter-group">
+            <label for="date_debut">Du</label>
+            <input
+                type="date"
+                name="date_debut"
+                id="date_debut"
+                value="{% if periode_pub == 'personnalisee' %}{{ date_debut }}{% endif %}"
+            >
+        </div>
+
+        <div class="filter-group">
+            <label for="date_fin">Au</label>
+            <input
+                type="date"
+                name="date_fin"
+                id="date_fin"
+                value="{% if periode_pub == 'personnalisee' %}{{ date_fin }}{% endif %}"
+            >
+        </div>
+
+        <button
+            type="submit"
+            class="module-filter-button"
+        >
+            Appliquer ces dates
+        </button>
+    </form>
+
+    <div class="ads-period-summary">
+            <strong>
+                Données affichées :
+                {{ periode_label }}
+            </strong>
+
+            <span>
+                Du {{ date_debut_obj|date:"d/m/Y" }}
+                au {{ date_fin_obj|date:"d/m/Y" }}
+            </span>
+
+            <small>
+                {{ periode_granularite }}
+            </small>
+        </div>
+    </div>
 
     <div class="stats-grid">
         <div class="stat-card"><h2>{{ sessions_publicitaires }}</h2><p>Sessions publicitaires</p></div>
@@ -60,7 +140,33 @@
                 <div class="connector-account-card">
                     <h3>{{ compte.get_plateforme_display }}</h3>
                     <p>{{ compte.nom_compte }}</p>
-                    <p>{{ compte.dernier_message|default:"Compte prêt pour synchronisation." }}</p>
+
+                    <p>
+                        <strong>Dernière synchronisation récente :</strong><br>
+                        {{ compte.dernier_message|default:"Compte prêt pour synchronisation." }}
+                    </p>
+
+                    {% if compte.plateforme == "google_ads" %}
+                        <div class="ads-history-status">
+                            {% if compte.configuration.google_ads_historique_37_mois_debut %}
+                                <span>
+                                    <strong>Historique détaillé importé :</strong>
+                                    {{ compte.configuration.google_ads_historique_37_mois_debut }}
+                                    →
+                                    {{ compte.configuration.google_ads_historique_37_mois_fin }}
+                                </span>
+                            {% endif %}
+
+                            {% if compte.configuration.google_ads_historique_mensuel_debut %}
+                                <span>
+                                    <strong>Historique mensuel importé :</strong>
+                                    {{ compte.configuration.google_ads_historique_mensuel_debut }}
+                                    →
+                                    {{ compte.configuration.google_ads_historique_mensuel_fin }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
             {% empty %}
                 <p>Aucun compte publicitaire relié pour le moment.</p>
@@ -99,18 +205,34 @@
     </div>
 
     <div class="dashboard-section">
-        <h2>Configuration des conversions Google Ads</h2>
+        <h2>Configuration actuelle des conversions Google Ads</h2>
 
         <p class="section-description">
-            PredictNeed IA vérifie les actions que Google Ads
-            utilise pour compter et valoriser les conversions.
-            Cette lecture aide à distinguer une conversion
-            publicitaire d'une vente réellement attribuée.
+            Cette section décrit la configuration actuelle des actions
+            de conversion du compte Google Ads. Les compteurs marqués
+            « historique importé » correspondent à l'historique Google
+            déjà synchronisé et ne doivent pas être confondus avec
+            la période de performance sélectionnée ci-dessus.
         </p>
 
         {% for compte in comptes_externes %}
             {% if compte.plateforme == "google_ads" %}
                 {% with actions=compte.configuration.google_ads_actions_conversion %}
+                    {% if compte.configuration.google_ads_actions_conversion_historique_debut %}
+                        <div class="ads-conversion-history-note">
+                            <strong>
+                                Compteurs des actions de conversion :
+                                historique importé
+                            </strong>
+                            <span>
+                                Du
+                                {{ compte.configuration.google_ads_actions_conversion_historique_debut }}
+                                au
+                                {{ compte.configuration.google_ads_actions_conversion_historique_fin }}
+                            </span>
+                        </div>
+                    {% endif %}
+
                     {% if actions %}
                         <div class="ads-campaign-grid">
                             {% for action in actions %}
@@ -171,12 +293,12 @@
 
                                     <div class="ads-metrics-grid">
                                         <div class="ads-metric">
-                                            <span>Conversions historiques</span>
+                                            <span>Conversions — historique importé</span>
                                             <strong>{{ action.conversions }}</strong>
                                         </div>
 
                                         <div class="ads-metric">
-                                            <span>Valeur historique</span>
+                                            <span>Valeur — historique importé</span>
                                             <strong>
                                                 {{ action.conversions_value }}
                                                 {{ action.default_currency_code }}
@@ -184,7 +306,7 @@
                                         </div>
 
                                         <div class="ads-metric">
-                                            <span>Toutes conversions</span>
+                                            <span>Toutes conv. — historique importé</span>
                                             <strong>
                                                 {{ action.all_conversions }}
                                             </strong>
@@ -233,6 +355,13 @@
         <div class="ads-section-heading">
             <div>
                 <h2>Performances publicitaires par campagne</h2>
+
+                <p class="ads-campaign-period-note">
+                    <strong>{{ periode_label }}</strong>
+                    · {{ date_debut_obj|date:"d/m/Y" }}
+                    → {{ date_fin_obj|date:"d/m/Y" }}
+                </p>
+
                 <p class="section-description">
                     Données de la régie publicitaire et attribution PredictNeed IA
                     sont présentées séparément afin de distinguer la performance

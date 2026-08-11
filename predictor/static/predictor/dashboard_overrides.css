@@ -250,3 +250,137 @@ body.publicite-page .ads-empty-state {
         grid-template-columns: 1fr;
     }
 }
+
+/* =========================================================
+   PÉRIODES D'ANALYSE PUBLICITAIRE
+========================================================= */
+
+body.publicite-page .ads-period-panel {
+    margin: 0 0 1.5rem;
+    padding: 1rem;
+    background: #ffffff;
+    border: 1px solid #dbe5f1;
+    border-radius: 18px;
+}
+
+body.publicite-page .ads-period-selector {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+}
+
+body.publicite-page .ads-period-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0.65rem 1rem;
+    border: 1px solid #d7e1ee;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #334155;
+    text-decoration: none;
+    font-weight: 800;
+    transition: 0.2s ease;
+}
+
+body.publicite-page .ads-period-button:hover {
+    border-color: #8b5cf6;
+    transform: translateY(-1px);
+}
+
+body.publicite-page .ads-period-button.active {
+    color: #ffffff;
+    border-color: transparent;
+    background: linear-gradient(
+        90deg,
+        #38bdf8,
+        #7c3aed
+    );
+}
+
+body.publicite-page .ads-period-summary {
+    display: grid;
+    gap: 0.3rem;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #334155;
+}
+
+body.publicite-page .ads-period-summary strong {
+    color: #0f172a;
+}
+
+body.publicite-page .ads-period-summary small {
+    color: #64748b;
+    line-height: 1.5;
+}
+
+body.publicite-page .ads-history-status {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid #e5e7eb;
+    color: #475569;
+    font-size: 0.88rem;
+}
+
+body.publicite-page .ads-conversion-history-note {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0 0 1rem;
+    padding: 0.9rem 1rem;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 14px;
+    color: #9a3412;
+}
+
+body.publicite-page .ads-campaign-period-note {
+    margin: 0.35rem 0 0.75rem;
+    color: #5b21b6;
+}
+
+@media (max-width: 640px) {
+    body.publicite-page .ads-period-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    body.publicite-page .ads-period-button {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+body.publicite-page .ads-custom-period-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.9rem;
+    padding: 0.85rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+}
+
+body.publicite-page .ads-custom-period-form .filter-group {
+    flex: 1 1 180px;
+    min-width: 180px;
+}
+
+body.publicite-page .ads-custom-period-form input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+    body.publicite-page .ads-custom-period-form {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+}

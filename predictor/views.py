@@ -4623,6 +4623,195 @@ def module_connecteurs(request):
     })
 
 
+
+def _premier_jour_mois_publicite(jour, mois_recul):
+    total = (
+        jour.year * 12
+        + (jour.month - 1)
+        - mois_recul
+    )
+    annee, mois_zero = divmod(total, 12)
+
+    return jour.replace(
+        year=annee,
+        month=mois_zero + 1,
+        day=1,
+    )
+
+
+def _periode_publicite(request):
+    """
+    Périodes lisibles pour le client.
+
+    - 30 jours : exactement les 30 derniers jours terminés.
+    - 3/6/12/37 mois : mois calendaires.
+    - historique : fenêtre Google Ads disponible jusqu'à 11 ans.
+
+    Les données anciennes Google Ads sont stockées avec une
+    granularité mensuelle lorsqu'elles dépassent la fenêtre
+    journalière disponible.
+    """
+
+    options = [
+        {
+            "cle": "30j",
+            "label": "30 jours",
+        },
+        {
+            "cle": "3m",
+            "label": "3 mois",
+        },
+        {
+            "cle": "6m",
+            "label": "6 mois",
+        },
+        {
+            "cle": "12m",
+            "label": "12 mois",
+        },
+        {
+            "cle": "37m",
+            "label": "37 mois",
+        },
+        {
+            "cle": "historique",
+            "label": "Historique disponible",
+        },
+    ]
+
+    cles_valides = {
+        option["cle"]
+        for option in options
+    }
+
+    date_debut_manuel = parse_date(
+        (request.GET.get("date_debut") or "").strip()
+    )
+    date_fin_manuel = parse_date(
+        (request.GET.get("date_fin") or "").strip()
+    )
+
+    if (
+        date_debut_manuel
+        and date_fin_manuel
+        and date_debut_manuel <= date_fin_manuel
+    ):
+        return {
+            "cle": "personnalisee",
+            "label": "Période personnalisée",
+            "date_debut": date_debut_manuel,
+            "date_fin": date_fin_manuel,
+            "granularite": (
+                "Données disponibles dans PredictNeed IA "
+                "pour les dates sélectionnées."
+            ),
+            "options": options,
+        }
+
+    periode = (
+        request.GET.get("periode_pub")
+        or "30j"
+    ).strip()
+
+    if periode not in cles_valides:
+        periode = "30j"
+
+    # LAST_30_DAYS Google Ads n'inclut pas aujourd'hui.
+    date_fin = (
+        timezone.localdate()
+        - timedelta(days=1)
+    )
+
+    if periode == "30j":
+        date_debut = (
+            date_fin
+            - timedelta(days=29)
+        )
+        label = "30 derniers jours"
+        granularite = (
+            "Données de performance détaillées sur la période "
+            "du filtre."
+        )
+
+    elif periode == "3m":
+        date_debut = (
+            _premier_jour_mois_publicite(
+                date_fin,
+                2,
+            )
+        )
+        label = "3 derniers mois"
+        granularite = (
+            "Données Google Ads détaillées dans la fenêtre "
+            "récente."
+        )
+
+    elif periode == "6m":
+        date_debut = (
+            _premier_jour_mois_publicite(
+                date_fin,
+                5,
+            )
+        )
+        label = "6 derniers mois"
+        granularite = (
+            "Données Google Ads détaillées dans la fenêtre "
+            "récente."
+        )
+
+    elif periode == "12m":
+        date_debut = (
+            _premier_jour_mois_publicite(
+                date_fin,
+                11,
+            )
+        )
+        label = "12 derniers mois"
+        granularite = (
+            "Données Google Ads détaillées dans la fenêtre "
+            "récente."
+        )
+
+    elif periode == "37m":
+        date_debut = (
+            _premier_jour_mois_publicite(
+                date_fin,
+                36,
+            )
+        )
+        label = "37 derniers mois"
+        granularite = (
+            "Fenêtre maximale de détail temporel récent "
+            "prise en charge par Google Ads."
+        )
+
+    else:
+        # 11 ans = 132 mois.
+        # Google aligne l'historique ancien au prochain
+        # mois calendaire complet : on revient donc
+        # de 131 mois au premier jour du mois.
+        date_debut = (
+            _premier_jour_mois_publicite(
+                date_fin,
+                131,
+            )
+        )
+        label = "Historique Google Ads disponible"
+        granularite = (
+            "Granularité mixte : données récentes détaillées "
+            "jusqu'à 37 mois, puis données mensuelles pour "
+            "l'historique plus ancien."
+        )
+
+    return {
+        "cle": periode,
+        "label": label,
+        "date_debut": date_debut,
+        "date_fin": date_fin,
+        "granularite": granularite,
+        "options": options,
+    }
+
 @login_required
 def module_publicite(request):
     scope = get_module_scope(request, module_field="module_publicite_actif")
@@ -4630,11 +4819,22 @@ def module_publicite(request):
     if not scope["sites_actifs"].exists() or scope["site_selectionne_inactif"]:
         return render_module_non_actif(request, "Publicité")
 
-    sessions = SessionVisiteur.objects.filter(site__in=scope["sites_filtres"])
-    sessions, date_debut, date_fin = appliquer_filtre_dates(
-        sessions,
-        "date_creation",
-        request
+    periode_info = _periode_publicite(request)
+
+    date_debut_obj = periode_info[
+        "date_debut"
+    ]
+    date_fin_obj = periode_info[
+        "date_fin"
+    ]
+
+    date_debut = date_debut_obj.isoformat()
+    date_fin = date_fin_obj.isoformat()
+
+    sessions = SessionVisiteur.objects.filter(
+        site__in=scope["sites_filtres"],
+        date_creation__date__gte=date_debut_obj,
+        date_creation__date__lte=date_fin_obj,
     )
 
     paid_q = (
@@ -4697,17 +4897,6 @@ def module_publicite(request):
         .select_related("compte", "site")[:12]
     )
 
-    date_debut_obj = (
-        parse_date(date_debut)
-        if date_debut
-        else None
-    )
-    date_fin_obj = (
-        parse_date(date_fin)
-        if date_fin
-        else None
-    )
-
     performances_campagnes = []
 
     for campagne_externe in campagnes_externes:
@@ -4754,6 +4943,14 @@ def module_publicite(request):
         "selected_site_id": scope["selected_site_id"],
         "date_debut": date_debut,
         "date_fin": date_fin,
+        "date_debut_obj": date_debut_obj,
+        "date_fin_obj": date_fin_obj,
+        "periode_pub": periode_info["cle"],
+        "periode_label": periode_info["label"],
+        "periode_granularite": (
+            periode_info["granularite"]
+        ),
+        "periode_options": periode_info["options"],
         "sessions_publicitaires": sessions_publicitaires.count(),
         "leads_publicitaires": leads_publicitaires.count(),
         "intentions_fortes_publicitaires": predictions_publicitaires.filter(
