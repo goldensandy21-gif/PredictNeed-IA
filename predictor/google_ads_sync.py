@@ -20,7 +20,9 @@ from .ad_sync_utils import (
 )
 from .google_ads_api import (
     access_token_pour_compte,
+    lister_actions_conversion_google_ads,
     lister_campagnes_google_ads,
+    lister_performances_actions_conversion_mensuelles,
     lister_performances_campagnes,
     lister_performances_campagnes_intervalle,
     lister_performances_campagnes_mensuelles,
@@ -216,6 +218,282 @@ def synchroniser_compte_google_ads(
         access_token,
         customer_id,
         login_customer_id=login_customer_id,
+    )
+
+    # --------------------------------------------------------
+    # CONFIGURATION DES CONVERSIONS GOOGLE ADS
+    # --------------------------------------------------------
+
+    actions_rows = lister_actions_conversion_google_ads(
+        access_token,
+        customer_id,
+        login_customer_id=login_customer_id,
+    )
+
+    actions_par_resource = {}
+
+    for row in actions_rows:
+        action = row.get("conversionAction") or {}
+
+        resource_name = str(
+            action.get("resourceName") or ""
+        ).strip()
+
+        if not resource_name:
+            continue
+
+        value_settings = (
+            action.get("valueSettings") or {}
+        )
+
+        actions_par_resource[resource_name] = {
+            "resource_name": resource_name,
+            "id": str(action.get("id") or ""),
+            "name": action.get("name") or "",
+            "status": action.get("status") or "",
+            "category": action.get("category") or "",
+            "type": action.get("type") or "",
+            "origin": action.get("origin") or "",
+            "primary_for_goal": bool(
+                action.get("primaryForGoal")
+            ),
+            "counting_type": (
+                action.get("countingType") or ""
+            ),
+            "default_value": str(
+                value_settings.get("defaultValue")
+                if value_settings.get("defaultValue")
+                is not None
+                else ""
+            ),
+            "default_currency_code": (
+                value_settings.get(
+                    "defaultCurrencyCode"
+                )
+                or ""
+            ),
+            "always_use_default_value": bool(
+                value_settings.get(
+                    "alwaysUseDefaultValue"
+                )
+            ),
+            "conversions": "0",
+            "conversions_value": "0",
+            "all_conversions": "0",
+            "all_conversions_value": "0",
+            "campagnes": [],
+        }
+
+    historique_actions_initial = not bool(
+        configuration.get(
+            "google_ads_actions_conversion_historique_importe"
+        )
+    )
+
+    if historique_actions_initial:
+        limite_actions = _reculer_mois(
+            timezone.localdate(),
+            132,
+        )
+
+        if limite_actions.month == 12:
+            debut_actions = date(
+                limite_actions.year + 1,
+                1,
+                1,
+            )
+        else:
+            debut_actions = date(
+                limite_actions.year,
+                limite_actions.month + 1,
+                1,
+            )
+
+        fin_actions = date(
+            timezone.localdate().year,
+            timezone.localdate().month,
+            1,
+        )
+
+        historique_actions = (
+            lister_performances_actions_conversion_mensuelles(
+                access_token,
+                customer_id,
+                login_customer_id=login_customer_id,
+                date_debut=debut_actions,
+                date_fin=fin_actions,
+            )
+        )
+
+        agregats = {}
+
+        for row in historique_actions:
+            segments = row.get("segments") or {}
+            metrics = row.get("metrics") or {}
+            campaign = row.get("campaign") or {}
+
+            resource_name = str(
+                segments.get("conversionAction") or ""
+            ).strip()
+
+            if not resource_name:
+                continue
+
+            entree = agregats.setdefault(
+                resource_name,
+                {
+                    "name": (
+                        segments.get(
+                            "conversionActionName"
+                        )
+                        or "Action de conversion"
+                    ),
+                    "category": (
+                        segments.get(
+                            "conversionActionCategory"
+                        )
+                        or ""
+                    ),
+                    "conversions": Decimal("0"),
+                    "conversions_value": Decimal("0"),
+                    "all_conversions": Decimal("0"),
+                    "all_conversions_value": Decimal("0"),
+                    "campagnes": set(),
+                },
+            )
+
+            entree["conversions"] += decimal_depuis(
+                metrics.get("conversions")
+            )
+
+            entree["conversions_value"] += decimal_depuis(
+                metrics.get("conversionsValue")
+            )
+
+            entree["all_conversions"] += decimal_depuis(
+                metrics.get("allConversions")
+            )
+
+            entree[
+                "all_conversions_value"
+            ] += decimal_depuis(
+                metrics.get("allConversionsValue")
+            )
+
+            campaign_name = str(
+                campaign.get("name") or ""
+            ).strip()
+
+            if campaign_name:
+                entree["campagnes"].add(
+                    campaign_name
+                )
+
+        for resource_name, stats in agregats.items():
+            if resource_name not in actions_par_resource:
+                actions_par_resource[
+                    resource_name
+                ] = {
+                    "resource_name": resource_name,
+                    "id": "",
+                    "name": stats["name"],
+                    "status": "",
+                    "category": stats["category"],
+                    "type": "",
+                    "origin": "",
+                    "primary_for_goal": False,
+                    "counting_type": "",
+                    "default_value": "",
+                    "default_currency_code": "",
+                    "always_use_default_value": False,
+                    "conversions": "0",
+                    "conversions_value": "0",
+                    "all_conversions": "0",
+                    "all_conversions_value": "0",
+                    "campagnes": [],
+                }
+
+            action = actions_par_resource[
+                resource_name
+            ]
+
+            action["conversions"] = str(
+                stats["conversions"]
+            )
+
+            action["conversions_value"] = str(
+                stats["conversions_value"]
+            )
+
+            action["all_conversions"] = str(
+                stats["all_conversions"]
+            )
+
+            action["all_conversions_value"] = str(
+                stats["all_conversions_value"]
+            )
+
+            action["campagnes"] = sorted(
+                stats["campagnes"]
+            )
+
+        configuration[
+            "google_ads_actions_conversion_historique_importe"
+        ] = True
+
+        configuration[
+            "google_ads_actions_conversion_historique_debut"
+        ] = debut_actions.isoformat()
+
+        configuration[
+            "google_ads_actions_conversion_historique_fin"
+        ] = fin_actions.isoformat()
+
+    else:
+        anciennes_actions = configuration.get(
+            "google_ads_actions_conversion"
+        ) or []
+
+        anciennes_par_resource = {
+            str(
+                action.get("resource_name") or ""
+            ): action
+            for action in anciennes_actions
+        }
+
+        for resource_name, action in (
+            actions_par_resource.items()
+        ):
+            ancienne = anciennes_par_resource.get(
+                resource_name
+            )
+
+            if not ancienne:
+                continue
+
+            for champ in [
+                "conversions",
+                "conversions_value",
+                "all_conversions",
+                "all_conversions_value",
+                "campagnes",
+            ]:
+                action[champ] = ancienne.get(
+                    champ,
+                    action.get(champ),
+                )
+
+    configuration[
+        "google_ads_actions_conversion"
+    ] = list(actions_par_resource.values())
+
+    compte.configuration = configuration
+
+    compte.save(
+        update_fields=[
+            "configuration",
+            "date_mise_a_jour",
+        ]
     )
 
     campagnes_par_id = {}

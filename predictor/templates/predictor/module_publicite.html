@@ -99,6 +99,137 @@
     </div>
 
     <div class="dashboard-section">
+        <h2>Configuration des conversions Google Ads</h2>
+
+        <p class="section-description">
+            PredictNeed IA vérifie les actions que Google Ads
+            utilise pour compter et valoriser les conversions.
+            Cette lecture aide à distinguer une conversion
+            publicitaire d'une vente réellement attribuée.
+        </p>
+
+        {% for compte in comptes_externes %}
+            {% if compte.plateforme == "google_ads" %}
+                {% with actions=compte.configuration.google_ads_actions_conversion %}
+                    {% if actions %}
+                        <div class="ads-campaign-grid">
+                            {% for action in actions %}
+                                <article class="ads-campaign-card">
+                                    <div class="ads-campaign-card-header">
+                                        <div>
+                                            <p class="ads-platform-label">
+                                                Action de conversion
+                                            </p>
+                                            <h3>
+                                                {{ action.name|default:"Action Google Ads" }}
+                                            </h3>
+                                        </div>
+
+                                        <span class="ads-status-badge">
+                                            {{ action.status|default:"Statut inconnu" }}
+                                        </span>
+                                    </div>
+
+                                    <div class="ads-campaign-meta">
+                                        <div class="ads-meta-item">
+                                            <span>Catégorie</span>
+                                            <strong>
+                                                {{ action.category|default:"Non renseignée" }}
+                                            </strong>
+                                        </div>
+
+                                        <div class="ads-meta-item">
+                                            <span>Origine</span>
+                                            <strong>
+                                                {{ action.origin|default:"Non renseignée" }}
+                                            </strong>
+                                        </div>
+
+                                        <div class="ads-meta-item">
+                                            <span>Optimisation des enchères</span>
+                                            <strong>
+                                                {% if action.primary_for_goal %}
+                                                    Action principale
+                                                {% else %}
+                                                    Action secondaire
+                                                {% endif %}
+                                            </strong>
+                                        </div>
+
+                                        <div class="ads-meta-item">
+                                            <span>Valeur par défaut</span>
+                                            <strong>
+                                                {% if action.default_value %}
+                                                    {{ action.default_value }}
+                                                    {{ action.default_currency_code }}
+                                                {% else %}
+                                                    Aucune valeur configurée
+                                                {% endif %}
+                                            </strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="ads-metrics-grid">
+                                        <div class="ads-metric">
+                                            <span>Conversions historiques</span>
+                                            <strong>{{ action.conversions }}</strong>
+                                        </div>
+
+                                        <div class="ads-metric">
+                                            <span>Valeur historique</span>
+                                            <strong>
+                                                {{ action.conversions_value }}
+                                                {{ action.default_currency_code }}
+                                            </strong>
+                                        </div>
+
+                                        <div class="ads-metric">
+                                            <span>Toutes conversions</span>
+                                            <strong>
+                                                {{ action.all_conversions }}
+                                            </strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="ads-analysis-panel">
+                                        <h4>Diagnostic PredictNeed IA</h4>
+
+                                        {% if action.conversions != "0" and action.conversions_value == "0" %}
+                                            <p class="ads-analysis-predictneed">
+                                                Des conversions ont été comptabilisées,
+                                                mais aucune valeur monétaire n'a été
+                                                remontée pour cette action. Le ROAS
+                                                Google Ads ne peut donc pas refléter
+                                                une valeur commerciale positive.
+                                            </p>
+                                        {% elif not action.primary_for_goal %}
+                                            <p class="ads-analysis-predictneed">
+                                                Cette action est secondaire et n'est
+                                                normalement pas utilisée comme objectif
+                                                principal d'optimisation des enchères.
+                                            </p>
+                                        {% else %}
+                                            <p class="ads-analysis-predictneed">
+                                                Cette action est configurée comme
+                                                conversion principale Google Ads.
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="ads-empty-state">
+                            Aucune configuration de conversion Google Ads
+                            synchronisée pour le moment.
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="dashboard-section">
         <div class="ads-section-heading">
             <div>
                 <h2>Performances publicitaires par campagne</h2>

@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .google_ads_api import (
+    lister_actions_conversion_google_ads,
     lister_campagnes_google_ads,
     lister_performances_campagnes,
     lister_performances_campagnes_intervalle,
@@ -104,6 +105,30 @@ class GoogleAdsNativeSyncTests(TestCase):
         )
         self.addCleanup(
             self.campaign_inventory_patcher.stop
+        )
+
+        self.conversion_actions_patcher = patch(
+            "predictor.google_ads_sync."
+            "lister_actions_conversion_google_ads",
+            return_value=[],
+        )
+        self.conversion_actions = (
+            self.conversion_actions_patcher.start()
+        )
+        self.addCleanup(
+            self.conversion_actions_patcher.stop
+        )
+
+        self.conversion_history_patcher = patch(
+            "predictor.google_ads_sync."
+            "lister_performances_actions_conversion_mensuelles",
+            return_value=[],
+        )
+        self.conversion_history = (
+            self.conversion_history_patcher.start()
+        )
+        self.addCleanup(
+            self.conversion_history_patcher.stop
         )
 
     @patch("predictor.google_ads_api.rechercher")
@@ -589,4 +614,128 @@ class GoogleAdsNativeSyncTests(TestCase):
         self.assertIn(
             "HISTORIQUE_MENSUEL_11_ANS",
             resultat["periode"],
+        )
+
+
+    @patch("predictor.google_ads_api.rechercher")
+    def test_conversion_actions_query_reads_value_settings(
+        self,
+        rechercher,
+    ):
+        rechercher.return_value = []
+
+        lister_actions_conversion_google_ads(
+            "access-token",
+            "1234567890",
+            login_customer_id="9999999999",
+        )
+
+        query = rechercher.call_args.args[2]
+
+        self.assertIn(
+            "conversion_action.primary_for_goal",
+            query,
+        )
+
+        self.assertIn(
+            "conversion_action.value_settings.default_value",
+            query,
+        )
+
+        self.assertIn(
+            "conversion_action.category",
+            query,
+        )
+
+
+    @patch(
+        "predictor.google_ads_sync."
+        "lister_performances_campagnes",
+        return_value=[],
+    )
+    def test_sync_stores_conversion_action_diagnostic(
+        self,
+        recent,
+    ):
+        configuration = dict(
+            self.compte.configuration
+        )
+
+        configuration.pop(
+            "google_ads_actions_conversion_historique_importe",
+            None,
+        )
+
+        self.compte.configuration = configuration
+        self.compte.save()
+
+        self.conversion_actions.return_value = [{
+            "conversionAction": {
+                "resourceName": (
+                    "customers/1234567890/"
+                    "conversionActions/123"
+                ),
+                "id": "123",
+                "name": "Achat",
+                "status": "ENABLED",
+                "category": "PURCHASE",
+                "type": "WEBPAGE",
+                "origin": "WEBSITE",
+                "primaryForGoal": True,
+                "countingType": "MANY_PER_CLICK",
+                "valueSettings": {
+                    "defaultValue": 0,
+                    "defaultCurrencyCode": "EUR",
+                    "alwaysUseDefaultValue": False,
+                },
+            }
+        }]
+
+        self.conversion_history.return_value = [{
+            "campaign": {
+                "id": "555001",
+                "name": "Campagne historique",
+            },
+            "segments": {
+                "month": "2022-10-01",
+                "conversionAction": (
+                    "customers/1234567890/"
+                    "conversionActions/123"
+                ),
+                "conversionActionName": "Achat",
+                "conversionActionCategory": "PURCHASE",
+            },
+            "metrics": {
+                "conversions": "2",
+                "conversionsValue": "0",
+                "allConversions": "2",
+                "allConversionsValue": "0",
+            },
+        }]
+
+        synchroniser_compte_google_ads(
+            self.compte
+        )
+
+        self.compte.refresh_from_db()
+
+        actions = self.compte.configuration[
+            "google_ads_actions_conversion"
+        ]
+
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(
+            actions[0]["name"],
+            "Achat",
+        )
+        self.assertTrue(
+            actions[0]["primary_for_goal"]
+        )
+        self.assertEqual(
+            actions[0]["conversions"],
+            "2",
+        )
+        self.assertEqual(
+            actions[0]["conversions_value"],
+            "0",
         )

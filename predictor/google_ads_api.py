@@ -746,3 +746,103 @@ def lister_performances_campagnes_mensuelles(
         query,
         login_customer_id=login_customer_id,
     )
+
+
+def lister_actions_conversion_google_ads(
+    access_token,
+    customer_id,
+    *,
+    login_customer_id="",
+):
+    """
+    Récupère la configuration des actions de conversion
+    du compte Google Ads.
+    """
+    query = (
+        "SELECT "
+        "conversion_action.resource_name, "
+        "conversion_action.id, "
+        "conversion_action.name, "
+        "conversion_action.status, "
+        "conversion_action.category, "
+        "conversion_action.type, "
+        "conversion_action.origin, "
+        "conversion_action.primary_for_goal, "
+        "conversion_action.counting_type, "
+        "conversion_action.click_through_lookback_window_days, "
+        "conversion_action.view_through_lookback_window_days, "
+        "conversion_action.value_settings.default_value, "
+        "conversion_action.value_settings.default_currency_code, "
+        "conversion_action.value_settings.always_use_default_value "
+        "FROM conversion_action "
+        "ORDER BY conversion_action.id"
+    )
+
+    return rechercher(
+        access_token,
+        customer_id,
+        query,
+        login_customer_id=login_customer_id,
+    )
+
+
+def lister_performances_actions_conversion_mensuelles(
+    access_token,
+    customer_id,
+    *,
+    login_customer_id="",
+    date_debut,
+    date_fin,
+):
+    """
+    Récupère l'historique mensuel des conversions
+    en distinguant chaque action de conversion.
+    """
+
+    if not isinstance(date_debut, date):
+        date_debut = date.fromisoformat(
+            str(date_debut)
+        )
+
+    if not isinstance(date_fin, date):
+        date_fin = date.fromisoformat(
+            str(date_fin)
+        )
+
+    date_debut = date(
+        date_debut.year,
+        date_debut.month,
+        1,
+    )
+
+    date_fin = date(
+        date_fin.year,
+        date_fin.month,
+        1,
+    )
+
+    query = (
+        "SELECT "
+        "segments.month, "
+        "campaign.id, "
+        "campaign.name, "
+        "segments.conversion_action, "
+        "segments.conversion_action_name, "
+        "segments.conversion_action_category, "
+        "metrics.conversions, "
+        "metrics.conversions_value, "
+        "metrics.all_conversions, "
+        "metrics.all_conversions_value "
+        "FROM campaign "
+        f"WHERE segments.month BETWEEN "
+        f"'{date_debut.isoformat()}' "
+        f"AND '{date_fin.isoformat()}' "
+        "ORDER BY segments.month, campaign.id"
+    )
+
+    return rechercher(
+        access_token,
+        customer_id,
+        query,
+        login_customer_id=login_customer_id,
+    )
