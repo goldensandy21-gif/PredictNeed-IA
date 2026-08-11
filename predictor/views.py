@@ -5,6 +5,9 @@ from .models import ClientProfessionnel, SiteClient, SessionVisiteur, EvenementU
 from .automations import ensure_default_automation_steps, envoyer_confirmation_lead, get_or_create_lead_confirmation_automation
 from .attribution import appliquer_attribution_opportunite
 from .ad_performance import calculer_performance_campagne
+from .meta_ads_performance import calculer_performance_meta_ads
+from .tiktok_ads_performance import calculer_performance_tiktok_ads
+from .linkedin_ads_performance import calculer_performance_linkedin_ads
 from .sales import (
     agreger_montants_par_devise,
     annuler_vente_opportunite,
@@ -4812,6 +4815,106 @@ def _periode_publicite(request):
         "options": options,
     }
 
+
+def _periode_publicite_regie(request):
+    """
+    Périodes génériques pour Meta Ads, TikTok Ads
+    et LinkedIn Ads.
+
+    Aucun plafond historique propre à une régie
+    n'est supposé ici.
+    """
+
+    options = [
+        {"cle": "30j", "label": "30 jours"},
+        {"cle": "3m", "label": "3 mois"},
+        {"cle": "6m", "label": "6 mois"},
+        {"cle": "12m", "label": "12 mois"},
+    ]
+
+    cles_valides = {
+        option["cle"]
+        for option in options
+    }
+
+    date_debut_manuel = parse_date(
+        (request.GET.get("date_debut") or "").strip()
+    )
+    date_fin_manuel = parse_date(
+        (request.GET.get("date_fin") or "").strip()
+    )
+
+    if (
+        date_debut_manuel
+        and date_fin_manuel
+        and date_debut_manuel <= date_fin_manuel
+    ):
+        return {
+            "cle": "personnalisee",
+            "label": "Période personnalisée",
+            "date_debut": date_debut_manuel,
+            "date_fin": date_fin_manuel,
+            "granularite": (
+                "Données disponibles dans PredictNeed IA "
+                "pour les dates sélectionnées."
+            ),
+            "options": options,
+        }
+
+    periode = (
+        request.GET.get("periode_pub")
+        or "30j"
+    ).strip()
+
+    if periode not in cles_valides:
+        periode = "30j"
+
+    date_fin = (
+        timezone.localdate()
+        - timedelta(days=1)
+    )
+
+    if periode == "30j":
+        date_debut = (
+            date_fin
+            - timedelta(days=29)
+        )
+        label = "30 derniers jours"
+
+    elif periode == "3m":
+        date_debut = _premier_jour_mois_publicite(
+            date_fin,
+            2,
+        )
+        label = "3 derniers mois"
+
+    elif periode == "6m":
+        date_debut = _premier_jour_mois_publicite(
+            date_fin,
+            5,
+        )
+        label = "6 derniers mois"
+
+    else:
+        date_debut = _premier_jour_mois_publicite(
+            date_fin,
+            11,
+        )
+        label = "12 derniers mois"
+
+    return {
+        "cle": periode,
+        "label": label,
+        "date_debut": date_debut,
+        "date_fin": date_fin,
+        "granularite": (
+            "Données publicitaires de la régie "
+            "sur la période sélectionnée."
+        ),
+        "options": options,
+    }
+
+
 @login_required
 def module_publicite(request):
     scope = get_module_scope(request, module_field="module_publicite_actif")
@@ -4819,7 +4922,32 @@ def module_publicite(request):
     if not scope["sites_actifs"].exists() or scope["site_selectionne_inactif"]:
         return render_module_non_actif(request, "Publicité")
 
-    periode_info = _periode_publicite(request)
+    plateformes_publicite = [
+        {"cle": "google_ads", "label": "Google Ads"},
+        {"cle": "meta_ads", "label": "Meta Ads"},
+        {"cle": "tiktok_ads", "label": "TikTok Ads"},
+        {"cle": "linkedin_ads", "label": "LinkedIn Ads"},
+    ]
+
+    plateformes_valides = {
+        plateforme["cle"]
+        for plateforme in plateformes_publicite
+    }
+
+    plateforme_pub = (
+        request.GET.get("plateforme_pub")
+        or "google_ads"
+    ).strip()
+
+    if plateforme_pub not in plateformes_valides:
+        plateforme_pub = "google_ads"
+
+    if plateforme_pub == "google_ads":
+        # Google Ads conserve exactement ses règles de période.
+        periode_info = _periode_publicite(request)
+    else:
+        # Meta, TikTok et LinkedIn ont leurs propres périodes.
+        periode_info = _periode_publicite_regie(request)
 
     date_debut_obj = periode_info[
         "date_debut"
@@ -4837,18 +4965,36 @@ def module_publicite(request):
         date_creation__date__lte=date_fin_obj,
     )
 
-    paid_q = (
-        Q(utm_medium__icontains="cpc") |
-        Q(utm_medium__icontains="paid") |
-        Q(utm_medium__icontains="ads") |
-        Q(utm_source__icontains="google") |
-        Q(utm_source__icontains="facebook") |
-        Q(utm_source__icontains="meta") |
-        Q(utm_source__icontains="linkedin") |
-        Q(utm_source__icontains="tiktok")
-    )
+    # Isolation des parcours visiteurs par régie.
+    # Une session attribuée à une plateforme ne doit jamais
+    # alimenter les statistiques d'une autre plateforme.
+    sources_par_plateforme = {
+        "google_ads": (
+            Q(utm_source__icontains="google") |
+            Q(utm_source__icontains="adwords")
+        ),
+        "meta_ads": (
+            Q(utm_source__icontains="facebook") |
+            Q(utm_source__icontains="instagram") |
+            Q(utm_source__icontains="meta") |
+            Q(utm_source__iexact="fb") |
+            Q(utm_source__iexact="ig")
+        ),
+        "tiktok_ads": (
+            Q(utm_source__icontains="tiktok")
+        ),
+        "linkedin_ads": (
+            Q(utm_source__icontains="linkedin")
+        ),
+    }
 
-    sessions_publicitaires = sessions.filter(paid_q).distinct()
+    filtre_plateforme = sources_par_plateforme[
+        plateforme_pub
+    ]
+
+    sessions_publicitaires = sessions.filter(
+        filtre_plateforme
+    ).distinct()
     leads_publicitaires = LeadCapture.objects.filter(
         site__in=scope["sites_filtres"],
         session__in=sessions_publicitaires
@@ -4890,6 +5036,18 @@ def module_publicite(request):
         comptes_externes = CompteConnecteExterne.objects.none()
         campagnes_externes = CampagneExterne.objects.none()
 
+    # Isolation stricte par régie publicitaire.
+    # Chaque onglet ne voit que ses propres comptes
+    # et ses propres campagnes.
+    comptes_externes = comptes_externes.filter(
+        plateforme=plateforme_pub
+    )
+
+    campagnes_externes = campagnes_externes.filter(
+        plateforme=plateforme_pub,
+        compte__plateforme=plateforme_pub,
+    )
+
     comptes_externes = comptes_externes.select_related("site")
 
     campagnes_externes = list(
@@ -4901,11 +5059,34 @@ def module_publicite(request):
 
     for campagne_externe in campagnes_externes:
         try:
-            performance = calculer_performance_campagne(
-                campagne_externe,
-                date_debut=date_debut_obj,
-                date_fin=date_fin_obj,
-            )
+            if plateforme_pub == "google_ads":
+                # Google Ads conserve son moteur existant.
+                performance = calculer_performance_campagne(
+                    campagne_externe,
+                    date_debut=date_debut_obj,
+                    date_fin=date_fin_obj,
+                )
+
+            elif plateforme_pub == "meta_ads":
+                performance = calculer_performance_meta_ads(
+                    campagne_externe,
+                    date_debut=date_debut_obj,
+                    date_fin=date_fin_obj,
+                )
+
+            elif plateforme_pub == "tiktok_ads":
+                performance = calculer_performance_tiktok_ads(
+                    campagne_externe,
+                    date_debut=date_debut_obj,
+                    date_fin=date_fin_obj,
+                )
+
+            else:
+                performance = calculer_performance_linkedin_ads(
+                    campagne_externe,
+                    date_debut=date_debut_obj,
+                    date_fin=date_fin_obj,
+                )
         except ValueError as exc:
             performance = {
                 "campagne": campagne_externe,
@@ -4938,7 +5119,18 @@ def module_publicite(request):
         - campagnes_financieres_calculables
     )
 
-    return render(request, "predictor/module_publicite.html", {
+    templates_publicite = {
+        "google_ads": "predictor/module_publicite.html",
+        "meta_ads": "predictor/module_publicite_meta.html",
+        "tiktok_ads": "predictor/module_publicite_tiktok.html",
+        "linkedin_ads": "predictor/module_publicite_linkedin.html",
+    }
+
+    template_publicite = templates_publicite[
+        plateforme_pub
+    ]
+
+    return render(request, template_publicite, {
         "sites": scope["sites_actifs"],
         "selected_site_id": scope["selected_site_id"],
         "date_debut": date_debut,
@@ -4951,6 +5143,8 @@ def module_publicite(request):
             periode_info["granularite"]
         ),
         "periode_options": periode_info["options"],
+        "plateforme_pub": plateforme_pub,
+        "plateformes_publicite": plateformes_publicite,
         "sessions_publicitaires": sessions_publicitaires.count(),
         "leads_publicitaires": leads_publicitaires.count(),
         "intentions_fortes_publicitaires": predictions_publicitaires.filter(

@@ -47,6 +47,12 @@
             value="{{ periode_pub }}"
         >
 
+        <input
+            type="hidden"
+            name="plateforme_pub"
+            value="{{ plateforme_pub }}"
+        >
+
         <button
             type="submit"
             class="module-filter-button"
@@ -55,11 +61,22 @@
         </button>
     </form>
 
+    <div class="ads-platform-selector" aria-label="Plateforme publicitaire">
+        {% for plateforme in plateformes_publicite %}
+            <a
+                href="?site={{ selected_site_id }}&plateforme_pub={{ plateforme.cle }}&periode_pub={{ periode_pub }}"
+                class="ads-platform-button {% if plateforme_pub == plateforme.cle %}active{% endif %}"
+            >
+                {{ plateforme.label }}
+            </a>
+        {% endfor %}
+    </div>
+
     <div class="ads-period-panel">
         <div class="ads-period-selector" aria-label="Période d'analyse publicitaire">
             {% for option in periode_options %}
                 <a
-                    href="?site={{ selected_site_id }}&periode_pub={{ option.cle }}"
+                    href="?site={{ selected_site_id }}&plateforme_pub={{ plateforme_pub }}&periode_pub={{ option.cle }}"
                     class="ads-period-button {% if periode_pub == option.cle %}active{% endif %}"
                 >
                     {{ option.label }}
@@ -72,6 +89,12 @@
             type="hidden"
             name="site"
             value="{{ selected_site_id }}"
+        >
+
+        <input
+            type="hidden"
+            name="plateforme_pub"
+            value="{{ plateforme_pub }}"
         >
 
         <div class="filter-group">

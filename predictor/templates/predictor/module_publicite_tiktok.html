@@ -1,0 +1,285 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>TikTok Ads - PredictNeed IA</title>
+    {% include "predictor/includes/seo_head.html" %}
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
+    <link rel="stylesheet" href="{% static 'predictor/dashboard_overrides.css' %}?v=2">
+</head>
+
+<body class="publicite-page">
+
+{% include "predictor/includes/dashboard_header.html" %}
+
+<section class="dashboard module-page">
+
+    <div class="dashboard-actions">
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="btn-secondary"
+        >
+            Retour au dashboard
+        </a>
+    </div>
+
+    <h1>TikTok Ads</h1>
+
+    <p class="dashboard-intro">
+        Performances publicitaires TikTok Ads, données de la régie
+        et attribution PredictNeed IA.
+    </p>
+
+    <div class="ads-platform-selector">
+        {% for plateforme in plateformes_publicite %}
+            <a
+                href="?site={{ selected_site_id }}&plateforme_pub={{ plateforme.cle }}&periode_pub={{ periode_pub }}"
+                class="ads-platform-button {% if plateforme_pub == plateforme.cle %}active{% endif %}"
+            >
+                {{ plateforme.label }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <form method="get" class="module-filters ads-site-filter">
+        <div class="filter-group">
+            <label for="site">Site analysé</label>
+
+            <select name="site" id="site">
+                {% for site in sites %}
+                    <option
+                        value="{{ site.id }}"
+                        {% if selected_site_id == site.id|stringformat:"s" %}selected{% endif %}
+                    >
+                        {{ site.nom_site }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <input type="hidden" name="plateforme_pub" value="tiktok_ads">
+        <input type="hidden" name="periode_pub" value="{{ periode_pub }}">
+
+        <button type="submit" class="module-filter-button">
+            Afficher ce site
+        </button>
+    </form>
+
+    <div class="ads-period-panel">
+
+        <div class="ads-period-selector">
+            {% for option in periode_options %}
+                <a
+                    href="?site={{ selected_site_id }}&plateforme_pub=tiktok_ads&periode_pub={{ option.cle }}"
+                    class="ads-period-button {% if periode_pub == option.cle %}active{% endif %}"
+                >
+                    {{ option.label }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <form method="get" class="ads-custom-period-form">
+
+            <input type="hidden" name="site" value="{{ selected_site_id }}">
+            <input type="hidden" name="plateforme_pub" value="tiktok_ads">
+
+            <div class="filter-group">
+                <label for="date_debut">Du</label>
+                <input
+                    type="date"
+                    name="date_debut"
+                    id="date_debut"
+                    value="{{ date_debut }}"
+                >
+            </div>
+
+            <div class="filter-group">
+                <label for="date_fin">Au</label>
+                <input
+                    type="date"
+                    name="date_fin"
+                    id="date_fin"
+                    value="{{ date_fin }}"
+                >
+            </div>
+
+            <button type="submit" class="module-filter-button">
+                Appliquer ces dates
+            </button>
+        </form>
+
+        <div class="ads-period-summary">
+            <strong>{{ periode_label }}</strong>
+
+            <span>
+                Du {{ date_debut_obj|date:"d/m/Y" }}
+                au {{ date_fin_obj|date:"d/m/Y" }}
+            </span>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h2>{{ sessions_publicitaires }}</h2>
+            <p>Sessions TikTok Ads</p>
+        </div>
+
+        <div class="stat-card">
+            <h2>{{ leads_publicitaires }}</h2>
+            <p>Leads TikTok Ads</p>
+        </div>
+
+        <div class="stat-card">
+            <h2>{{ intentions_fortes_publicitaires }}</h2>
+            <p>Intentions fortes</p>
+        </div>
+
+        <div class="stat-card">
+            <h2>{{ campagnes_financieres_calculables }}</h2>
+            <p>ROAS PredictNeed calculables</p>
+        </div>
+
+        <div class="stat-card">
+            <h2>{{ campagnes_financieres_a_verifier }}</h2>
+            <p>Campagnes à vérifier</p>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Compte TikTok Ads</h2>
+
+        <div class="connector-account-grid compact">
+            {% for compte in comptes_externes %}
+                <div class="connector-account-card">
+                    <h3>{{ compte.nom_compte }}</h3>
+
+                    <p>
+                        <strong>Statut :</strong>
+                        {{ compte.get_statut_display }}
+                    </p>
+
+                    <p>
+                        <strong>Identifiant :</strong>
+                        {{ compte.identifiant_externe|default:"Non renseigné" }}
+                    </p>
+
+                    <p>
+                        <strong>Dernière synchronisation :</strong><br>
+                        {{ compte.dernier_message|default:"Compte prêt pour synchronisation." }}
+                    </p>
+                </div>
+            {% empty %}
+                <div class="ads-empty-state">
+                    Aucun compte TikTok Ads connecté pour ce site.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Campagnes TikTok Ads</h2>
+
+        <p class="section-description">
+            Cette zone reçoit uniquement les campagnes provenant de TikTok Ads.
+            Les données des autres régies sont exclues.
+        </p>
+
+        <div class="ads-campaign-grid">
+            {% for performance in performances_campagnes %}
+                <article class="ads-campaign-card">
+
+                    <div class="ads-campaign-card-header">
+                        <div>
+                            <p class="ads-platform-label">TikTok Ads</p>
+                            <h3>{{ performance.campagne.nom }}</h3>
+                        </div>
+                    </div>
+
+                    <div class="ads-metrics-grid">
+
+                        <div class="ads-metric">
+                            <span>Impressions</span>
+                            <strong>{{ performance.impressions }}</strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>Clics</span>
+                            <strong>{{ performance.clics }}</strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>Conversions régie</span>
+                            <strong>{{ performance.conversions_regie }}</strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>Dépenses</span>
+                            <strong>
+                                {{ performance.depense }}
+                                {{ performance.devise }}
+                            </strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>CTR</span>
+                            <strong>
+                                {{ performance.ctr|default:"—" }}
+                                {% if performance.ctr %}%{% endif %}
+                            </strong>
+                        </div>
+
+                        <div class="ads-metric">
+                            <span>CPC moyen</span>
+                            <strong>
+                                {{ performance.cpc_moyen|default:"—" }}
+                                {% if performance.cpc_moyen %}
+                                    {{ performance.devise }}
+                                {% endif %}
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <div class="ads-analysis-panel">
+                        <h4>Attribution PredictNeed IA</h4>
+
+                        <p>
+                            Ventes attribuées :
+                            <strong>{{ performance.ventes_attribuees }}</strong>
+                        </p>
+
+                        <p>
+                            Chiffre d'affaires attribué :
+                            <strong>
+                                {{ performance.chiffre_affaires_attribue }}
+                                {{ performance.devise }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            ROAS PredictNeed :
+                            <strong>{{ performance.roas|default:"Non calculable" }}</strong>
+                        </p>
+
+                        <p>
+                            ROI publicitaire :
+                            <strong>
+                                {{ performance.roi_publicitaire|default:"Non calculable" }}
+                                {% if performance.roi_publicitaire %}%{% endif %}
+                            </strong>
+                        </p>
+                    </div>
+
+                </article>
+            {% empty %}
+                <div class="ads-empty-state">
+                    Aucune campagne TikTok Ads synchronisée pour ce site.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</section>
+</body>
+</html>
