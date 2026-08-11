@@ -23,6 +23,7 @@ from .google_ads_api import (
     lister_campagnes_google_ads,
     lister_performances_campagnes,
     lister_performances_campagnes_intervalle,
+    lister_performances_campagnes_mensuelles,
     normaliser_customer_id,
 )
 from .models import CampagneExterne
@@ -251,13 +252,24 @@ def synchroniser_compte_google_ads(
         # Elle ne signifie plus "aucune campagne".
         # ----------------------------------------------------
 
-        historique_initial = not bool(
+        historique_journalier_initial = not bool(
             configuration.get(
                 "google_ads_historique_37_mois_importe"
             )
         )
 
-        if historique_initial:
+        historique_mensuel_initial = (
+            not historique_journalier_initial
+            and not bool(
+                configuration.get(
+                    "google_ads_historique_mensuel_11_ans_importe"
+                )
+            )
+        )
+
+        libelle_mesures = "mesure(s) journalière(s)"
+
+        if historique_journalier_initial:
             date_fin_historique = (
                 timezone.localdate()
                 - timedelta(days=1)
@@ -287,6 +299,88 @@ def synchroniser_compte_google_ads(
                 f"au {date_fin_historique.isoformat()}"
             )
 
+        elif historique_mensuel_initial:
+
+            date_debut_journalier_raw = (
+                configuration.get(
+                    "google_ads_historique_37_mois_debut"
+                )
+            )
+
+            try:
+                date_debut_journalier = date.fromisoformat(
+                    date_debut_journalier_raw
+                )
+            except (TypeError, ValueError):
+                date_fin_journalier = (
+                    timezone.localdate()
+                    - timedelta(days=1)
+                )
+
+                date_debut_journalier = (
+                    _reculer_mois(
+                        date_fin_journalier,
+                        37,
+                    )
+                    + timedelta(days=1)
+                )
+
+            # Dernier mois complet avant la zone journalière.
+            premier_mois_journalier = date(
+                date_debut_journalier.year,
+                date_debut_journalier.month,
+                1,
+            )
+
+            dernier_jour_ancien = (
+                premier_mois_journalier
+                - timedelta(days=1)
+            )
+
+            date_fin_mensuelle = date(
+                dernier_jour_ancien.year,
+                dernier_jour_ancien.month,
+                1,
+            )
+
+            # Google conserve le haut niveau pendant 11 ans.
+            limite_11_ans = _reculer_mois(
+                timezone.localdate(),
+                132,
+            )
+
+            # Premier mois complet suivant la limite.
+            if limite_11_ans.month == 12:
+                date_debut_mensuelle = date(
+                    limite_11_ans.year + 1,
+                    1,
+                    1,
+                )
+            else:
+                date_debut_mensuelle = date(
+                    limite_11_ans.year,
+                    limite_11_ans.month + 1,
+                    1,
+                )
+
+            rows = (
+                lister_performances_campagnes_mensuelles(
+                    access_token,
+                    customer_id,
+                    login_customer_id=login_customer_id,
+                    date_debut=date_debut_mensuelle,
+                    date_fin=date_fin_mensuelle,
+                )
+            )
+
+            periode_effective = (
+                "HISTORIQUE_MENSUEL_11_ANS "
+                f"{date_debut_mensuelle.isoformat()} "
+                f"au {date_fin_mensuelle.isoformat()}"
+            )
+
+            libelle_mesures = "mesure(s) mensuelle(s)"
+
         else:
             rows = lister_performances_campagnes(
                 access_token,
@@ -310,8 +404,17 @@ def synchroniser_compte_google_ads(
             ).strip()
 
             date_raw = str(
-                segments.get("date") or ""
+                segments.get("date")
+                or segments.get("month")
+                or ""
             ).strip()
+
+            granularite = (
+                "mensuelle"
+                if segments.get("month")
+                and not segments.get("date")
+                else "journaliere"
+            )
 
             if (
                 not campaign_id
@@ -364,6 +467,7 @@ def synchroniser_compte_google_ads(
                     "provider": "google_ads",
                     "customer_id": customer_id,
                     "campaign_id": campaign_id,
+                    "granularite": granularite,
                     "campaign_status": (
                         campaign.get("status") or ""
                     ),
@@ -423,7 +527,7 @@ def synchroniser_compte_google_ads(
         ):
             recalculer_totaux_campagne(campagne)
 
-        if historique_initial:
+        if historique_journalier_initial:
             configuration[
                 "google_ads_historique_37_mois_importe"
             ] = True
@@ -436,6 +540,23 @@ def synchroniser_compte_google_ads(
                 "google_ads_historique_37_mois_fin"
             ] = date_fin_historique.isoformat()
 
+        if historique_mensuel_initial:
+            configuration[
+                "google_ads_historique_mensuel_11_ans_importe"
+            ] = True
+
+            configuration[
+                "google_ads_historique_mensuel_debut"
+            ] = date_debut_mensuelle.isoformat()
+
+            configuration[
+                "google_ads_historique_mensuel_fin"
+            ] = date_fin_mensuelle.isoformat()
+
+        if (
+            historique_journalier_initial
+            or historique_mensuel_initial
+        ):
             compte.configuration = configuration
             compte.save(
                 update_fields=[
@@ -452,6 +573,7 @@ def synchroniser_compte_google_ads(
             campagnes=len(campagnes_ids),
             mesures=mesures_total,
             maintenant=maintenant,
+            libelle_mesures=libelle_mesures,
         )
 
     return {

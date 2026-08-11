@@ -12,6 +12,7 @@ from .google_ads_api import (
     lister_campagnes_google_ads,
     lister_performances_campagnes,
     lister_performances_campagnes_intervalle,
+    lister_performances_campagnes_mensuelles,
 )
 from .google_ads_sync import synchroniser_compte_google_ads
 from .models import (
@@ -89,6 +90,7 @@ class GoogleAdsNativeSyncTests(TestCase):
                 "login_customer_id": "9999999999",
                 "devise": "EUR",
                 "google_ads_historique_37_mois_importe": True,
+                "google_ads_historique_mensuel_11_ans_importe": True,
             },
         )
 
@@ -489,5 +491,102 @@ class GoogleAdsNativeSyncTests(TestCase):
 
         self.assertIn(
             "HISTORIQUE_37_MOIS",
+            resultat["periode"],
+        )
+
+
+    @patch("predictor.google_ads_api.rechercher")
+    def test_monthly_history_query_uses_month_segment(
+        self,
+        rechercher,
+    ):
+        rechercher.return_value = []
+
+        lister_performances_campagnes_mensuelles(
+            "access-token",
+            "1234567890",
+            login_customer_id="9999999999",
+            date_debut=date(2016, 1, 1),
+            date_fin=date(2023, 6, 1),
+        )
+
+        query = rechercher.call_args.args[2]
+
+        self.assertIn(
+            "segments.month",
+            query,
+        )
+
+        self.assertNotIn(
+            "segments.date,",
+            query,
+        )
+
+        self.assertIn(
+            "segments.month BETWEEN "
+            "'2016-01-01' AND '2023-06-01'",
+            query,
+        )
+
+
+    @patch(
+        "predictor.google_ads_sync."
+        "lister_performances_campagnes"
+    )
+    @patch(
+        "predictor.google_ads_sync."
+        "lister_performances_campagnes_mensuelles"
+    )
+    def test_second_history_sync_uses_monthly_data(
+        self,
+        mensuel,
+        recent,
+    ):
+        configuration = dict(
+            self.compte.configuration
+        )
+
+        configuration[
+            "google_ads_historique_37_mois_importe"
+        ] = True
+
+        configuration[
+            "google_ads_historique_37_mois_debut"
+        ] = "2023-07-11"
+
+        configuration.pop(
+            "google_ads_historique_mensuel_11_ans_importe",
+            None,
+        )
+
+        self.compte.configuration = configuration
+
+        self.compte.save(
+            update_fields=[
+                "configuration",
+                "date_mise_a_jour",
+            ]
+        )
+
+        mensuel.return_value = []
+        recent.return_value = []
+
+        resultat = synchroniser_compte_google_ads(
+            self.compte
+        )
+
+        mensuel.assert_called_once()
+        recent.assert_not_called()
+
+        self.compte.refresh_from_db()
+
+        self.assertTrue(
+            self.compte.configuration[
+                "google_ads_historique_mensuel_11_ans_importe"
+            ]
+        )
+
+        self.assertIn(
+            "HISTORIQUE_MENSUEL_11_ANS",
             resultat["periode"],
         )

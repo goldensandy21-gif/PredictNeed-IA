@@ -45,11 +45,12 @@ def finaliser_synchronisation_native(
     campagnes,
     mesures,
     maintenant,
+    libelle_mesures="mesure(s) journalière(s)",
 ):
     compte.derniere_synchro = maintenant
     compte.dernier_message = (
         f"{campagnes} campagne(s) {label} et "
-        f"{mesures} mesure(s) journalière(s) synchronisées sur {periode}."
+        f"{mesures} {libelle_mesures} synchronisée(s) sur {periode}."
     )
     compte.save(
         update_fields=[

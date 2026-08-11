@@ -669,3 +669,79 @@ def lister_performances_campagnes_intervalle(
         query,
         login_customer_id=login_customer_id,
     )
+
+
+def lister_performances_campagnes_mensuelles(
+    access_token,
+    customer_id,
+    *,
+    login_customer_id="",
+    date_debut,
+    date_fin,
+):
+    """
+    Récupère les performances Google Ads avec une granularité
+    mensuelle pour l'historique antérieur aux 37 mois.
+    """
+
+    if not isinstance(date_debut, date):
+        try:
+            date_debut = date.fromisoformat(str(date_debut))
+        except ValueError as exc:
+            raise ValueError(
+                "Date de début mensuelle Google Ads invalide."
+            ) from exc
+
+    if not isinstance(date_fin, date):
+        try:
+            date_fin = date.fromisoformat(str(date_fin))
+        except ValueError as exc:
+            raise ValueError(
+                "Date de fin mensuelle Google Ads invalide."
+            ) from exc
+
+    date_debut = date(
+        date_debut.year,
+        date_debut.month,
+        1,
+    )
+
+    date_fin = date(
+        date_fin.year,
+        date_fin.month,
+        1,
+    )
+
+    if date_debut > date_fin:
+        return []
+
+    query = (
+        "SELECT "
+        "segments.month, "
+        "campaign.id, "
+        "campaign.name, "
+        "campaign.status, "
+        "campaign.advertising_channel_type, "
+        "metrics.impressions, "
+        "metrics.clicks, "
+        "metrics.ctr, "
+        "metrics.average_cpc, "
+        "metrics.conversions, "
+        "metrics.conversions_value, "
+        "metrics.all_conversions, "
+        "metrics.all_conversions_value, "
+        "metrics.cost_per_conversion, "
+        "metrics.cost_micros "
+        "FROM campaign "
+        f"WHERE segments.month BETWEEN "
+        f"'{date_debut.isoformat()}' "
+        f"AND '{date_fin.isoformat()}' "
+        "ORDER BY segments.month, campaign.id"
+    )
+
+    return rechercher(
+        access_token,
+        customer_id,
+        query,
+        login_customer_id=login_customer_id,
+    )
