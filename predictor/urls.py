@@ -59,6 +59,10 @@ urlpatterns = [
         name='password_reset_complete',
     ),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/visiteurs/', views.dashboard, name='dashboard_visiteurs'),
+    path('dashboard/sources-trafic/', views.dashboard, name='dashboard_sources_trafic'),
+    path('dashboard/pages-parcours/', views.dashboard, name='dashboard_pages_parcours'),
+    path('dashboard/profils/', views.dashboard, name='dashboard_profils'),
     path('dashboard/parametres/', views.dashboard_parametres, name='dashboard_parametres'),
     path('dashboard/nettoyer-evenements/', views.nettoyer_evenements, name='nettoyer_evenements'),
 

@@ -1603,7 +1603,17 @@ def dashboard(request):
         ml_conversions = resultats_ml["positives"]
         ml_pertes = resultats_ml["negatives"]
 
-    return render(request, "predictor/dashboard.html", {
+    dashboard_template = {
+        "dashboard_visiteurs": "predictor/dashboard_visiteurs.html",
+        "dashboard_sources_trafic": "predictor/dashboard_sources_trafic.html",
+        "dashboard_pages_parcours": "predictor/dashboard_pages_parcours.html",
+        "dashboard_profils": "predictor/dashboard_profils.html",
+    }.get(
+        request.resolver_match.url_name,
+        "predictor/dashboard.html",
+    )
+
+    return render(request, dashboard_template, {
         "nom_client": nom_client,
         "sites_disponibles": sites_disponibles,
         "selected_site": selected_site,

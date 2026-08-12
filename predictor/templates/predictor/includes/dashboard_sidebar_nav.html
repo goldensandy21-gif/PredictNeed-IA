@@ -13,32 +13,32 @@
         <p class="pn-nav-section-title">Analyse</p>
 
         <a
-            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=analyse-visiteurs{% else %}?scroll=analyse-visiteurs{% endif %}"
-            class="pn-nav-link"
+            href="{% url 'dashboard_visiteurs' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'dashboard_visiteurs' %}active{% endif %}"
         >
             <i class="bi bi-people"></i>
             <span>Visiteurs</span>
         </a>
 
         <a
-            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=sources-trafic{% else %}?scroll=sources-trafic{% endif %}"
-            class="pn-nav-link"
+            href="{% url 'dashboard_sources_trafic' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'dashboard_sources_trafic' %}active{% endif %}"
         >
             <i class="bi bi-diagram-3"></i>
             <span>Sources de trafic</span>
         </a>
 
         <a
-            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=parcours-visiteurs{% else %}?scroll=parcours-visiteurs{% endif %}"
-            class="pn-nav-link"
+            href="{% url 'dashboard_pages_parcours' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'dashboard_pages_parcours' %}active{% endif %}"
         >
             <i class="bi bi-signpost-split"></i>
             <span>Pages & parcours</span>
         </a>
 
         <a
-            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=profils{% else %}?scroll=profils{% endif %}"
-            class="pn-nav-link"
+            href="{% url 'dashboard_profils' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'dashboard_profils' %}active{% endif %}"
         >
             <i class="bi bi-person-badge"></i>
             <span>Profils détectés</span>
