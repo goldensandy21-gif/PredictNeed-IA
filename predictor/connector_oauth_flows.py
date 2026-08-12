@@ -68,6 +68,9 @@ def creer_flux_selection_compte(
         "refresh_token_signe": signer_token(refresh_token),
         "token_type": token_payload.get("token_type", "Bearer"),
         "expires_in": token_payload.get("expires_in"),
+        "oauth_user_id": str(
+            token_payload.get("oauth_user_id") or ""
+        ).strip(),
         "comptes": comptes,
     }
 

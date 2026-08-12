@@ -150,6 +150,23 @@ def _requete_graph(
     return payload
 
 
+def obtenir_identite_meta(access_token):
+    payload = _requete_graph(
+        "/me",
+        access_token=access_token,
+        params={"fields": "id"},
+    )
+
+    user_id = str(payload.get("id") or "").strip()
+
+    if not user_id or not user_id.isdigit():
+        raise MetaAdsAPIError(
+            "Identifiant utilisateur Meta invalide."
+        )
+
+    return user_id
+
+
 def normaliser_account_id_meta(value):
     account_id = str(value or "").strip()
 

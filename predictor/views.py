@@ -63,6 +63,7 @@ from .meta_ads_api import (
     MetaAdsAPIError,
     MetaAdsConfigurationError,
     lister_comptes_publicitaires_meta,
+    obtenir_identite_meta,
 )
 from .meta_ads_sync import synchroniser_compte_meta_ads
 from .linkedin_ads_api import (
@@ -3698,6 +3699,9 @@ def connecteur_oauth_callback(request, plateforme):
             )
 
         try:
+            token_payload["oauth_user_id"] = obtenir_identite_meta(
+                access_token
+            )
             comptes_meta_ads = (
                 lister_comptes_publicitaires_meta(
                     access_token
@@ -3993,6 +3997,12 @@ def _selectionner_compte_publicitaire(
                 selection,
                 identifiant,
             )
+
+            oauth_user_id = str(
+                pending.get("oauth_user_id") or ""
+            ).strip()
+            if oauth_user_id:
+                configuration["oauth_user_id"] = oauth_user_id
             compte, _ = upsert_compte_selectionne(
                 client=client,
                 site=site,

@@ -1,12 +1,18 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from . import meta_data_deletion
 
 urlpatterns = [
     path('', views.accueil, name='accueil'),
     path('robots.txt', views.robots_txt, name='robots_txt'),
     path('sitemap.xml', views.sitemap_xml, name='sitemap_xml'),
     path('healthz/', views.health_check, name='health_check'),
+    path(
+        "meta/suppression-donnees/callback/",
+        meta_data_deletion.meta_suppression_donnees_callback,
+        name="meta_suppression_donnees_callback",
+    ),
     path('a-propos/', views.a_propos, name='a_propos'),
     path('contact/', views.contact, name='contact'),
     path('newsletter/inscription/', views.newsletter_inscription, name='newsletter_inscription'),
