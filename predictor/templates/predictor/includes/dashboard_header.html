@@ -2,11 +2,31 @@
     <a href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}" class="dashboard-header-logo">PredictNeed IA</a>
 
     <nav class="dashboard-header-links" aria-label="Navigation espace client">
-        <a href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}">Vue d'ensemble</a>
-        <a href="{% url 'module_connecteurs' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}">Connecteurs</a>
-        <a href="{% url 'module_multicanal' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}">Multi-canal</a>
-        <a href="{% url 'module_publicite' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}">Publicité</a>
-        <a href="{% url 'dashboard_parametres' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}">Mon profil</a>
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            {% if request.resolver_match.url_name == 'dashboard' %}class="is-active" aria-current="page"{% endif %}
+        >Vue d'ensemble</a>
+
+        <a
+            href="{% url 'module_connecteurs' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            {% if request.resolver_match.url_name == 'module_connecteurs' %}class="is-active" aria-current="page"{% endif %}
+        >Connecteurs</a>
+
+        <a
+            href="{% url 'module_multicanal' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            {% if request.resolver_match.url_name == 'module_multicanal' %}class="is-active" aria-current="page"{% endif %}
+        >Multi-canal</a>
+
+        <a
+            href="{% url 'module_publicite' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            {% if request.resolver_match.url_name == 'module_publicite' %}class="is-active" aria-current="page"{% endif %}
+        >Publicité</a>
+
+        <a
+            href="{% url 'dashboard_parametres' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            {% if request.resolver_match.url_name == 'dashboard_parametres' %}class="is-active" aria-current="page"{% endif %}
+        >Mon profil</a>
+
         <a href="{% url 'accueil' %}">Retour au site</a>
 
         {% if request.user.is_superuser %}

@@ -8648,3 +8648,54 @@ body.dashboard-page .dashboard-overview > #leads.dashboard-collapsible {
     color: #64748b;
     font-size: 0.75rem;
 }
+
+
+/* ===== NAV ACTIVE + CONTRASTE MODULES ===== */
+
+/* État normal des rubriques */
+.dashboard-header-links a {
+    border: 1px solid transparent !important;
+    border-radius: 10px !important;
+    transition:
+        color 0.18s ease,
+        background 0.18s ease,
+        border-color 0.18s ease !important;
+}
+
+/* Rubrique correspondant à la page actuellement affichée */
+.dashboard-header-links a.is-active,
+.dashboard-header-links a[aria-current="page"] {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+    background: #e2e8f0 !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: inset 0 -3px 0 #0284c7 !important;
+}
+
+/* Textes secondaires des pages dashboard/modules : plus lisibles */
+.dashboard.module-page .dashboard-intro,
+.dashboard.module-page .section-description,
+.dashboard.module-page .module-panel p,
+.dashboard.module-page .connector-provider-card p,
+.dashboard.module-page .connector-account-card p,
+.dashboard.module-page .connector-help-card p,
+.dashboard.module-page .connector-payment-card p,
+.dashboard.module-page .connector-scopes,
+.dashboard.module-page .module-panel-header span:not(.module-status),
+.dashboard.module-page .module-row-bar > span,
+.dashboard.module-page .chart-row > span,
+.dashboard.module-page .settings-summary-grid span,
+.dashboard.module-page .settings-summary-grid p {
+    color: #1f2937 !important;
+    -webkit-text-fill-color: #1f2937 !important;
+}
+
+/* Chiffres et valeurs : presque noir */
+.dashboard.module-page .module-panel-header h2,
+.dashboard.module-page .module-row-bar > strong,
+.dashboard.module-page .chart-row > strong,
+.dashboard.module-page .settings-summary-grid strong,
+.dashboard.module-page .stat-card h2 {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+}
