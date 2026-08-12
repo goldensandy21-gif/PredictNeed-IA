@@ -322,9 +322,9 @@ def lister_campagnes_linkedin(access_token, account_id):
         params = {
             "q": "search",
             "search": (
-                "status:(values:List("
+                "(status:(values:List("
                 f"{','.join(LINKEDIN_CAMPAIGN_STATUSES)}"
-                "))"
+                ")))"
             ),
             "pageSize": 100,
         }
