@@ -1,0 +1,151 @@
+<nav class="pn-sidebar-nav">
+
+    <div class="pn-nav-main">
+
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+        >
+            <i class="bi bi-grid"></i>
+            <span>Vue d'ensemble</span>
+        </a>
+
+        <p class="pn-nav-section-title">Analyse</p>
+
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=analyse-visiteurs{% else %}?scroll=analyse-visiteurs{% endif %}"
+            class="pn-nav-link"
+        >
+            <i class="bi bi-people"></i>
+            <span>Visiteurs</span>
+        </a>
+
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=sources-trafic{% else %}?scroll=sources-trafic{% endif %}"
+            class="pn-nav-link"
+        >
+            <i class="bi bi-diagram-3"></i>
+            <span>Sources de trafic</span>
+        </a>
+
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=parcours-visiteurs{% else %}?scroll=parcours-visiteurs{% endif %}"
+            class="pn-nav-link"
+        >
+            <i class="bi bi-signpost-split"></i>
+            <span>Pages & parcours</span>
+        </a>
+
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=profils{% else %}?scroll=profils{% endif %}"
+            class="pn-nav-link"
+        >
+            <i class="bi bi-person-badge"></i>
+            <span>Profils détectés</span>
+        </a>
+
+        <a
+            href="{% url 'module_prediction_avancee' %}?site={{ selected_site_id }}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'module_prediction_avancee' %}active{% endif %}"
+        >
+            <i class="bi bi-stars"></i>
+            <span>Prédictions</span>
+        </a>
+
+        <p class="pn-nav-section-title">Commercial</p>
+
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=messages-visiteurs{% else %}?scroll=messages-visiteurs{% endif %}"
+            class="pn-nav-link"
+        >
+            <i class="bi bi-chat-left-text"></i>
+            <span>Messages</span>
+        </a>
+
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=leads{% else %}?scroll=leads{% endif %}"
+            class="pn-nav-link"
+        >
+            <i class="bi bi-person-check"></i>
+            <span>Leads</span>
+        </a>
+
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=opportunites{% else %}?scroll=opportunites{% endif %}"
+            class="pn-nav-link"
+        >
+            <i class="bi bi-briefcase"></i>
+            <span>Opportunités</span>
+        </a>
+
+        <p class="pn-nav-section-title">Performance</p>
+
+        <a
+            href="{% url 'module_multicanal' %}?site={{ selected_site_id }}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'module_multicanal' %}active{% endif %}"
+        >
+            <i class="bi bi-share"></i>
+            <span>Multi-canal</span>
+        </a>
+
+        <a
+            href="{% url 'module_publicite' %}?site={{ selected_site_id }}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'module_publicite' %}active{% endif %}"
+        >
+            <i class="bi bi-megaphone"></i>
+            <span>Publicité</span>
+        </a>
+
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=automatisations{% else %}?scroll=automatisations{% endif %}"
+            class="pn-nav-link"
+        >
+            <i class="bi bi-lightning-charge"></i>
+            <span>Automatisations</span>
+        </a>
+
+    </div>
+
+    <div class="pn-nav-bottom">
+
+        <a
+            href="{% url 'module_connecteurs' %}?site={{ selected_site_id }}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'module_connecteurs' %}active{% endif %}"
+        >
+            <i class="bi bi-plug"></i>
+            <span>Connecteurs</span>
+        </a>
+
+        <a
+            href="{% url 'dashboard_parametres' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'dashboard_parametres' %}active{% endif %}"
+        >
+            <i class="bi bi-gear"></i>
+            <span>Paramètres</span>
+        </a>
+
+        {% if request.user.is_superuser %}
+            <a
+                href="/admin/"
+                target="_blank"
+                rel="noopener"
+                class="pn-nav-link"
+            >
+                <i class="bi bi-shield-lock"></i>
+                <span>Admin</span>
+            </a>
+        {% endif %}
+
+        <a href="{% url 'accueil' %}" class="pn-nav-link">
+            <i class="bi bi-box-arrow-up-right"></i>
+            <span>Retour au site</span>
+        </a>
+
+        <a href="{% url 'deconnexion' %}" class="pn-nav-link pn-nav-logout">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Déconnexion</span>
+        </a>
+
+    </div>
+
+</nav>

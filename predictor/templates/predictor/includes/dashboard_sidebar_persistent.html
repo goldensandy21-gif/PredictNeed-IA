@@ -1,0 +1,78 @@
+
+<div class="pn-mobile-topbar d-lg-none sticky-top">
+    <button
+        class="btn pn-mobile-menu-button"
+        type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#pnDashboardMenu"
+        aria-controls="pnDashboardMenu"
+        aria-label="Ouvrir le menu"
+    >
+        <i class="bi bi-list"></i>
+    </button>
+
+    <a
+        href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+        class="pn-mobile-brand"
+    >
+        <span class="pn-brand-mark">PN</span>
+        <span>PredictNeed IA</span>
+    </a>
+</div>
+
+<div
+    class="offcanvas offcanvas-start pn-sidebar-offcanvas d-lg-none"
+    tabindex="-1"
+    id="pnDashboardMenu"
+>
+    <div class="offcanvas-header">
+        <div class="pn-sidebar-brand">
+            <span class="pn-brand-mark">PN</span>
+            <div class="pn-brand-copy">
+                <strong>PredictNeed IA</strong>
+                <small>Intelligence commerciale</small>
+            </div>
+        </div>
+
+        <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="offcanvas"
+            aria-label="Fermer"
+        ></button>
+    </div>
+
+    <div class="offcanvas-body p-0">
+        {% include "predictor/includes/dashboard_sidebar_nav.html" %}
+    </div>
+</div>
+
+<aside class="pn-sidebar pn-sidebar-fixed d-none d-lg-flex flex-column">
+
+    <div class="pn-sidebar-brand-row">
+        <a
+            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-sidebar-brand text-decoration-none"
+        >
+            <span class="pn-brand-mark">PN</span>
+
+            <div class="pn-brand-copy">
+                <strong>PredictNeed IA</strong>
+                <small>Intelligence commerciale</small>
+            </div>
+        </a>
+
+        <button
+            type="button"
+            class="pn-sidebar-collapse-button"
+            id="pnSidebarCollapse"
+            aria-label="Réduire le menu"
+            title="Réduire le menu"
+        >
+            <i class="bi bi-chevron-left"></i>
+        </button>
+    </div>
+
+    {% include "predictor/includes/dashboard_sidebar_nav.html" %}
+
+</aside>

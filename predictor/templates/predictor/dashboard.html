@@ -6,44 +6,28 @@
     <meta charset="UTF-8">
     <title>Dashboard - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+        crossorigin="anonymous"
+    >
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    >
+
     <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=118">
     <link rel="stylesheet" href="{% static 'predictor/dashboard_overrides.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'predictor/dashboard_bootstrap.css' %}?v=1">
 </head>
-<body class="dashboard-page">
+<body class="dashboard-page dashboard-bootstrap-page pn-has-sidebar">
 
-{% include "predictor/includes/dashboard_header.html" %}
+{% include "predictor/includes/dashboard_sidebar_persistent.html" %}
 
-    <div class="dashboard-shell">
-        <aside class="dashboard-sidebar" aria-label="Navigation du dashboard">
-            <p class="dashboard-sidebar-title">Dashboard</p>
-            <nav class="dashboard-sidebar-nav">
-                <a href="#vue-ensemble">Vue d'ensemble</a>
-                <a href="#modules-intelligents">Modules actifs</a>
-                <a href="#analyse-visiteurs">Analyse visiteurs</a>
-                <a href="#parcours-visiteurs">Pages regardées</a>
-                <a href="#messages-visiteurs">Messages visiteurs</a>
-                <a href="#opportunites">Opportunités</a>
-                <a href="#leads">Leads</a>
-                <a href="#automatisations">Automatisations</a>
-                <a href="#installation">Installation</a>
-                <a href="{% url 'dashboard_parametres' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}">Mon profil</a>
-            </nav>
-
-            <p class="dashboard-sidebar-title">Modules</p>
-            <nav class="dashboard-sidebar-nav module-links">
-                <a href="{% url 'module_prediction_avancee' %}?site={{ selected_site_id }}" class="{% if not a_module_prediction_avancee %}muted{% endif %}">Prédiction avancée</a>
-                <a href="{% url 'module_segmentation' %}?site={{ selected_site_id }}" class="{% if not a_module_segmentation %}muted{% endif %}">Segmentation</a>
-                <a href="{% url 'module_ecommerce' %}?site={{ selected_site_id }}" class="{% if not a_module_ecommerce %}muted{% endif %}">E-commerce</a>
-                <a href="{% url 'module_visualisations' %}?site={{ selected_site_id }}" class="{% if not a_module_visualisations %}muted{% endif %}">Visualisations</a>
-                <a href="{% url 'module_historique' %}?site={{ selected_site_id }}" class="{% if not a_module_historique %}muted{% endif %}">Historique</a>
-                <a href="{% url 'module_multicanal' %}?site={{ selected_site_id }}" class="{% if not a_module_multicanal %}muted{% endif %}">Multi-canal</a>
-                <a href="{% url 'module_connecteurs' %}?site={{ selected_site_id }}" class="{% if not a_module_connecteurs %}muted{% endif %}">Connecteurs</a>
-                <a href="{% url 'module_publicite' %}?site={{ selected_site_id }}" class="{% if not a_module_publicite %}muted{% endif %}">Publicité</a>
-                <a href="{% url 'module_securite' %}?site={{ selected_site_id }}" class="{% if not a_module_securite_entreprise %}muted{% endif %}">Sécurité</a>
-            </nav>
-        </aside>
-
-    <main class="dashboard dashboard-overview" id="vue-ensemble">
+<main class="dashboard dashboard-overview pn-dashboard-main flex-grow-1" id="vue-ensemble">
 {% if user.is_authenticated and not user.is_superuser %}
     {% with compte=user.client_professionnel %}
         {% if compte.statut_abonnement == "essai" %}
@@ -67,22 +51,17 @@
     {% endwith %}
 {% endif %}
 
-        <div class="dashboard-topbar">
+        <div class="dashboard-topbar pn-overview-header">
             <div>
                 <p class="dashboard-eyebrow">Espace client</p>
                 <h1>Dashboard PredictNeed IA</h1>
                 <p class="dashboard-intro">Espace : {{ nom_client }}</p>
             </div>
 
-            <div class="dashboard-actions">
-                <a href="{% url 'ajouter_site' %}" class="hero-button">
+            <div class="dashboard-actions pn-overview-actions">
+                <a href="{% url 'ajouter_site' %}" class="hero-button pn-add-site-button">
+                    <i class="bi bi-plus-lg"></i>
                     Ajouter un site
-                </a>
-                <a href="{% url 'dashboard_parametres' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}" class="btn-secondary">
-                    Mon profil
-                </a>
-                <a href="{% url 'accueil' %}" class="btn-secondary dashboard-return-site">
-                    Retour au site
                 </a>
             </div>
         </div>
@@ -173,31 +152,56 @@
             </div>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
+        <div class="stats-grid dashboard-kpi-grid">
+
+            <div class="stat-card pn-kpi-card">
+                <div class="pn-kpi-heading">
+                    <span class="pn-kpi-icon"><i class="bi bi-window-stack"></i></span>
+                    <span>Sites connectés</span>
+                </div>
                 <h2>{{ total_sites }}</h2>
-                <p>Sites connectés</p>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card pn-kpi-card">
+                <div class="pn-kpi-heading">
+                    <span class="pn-kpi-icon"><i class="bi bi-people"></i></span>
+                    <span>Sessions visiteurs</span>
+                </div>
                 <h2>{{ total_sessions }}</h2>
-                <p>Sessions visiteurs</p>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card pn-kpi-card">
+                <div class="pn-kpi-heading">
+                    <span class="pn-kpi-icon"><i class="bi bi-bullseye"></i></span>
+                    <span>Intentions fortes</span>
+                </div>
                 <h2>{{ intentions_fortes }}</h2>
-                <p>Intentions fortes</p>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card pn-kpi-card">
+                <div class="pn-kpi-heading">
+                    <span class="pn-kpi-icon"><i class="bi bi-person-check"></i></span>
+                    <span>Leads capturés</span>
+                </div>
                 <h2>{{ total_leads }}</h2>
-                <p>Leads capturés</p>
             </div>
+
         </div>
 
         {% if a_module_ecommerce or a_module_prediction_avancee or a_module_segmentation or a_module_visualisations or a_module_historique or a_module_multicanal or a_module_connecteurs or a_module_publicite or a_module_securite_entreprise %}
-        <div class="dashboard-section" id="modules-intelligents">
-            <h2>Modules actifs pour le site sélectionné</h2>
+        <div class="dashboard-section pn-modules-section" id="modules-intelligents">
+            <div class="pn-section-heading">
+                <div>
+                    <span class="pn-section-kicker">Configuration active</span>
+                    <h2>
+                        Modules actifs
+                        {% if selected_site %}
+                            — {{ selected_site.nom_site }}
+                        {% endif %}
+                    </h2>
+                </div>
+                <i class="bi bi-grid-1x2"></i>
+            </div>
 
             <div class="stats-grid">
                 {% if a_module_ecommerce %}
@@ -1159,7 +1163,12 @@
 
                 <a href="{% url 'accueil' %}" class="btn-secondary dashboard-return-site dashboard-return-site-bottom">Retour au site</a>
     </main>
-    </div>
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"
+    ></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -1375,5 +1384,6 @@
 
 {% include "predictor/includes/footer.html" %}
 
+    <script src="{% static 'predictor/dashboard_sidebar.js' %}?v=1"></script>
 </body>
 </html>
