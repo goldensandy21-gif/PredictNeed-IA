@@ -746,6 +746,11 @@ def mentions_legales(request):
     )
 
 
+
+def suppression_donnees(request):
+    return render(request, "predictor/suppression_donnees.html")
+
+
 def politique_confidentialite(request):
     return render(
         request,

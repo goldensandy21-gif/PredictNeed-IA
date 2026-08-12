@@ -143,6 +143,7 @@ urlpatterns = [
     path('guide-utilisation/', views.guide_utilisation, name='guide_utilisation'),
     path('mentions-legales/', views.mentions_legales, name='mentions_legales'),
     path('politique-de-confidentialite/', views.politique_confidentialite, name='politique_confidentialite'),
+    path('suppression-des-donnees/', views.suppression_donnees, name='suppression_donnees'),
     path('conditions-generales-utilisation/', views.conditions_generales_utilisation, name='conditions_generales_utilisation'),
     path('politique-cookies/', views.politique_cookies, name='politique_cookies'),
     path(
