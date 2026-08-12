@@ -1608,6 +1608,10 @@ def dashboard(request):
         "dashboard_sources_trafic": "predictor/dashboard_sources_trafic.html",
         "dashboard_pages_parcours": "predictor/dashboard_pages_parcours.html",
         "dashboard_profils": "predictor/dashboard_profils.html",
+        "dashboard_messages": "predictor/dashboard_messages.html",
+        "dashboard_leads": "predictor/dashboard_leads.html",
+        "dashboard_opportunites": "predictor/dashboard_opportunites.html",
+        "dashboard_automatisations": "predictor/dashboard_automatisations.html",
     }.get(
         request.resolver_match.url_name,
         "predictor/dashboard.html",
@@ -1813,7 +1817,7 @@ def creer_opportunite_depuis_lead(request, lead_id):
             "Ce lead n'appartient pas au site sélectionné.",
         )
         return redirect(
-            f"{reverse('dashboard')}?site={site.pk}&scroll=leads"
+            f"{reverse('dashboard_leads')}?site={site.pk}"
         )
 
     opportunite_existante = OpportuniteCRM.objects.filter(lead=lead).first()
@@ -1852,7 +1856,7 @@ def creer_opportunite_depuis_lead(request, lead_id):
         })
 
     return redirect(
-        f"{reverse('dashboard')}?site={site.pk}&scroll=opportunites"
+        f"{reverse('dashboard_opportunites')}?site={site.pk}"
     )
 
 @login_required
@@ -1883,7 +1887,7 @@ def modifier_opportunite(request, opportunite_id):
             "Cette opportunité n'appartient pas au site sélectionné.",
         )
         return redirect(
-            f"{reverse('dashboard')}?site={site.pk}&scroll=opportunites"
+            f"{reverse('dashboard_opportunites')}?site={site.pk}"
         )
 
     montant = request.POST.get("montant_estime", "0").replace(",", ".")
@@ -1993,7 +1997,7 @@ def modifier_opportunite(request, opportunite_id):
         }, status=400 if vente_erreur else 200)
 
     return redirect(
-        f"{reverse('dashboard')}?site={site.pk}&scroll=opportunites"
+        f"{reverse('dashboard_opportunites')}?site={site.pk}"
     )
 
 
@@ -2034,7 +2038,7 @@ def modifier_automatisation_email(request, automatisation_id):
             "Cette automatisation n'appartient pas au site sélectionné.",
         )
         return redirect(
-            f"{reverse('dashboard')}?site={site.pk}&scroll=automatisations"
+            f"{reverse('dashboard_automatisations')}?site={site.pk}"
         )
 
     automatisation.nom = (
@@ -2115,7 +2119,7 @@ def modifier_automatisation_email(request, automatisation_id):
         )
 
     return redirect(
-        f"{reverse('dashboard')}?site={site.pk}&scroll=automatisations"
+        f"{reverse('dashboard_automatisations')}?site={site.pk}"
     )
 
 @login_required
@@ -4565,11 +4569,38 @@ def module_connecteurs(request):
     base_url = request.build_absolute_uri("/").rstrip("/")
 
     scripts_installation = []
+    sites_onboarding = []
 
+    # sites_onboarding_connecteurs_marker
     for site in scope["sites_filtres"]:
+        nb_sessions_site = sessions.filter(site=site).count()
+        nb_leads_site = leads.filter(site=site).count()
+
+        site_est_actif = nb_sessions_site > 0
+        site_est_installe = bool(
+            site.script_installe_le
+        ) or site_est_actif
+
+        if site_est_actif:
+            statut_site = "Site actif"
+        elif site_est_installe:
+            statut_site = "Script installé"
+        else:
+            statut_site = "En attente d’installation"
+
         scripts_installation.append({
             "site": site,
             "script": generer_script_installation_site(base_url, site),
+        })
+
+        sites_onboarding.append({
+            "site": site,
+            "statut": statut_site,
+            "est_actif": site_est_actif,
+            "est_installe": site_est_installe,
+            "derniere_detection": site.derniere_detection_script,
+            "nb_sessions": nb_sessions_site,
+            "nb_leads": nb_leads_site,
         })
 
     fournisseurs = statut_configuration_fournisseurs()
@@ -4648,6 +4679,8 @@ def module_connecteurs(request):
         "configuration_paiement": configuration_paiement,
         "comptes_externes": comptes_externes,
         "scripts_installation": scripts_installation,
+        "sites_onboarding": sites_onboarding,
+        "total_sites": scope["sites_filtres"].count(),
     })
 
 

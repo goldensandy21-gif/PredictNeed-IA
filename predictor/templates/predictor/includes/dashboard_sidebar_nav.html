@@ -55,24 +55,24 @@
         <p class="pn-nav-section-title">Commercial</p>
 
         <a
-            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=messages-visiteurs{% else %}?scroll=messages-visiteurs{% endif %}"
-            class="pn-nav-link"
+            href="{% url 'dashboard_messages' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'dashboard_messages' %}active{% endif %}"
         >
             <i class="bi bi-chat-left-text"></i>
             <span>Messages</span>
         </a>
 
         <a
-            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=leads{% else %}?scroll=leads{% endif %}"
-            class="pn-nav-link"
+            href="{% url 'dashboard_leads' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'dashboard_leads' %}active{% endif %}"
         >
             <i class="bi bi-person-check"></i>
             <span>Leads</span>
         </a>
 
         <a
-            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=opportunites{% else %}?scroll=opportunites{% endif %}"
-            class="pn-nav-link"
+            href="{% url 'dashboard_opportunites' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'dashboard_opportunites' %}active{% endif %}"
         >
             <i class="bi bi-briefcase"></i>
             <span>Opportunités</span>
@@ -97,8 +97,8 @@
         </a>
 
         <a
-            href="{% url 'dashboard' %}{% if selected_site_id %}?site={{ selected_site_id }}&scroll=automatisations{% else %}?scroll=automatisations{% endif %}"
-            class="pn-nav-link"
+            href="{% url 'dashboard_automatisations' %}{% if selected_site_id %}?site={{ selected_site_id }}{% endif %}"
+            class="pn-nav-link {% if request.resolver_match.url_name == 'dashboard_automatisations' %}active{% endif %}"
         >
             <i class="bi bi-lightning-charge"></i>
             <span>Automatisations</span>

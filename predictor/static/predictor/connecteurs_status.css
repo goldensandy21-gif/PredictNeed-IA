@@ -1,0 +1,235 @@
+/* =========================================================
+   STATUT DU SITE — PAGE CONNECTEURS UNIQUEMENT
+   N'affecte ni la sidebar, ni la Vue d'ensemble,
+   ni les autres modules.
+   ========================================================= */
+
+body.pn-connecteurs-status-page #statut-sites {
+    width: 100%;
+    margin: 26px 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #dbe3ef;
+    border-radius: 22px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+
+/* Barre de titre */
+
+body.pn-connecteurs-status-page #statut-sites > summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 50px;
+    align-items: center;
+    gap: 24px;
+    min-height: 92px;
+    padding: 24px 32px;
+    list-style: none;
+    cursor: pointer;
+}
+
+body.pn-connecteurs-status-page #statut-sites > summary::-webkit-details-marker {
+    display: none;
+}
+
+body.pn-connecteurs-status-page #statut-sites > summary::marker {
+    display: none;
+}
+
+body.pn-connecteurs-status-page #statut-sites > summary > span {
+    color: #0f172a !important;
+    font-size: clamp(1.45rem, 2.3vw, 2.2rem) !important;
+    font-weight: 850 !important;
+    line-height: 1.12;
+}
+
+body.pn-connecteurs-status-page #statut-sites > summary > small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: #dff2ff;
+    color: #075985 !important;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    white-space: nowrap;
+}
+
+
+/* Bouton rond + / - */
+
+body.pn-connecteurs-status-page #statut-sites > summary::after {
+    content: "+";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 1.8rem;
+    font-weight: 500;
+    line-height: 1;
+}
+
+body.pn-connecteurs-status-page #statut-sites[open] > summary::after {
+    content: "−";
+}
+
+
+/* Contenu ouvert */
+
+body.pn-connecteurs-status-page #statut-sites .dashboard-collapsible-body {
+    padding: 0 32px 32px;
+}
+
+body.pn-connecteurs-status-page #statut-sites .site-status-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+}
+
+
+/* Grande carte du site */
+
+body.pn-connecteurs-status-page #statut-sites .site-status-card {
+    min-height: 290px;
+    padding: 48px 56px;
+    border: 1px solid #dbe3ef;
+    border-radius: 20px;
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+body.pn-connecteurs-status-page #statut-sites .site-status-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+body.pn-connecteurs-status-page #statut-sites .site-status-header h3 {
+    margin: 0 0 8px !important;
+    color: #1f2937 !important;
+    font-size: clamp(1.6rem, 2.3vw, 2.45rem) !important;
+    font-weight: 750 !important;
+    line-height: 1.12;
+}
+
+body.pn-connecteurs-status-page #statut-sites .site-status-header p {
+    margin: 0 !important;
+    color: #1f2937 !important;
+    font-size: clamp(1rem, 1.4vw, 1.32rem) !important;
+}
+
+
+/* Badge Site actif / installation */
+
+body.pn-connecteurs-status-page #statut-sites .status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    white-space: nowrap;
+}
+
+body.pn-connecteurs-status-page #statut-sites .status-badge.active {
+    background: #dcfce7 !important;
+    color: #166534 !important;
+}
+
+body.pn-connecteurs-status-page #statut-sites .status-badge.pending {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+}
+
+
+/* Compteurs sessions / leads */
+
+body.pn-connecteurs-status-page #statut-sites .site-status-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 46px;
+}
+
+body.pn-connecteurs-status-page #statut-sites .site-status-stats span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 15px;
+    border: 1px solid #cfe0ff !important;
+    border-radius: 999px;
+    background: #eaf2ff !important;
+    color: #1d4ed8 !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+}
+
+
+/* Phrase d'état */
+
+body.pn-connecteurs-status-page #statut-sites .status-help {
+    margin: 46px 0 0 !important;
+    font-size: 1.05rem !important;
+    line-height: 1.5;
+}
+
+body.pn-connecteurs-status-page #statut-sites .status-help.success {
+    color: #15803d !important;
+}
+
+body.pn-connecteurs-status-page #statut-sites .status-help.warning {
+    color: #b45309 !important;
+}
+
+
+/* Responsive */
+
+@media (max-width: 767.98px) {
+    body.pn-connecteurs-status-page #statut-sites > summary {
+        grid-template-columns: minmax(0, 1fr) 44px;
+        gap: 14px;
+        padding: 20px;
+    }
+
+    body.pn-connecteurs-status-page #statut-sites > summary > small {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-self: start;
+    }
+
+    body.pn-connecteurs-status-page #statut-sites > summary::after {
+        grid-column: 2;
+        grid-row: 1;
+        width: 44px;
+        height: 44px;
+    }
+
+    body.pn-connecteurs-status-page #statut-sites .dashboard-collapsible-body {
+        padding: 0 20px 20px;
+    }
+
+    body.pn-connecteurs-status-page #statut-sites .site-status-card {
+        min-height: 0;
+        padding: 28px 24px;
+    }
+
+    body.pn-connecteurs-status-page #statut-sites .site-status-header {
+        flex-direction: column;
+    }
+
+    body.pn-connecteurs-status-page #statut-sites .site-status-stats,
+    body.pn-connecteurs-status-page #statut-sites .status-help {
+        margin-top: 28px !important;
+    }
+}

@@ -1,0 +1,460 @@
+/* =========================================================
+   PREDICTNEED IA — VUE D'ENSEMBLE STATISTIQUE
+   Ce fichier ne modifie pas la sidebar ni les autres pages.
+   ========================================================= */
+
+body.pn-overview-v2 .dashboard-overview {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+}
+
+body.pn-overview-v2 .dashboard-overview > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    grid-column: auto !important;
+    order: initial !important;
+}
+
+body.pn-overview-v2 .dashboard-topbar {
+    margin-bottom: 18px !important;
+}
+
+body.pn-overview-v2 .dashboard-site-selector {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 0 18px !important;
+}
+
+body.pn-overview-v2 .dashboard-overview > .onboarding-card {
+    width: 100% !important;
+    margin: 0 0 24px !important;
+}
+
+
+/* Zone statistique */
+
+body.pn-overview-v2 .pn-overview-statistics {
+    width: 100%;
+    margin: 0 0 24px;
+}
+
+body.pn-overview-v2 .pn-overview-statistics-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 0 0 14px;
+}
+
+body.pn-overview-v2 .pn-overview-statistics-heading h2 {
+    margin: 2px 0 3px !important;
+    font-size: 1.45rem !important;
+}
+
+body.pn-overview-v2 .pn-overview-statistics-heading p {
+    margin: 0 !important;
+    font-size: .82rem !important;
+}
+
+body.pn-overview-v2 .pn-overview-kicker {
+    font-size: .7rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .68;
+}
+
+
+/* 4 KPI principaux */
+
+body.pn-overview-v2 .pn-overview-main-kpis {
+    margin-bottom: 4px;
+}
+
+body.pn-overview-v2 .pn-overview-kpi-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    min-height: 142px;
+    padding: 17px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .96);
+    text-decoration: none !important;
+    box-shadow: 0 5px 16px rgba(15, 23, 42, .05);
+    transition: transform .16s ease, box-shadow .16s ease;
+}
+
+body.pn-overview-v2 .pn-overview-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, .08);
+}
+
+body.pn-overview-v2 .pn-overview-kpi-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: .8rem;
+    font-weight: 750;
+}
+
+body.pn-overview-v2 .pn-overview-kpi-top i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    border-radius: 9px;
+    background: rgba(148, 163, 184, .12);
+    font-size: .95rem;
+}
+
+body.pn-overview-v2 .pn-overview-kpi-card > strong {
+    display: block;
+    margin: 12px 0 7px;
+    font-size: clamp(2rem, 3vw, 2.65rem) !important;
+    line-height: 1;
+    letter-spacing: -.04em;
+}
+
+body.pn-overview-v2 .pn-overview-kpi-card > small {
+    font-size: .72rem;
+    opacity: .7;
+}
+
+
+/* Rangées principales */
+
+body.pn-overview-v2 .pn-overview-dashboard-row {
+    margin-top: 2px;
+}
+
+body.pn-overview-v2 .pn-overview-panel {
+    height: 100%;
+    min-height: 230px;
+    padding: 18px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 5px 16px rgba(15, 23, 42, .045);
+}
+
+body.pn-overview-v2 .pn-overview-panel-large {
+    min-height: 260px;
+}
+
+body.pn-overview-v2 .pn-overview-panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 17px;
+}
+
+body.pn-overview-v2 .pn-overview-panel-heading span {
+    display: block;
+    margin-bottom: 3px;
+    font-size: .68rem !important;
+    font-weight: 800 !important;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    opacity: .62;
+}
+
+body.pn-overview-v2 .pn-overview-panel-heading h3 {
+    margin: 0 !important;
+    font-size: 1.02rem !important;
+}
+
+body.pn-overview-v2 .pn-overview-panel-heading > i {
+    font-size: 1.1rem;
+    opacity: .58;
+}
+
+
+/* Grandes métriques */
+
+body.pn-overview-v2 .pn-overview-metric-grid {
+    display: grid;
+    gap: 10px;
+}
+
+body.pn-overview-v2 .pn-overview-metric-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body.pn-overview-v2 .pn-overview-metric-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.pn-overview-v2 .pn-overview-metric {
+    min-width: 0;
+    padding: 13px;
+    border-radius: 11px;
+    background: rgba(148, 163, 184, .07);
+}
+
+body.pn-overview-v2 .pn-overview-metric span {
+    display: block;
+    min-height: 30px;
+    font-size: .72rem !important;
+    font-weight: 700 !important;
+    opacity: .72;
+}
+
+body.pn-overview-v2 .pn-overview-metric strong {
+    display: block;
+    margin-top: 7px;
+    font-size: clamp(1.35rem, 2vw, 1.85rem) !important;
+    line-height: 1.05;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+}
+
+body.pn-overview-v2 .pn-overview-metric small {
+    display: block;
+    margin-top: 6px;
+    font-size: .65rem;
+    opacity: .6;
+}
+
+
+/* Petites listes chiffrées */
+
+body.pn-overview-v2 .pn-overview-list-metrics,
+body.pn-overview-v2 .pn-overview-ranking {
+    display: grid;
+    gap: 8px;
+}
+
+body.pn-overview-v2 .pn-overview-list-metrics > div,
+body.pn-overview-v2 .pn-overview-ranking > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 38px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: rgba(148, 163, 184, .065);
+}
+
+body.pn-overview-v2 .pn-overview-list-metrics span,
+body.pn-overview-v2 .pn-overview-ranking span {
+    min-width: 0;
+    font-size: .75rem !important;
+    font-weight: 650 !important;
+}
+
+body.pn-overview-v2 .pn-overview-list-metrics strong,
+body.pn-overview-v2 .pn-overview-ranking strong {
+    flex: 0 0 auto;
+    font-size: 1rem !important;
+}
+
+
+/* Lien bas des panneaux */
+
+body.pn-overview-v2 .pn-overview-panel-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 15px;
+    font-size: .72rem;
+    font-weight: 750;
+    text-decoration: none !important;
+}
+
+
+/* Les anciens blocs encore présents restent en dessous,
+   sans pouvoir casser la nouvelle grille statistique. */
+
+body.pn-overview-v2 #modules-intelligents,
+body.pn-overview-v2 #moteur-prediction,
+body.pn-overview-v2 #ecommerce,
+body.pn-overview-v2 #statut-sites,
+body.pn-overview-v2 #nettoyage,
+body.pn-overview-v2 #installation {
+    width: 100% !important;
+    grid-column: auto !important;
+    order: initial !important;
+}
+
+
+/* Responsive */
+
+@media (max-width: 1199.98px) {
+    body.pn-overview-v2 .pn-overview-metric-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.pn-overview-v2 .pn-overview-metric-grid-4,
+    body.pn-overview-v2 .pn-overview-metric-grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    body.pn-overview-v2 .pn-overview-statistics-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+
+/* ===== EXPLICATION MOTEUR DE PREDICTION ===== */
+
+body.pn-overview-v2 .pn-prediction-explainer {
+    margin: -2px 0 16px;
+    padding: 12px 14px;
+    border-left: 3px solid #3b82f6;
+    border-radius: 9px;
+    background: #f8fafc;
+    color: #475569 !important;
+    font-size: 0.76rem !important;
+    line-height: 1.55;
+}
+
+
+/* =========================================================
+   VUE D'ENSEMBLE — AJUSTEMENT FINAL SANS SCROLL HORIZONTAL
+   ========================================================= */
+
+html,
+body.pn-overview-v2 {
+    max-width: 100%;
+    overflow-x: hidden !important;
+}
+
+/*
+   IMPORTANT :
+   pas de 100vw ici.
+   Avec width:auto, le navigateur utilise naturellement
+   tout l'espace restant après la sidebar.
+*/
+@media (min-width: 992px) {
+    body.pn-overview-v2 .pn-dashboard-main {
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+
+        margin-left: var(--pn-sidebar-width) !important;
+        margin-right: 0 !important;
+
+        padding-left: 22px !important;
+        padding-right: 22px !important;
+
+        box-sizing: border-box !important;
+    }
+}
+
+/* Toute la Vue d'ensemble doit rester dans son conteneur */
+body.pn-overview-v2 .dashboard-overview,
+body.pn-overview-v2 .dashboard-overview > *,
+body.pn-overview-v2 .pn-overview-statistics,
+body.pn-overview-v2 #modules-intelligents,
+body.pn-overview-v2 .pn-prediction-bottom-row {
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Neutralise les débordements Bootstrap des .row */
+body.pn-overview-v2 .pn-overview-statistics .row,
+body.pn-overview-v2 .pn-prediction-bottom-row {
+    width: auto !important;
+    max-width: 100% !important;
+
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+
+    --bs-gutter-x: 10px;
+    --bs-gutter-y: 10px;
+}
+
+/* Colonnes */
+body.pn-overview-v2 .pn-overview-statistics .row > *,
+body.pn-overview-v2 .pn-prediction-bottom-row > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+
+    box-sizing: border-box !important;
+}
+
+/* Toutes les cartes restent dans leur colonne */
+body.pn-overview-v2 .pn-overview-kpi-card,
+body.pn-overview-v2 .pn-overview-panel,
+body.pn-overview-v2 .pn-overview-metric,
+body.pn-overview-v2 .pn-overview-list-metrics,
+body.pn-overview-v2 .pn-overview-ranking {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Évite qu'un texte, un chiffre ou un select agrandisse la page */
+body.pn-overview-v2 .dashboard-overview select,
+body.pn-overview-v2 .dashboard-overview input,
+body.pn-overview-v2 .dashboard-overview textarea,
+body.pn-overview-v2 .dashboard-overview a,
+body.pn-overview-v2 .dashboard-overview strong,
+body.pn-overview-v2 .dashboard-overview span {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Modules actifs : réduction suffisante pour tout faire tenir */
+body.pn-overview-v2 #modules-intelligents .stats-grid {
+    display: grid !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(105px, 1fr)) !important;
+
+    gap: 8px !important;
+}
+
+body.pn-overview-v2 #modules-intelligents .module-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+
+    padding: 12px 7px !important;
+    box-sizing: border-box !important;
+}
+
+/* Légère réduction générale pour que les tableaux respirent
+   sans dépasser de l'écran */
+body.pn-overview-v2 .pn-overview-panel {
+    padding: 14px !important;
+}
+
+body.pn-overview-v2 .pn-overview-kpi-card {
+    padding: 13px !important;
+}
+
+/* Mobile / tablette : pas de marge de sidebar */
+@media (max-width: 991.98px) {
+    body.pn-overview-v2 .pn-dashboard-main {
+        width: auto !important;
+        max-width: 100% !important;
+
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+}

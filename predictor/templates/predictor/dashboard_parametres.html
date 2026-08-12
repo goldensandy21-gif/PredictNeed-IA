@@ -229,6 +229,34 @@
     </section>
 {% endif %}
 
+
+<details class="dashboard-section dashboard-collapsible" id="nettoyage">
+            <summary>
+                <span>Nettoyage des données techniques</span>
+                <small>Action ponctuelle, à utiliser avec prudence</small>
+            </summary>
+
+            <div class="dashboard-collapsible-body">
+                <p class="section-description">
+                    Supprime les événements techniques enregistrés par le script PredictNeed IA : pages vues, clics et temps passé.
+                    Les leads, les sites et les clés API seront conservés.
+                </p>
+
+                <form
+                    method="post"
+                    action="{% url 'nettoyer_evenements' %}"
+                    onsubmit="return confirm('Confirmer le nettoyage des événements techniques ? Cette action est irréversible.');"
+                >
+                    {% csrf_token %}
+                    <input type="hidden" name="site" value="{{ selected_site_id }}">
+
+                    <button type="submit" class="danger-button">
+                        Nettoyer les événements techniques
+                    </button>
+                </form>
+            </div>
+        </details>
+
 </main>
 
     <script

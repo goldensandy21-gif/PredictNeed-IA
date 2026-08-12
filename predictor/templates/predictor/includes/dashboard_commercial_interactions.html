@@ -1,0 +1,211 @@
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+            const buttons = document.querySelectorAll(".lead-status-button");
+            const csrfToken = "{{ csrf_token }}";
+            const selectedSiteId = "{{ selected_site_id }}";
+
+            buttons.forEach(function (button) {
+                button.dataset.originalText = button.textContent.trim();
+
+                button.addEventListener("click", function () {
+                    const url = button.dataset.url;
+                    const card = button.closest(".lead-card");
+                    const badge = card.querySelector(".lead-status");
+
+                    button.disabled = true;
+                    button.textContent = "Mise à jour...";
+
+                    const requestBody = new URLSearchParams();
+                    requestBody.append("site", selectedSiteId);
+
+                    fetch(url, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "X-CSRFToken": csrfToken,
+                            "X-Requested-With": "XMLHttpRequest",
+                            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+                        },
+                        body: requestBody.toString()
+                    })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("Erreur HTTP " + response.status);
+                        }
+
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) {
+                            alert("Impossible de modifier le statut.");
+                            return;
+                        }
+
+                        badge.className = "lead-status " + data.statut;
+                        badge.textContent = data.label;
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                        alert("Erreur pendant la mise à jour.");
+                    })
+                    .finally(function () {
+                        button.disabled = false;
+                        button.textContent = button.dataset.originalText;
+                    });
+                });
+            });
+        });
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+            const params = new URLSearchParams(window.location.search);
+
+            const scrollTarget = params.get("scroll");
+
+            if (scrollTarget) {
+                const section = document.getElementById(scrollTarget);
+
+                if (section) {
+                    if (section.tagName.toLowerCase() === "details") {
+                        section.open = true;
+                    }
+
+                    setTimeout(function () {
+                        section.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+                    }, 250);
+                }
+            }
+
+            document.querySelectorAll(".dashboard-sidebar-nav a[href^='#']").forEach(function (link) {
+                link.addEventListener("click", function () {
+                    const target = document.querySelector(link.getAttribute("href"));
+
+                    if (target && target.tagName.toLowerCase() === "details") {
+                        target.open = true;
+                    }
+                });
+            });
+
+            const createOpportunityForms = document.querySelectorAll(".opportunity-create-form");
+
+            createOpportunityForms.forEach(function (form) {
+                form.addEventListener("submit", function (event) {
+                    event.preventDefault();
+
+                    const button = form.querySelector(".opportunity-button");
+                    const originalText = button.textContent.trim();
+                    const opportunitiesSection = document.getElementById("opportunites");
+
+                    button.disabled = true;
+                    button.textContent = "Création...";
+
+                    fetch(form.action, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: new FormData(form)
+                    })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("Erreur HTTP " + response.status);
+                        }
+
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) {
+                            alert("Impossible de créer l’opportunité.");
+                            return;
+                        }
+
+                        if (opportunitiesSection) {
+                            opportunitiesSection.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start"
+                            });
+                        }
+
+                        button.textContent = "Opportunité créée ✓";
+
+                        setTimeout(function () {
+                            button.textContent = originalText;
+                        }, 1500);
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                        alert("Erreur pendant la création de l’opportunité.");
+                        button.textContent = originalText;
+                    })
+                    .finally(function () {
+                        button.disabled = false;
+                    });
+                });
+            });
+
+            const opportunityForms = document.querySelectorAll(".opportunity-edit-form");
+
+            opportunityForms.forEach(function (form) {
+                form.addEventListener("submit", function (event) {
+                    event.preventDefault();
+
+                    const card = form.closest(".opportunity-card");
+                    const button = form.querySelector(".opportunity-save-button");
+                    const amount = card.querySelector(".opportunity-amount");
+                    const probability = card.querySelector(".opportunity-probability");
+                    const stage = card.querySelector(".opportunity-stage");
+
+                    const originalText = button.textContent.trim();
+
+                    button.disabled = true;
+                    button.textContent = "Enregistrement...";
+
+                    fetch(form.action, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: new FormData(form)
+                    })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("Erreur HTTP " + response.status);
+                        }
+
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) {
+                            alert("Impossible d’enregistrer l’opportunité.");
+                            return;
+                        }
+
+                        amount.textContent = data.montant_estime;
+                        probability.textContent = data.probabilite;
+                        stage.className = "opportunity-stage " + data.etape;
+                        stage.textContent = data.etape_label;
+
+                        button.textContent = "Enregistré ✓";
+
+                        setTimeout(function () {
+                            button.textContent = originalText;
+                        }, 1200);
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                        alert("Erreur pendant l’enregistrement.");
+                        button.textContent = originalText;
+                    })
+                    .finally(function () {
+                        button.disabled = false;
+                    });
+                });
+            });
+        });
+</script>

@@ -17,8 +17,9 @@
     >
     <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=116">
     <link rel="stylesheet" href="{% static 'predictor/dashboard_bootstrap.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'predictor/connecteurs_status.css' %}?v=1">
 </head>
-<body class="dashboard-bootstrap-page pn-has-sidebar">
+<body class="dashboard-bootstrap-page pn-has-sidebar pn-connecteurs-status-page">
 
 {% include "predictor/includes/dashboard_sidebar_persistent.html" %}
 
@@ -317,6 +318,64 @@
         </div>
     </div>
 
+    <details class="dashboard-section dashboard-collapsible" id="statut-sites">
+            <summary>
+                <span>Statut du site sélectionné</span>
+                <small>{{ total_sites }} site{{ total_sites|pluralize }} connecté{{ total_sites|pluralize }}</small>
+            </summary>
+
+            <div class="dashboard-collapsible-body">
+            <div class="site-status-grid">
+                {% for item in sites_onboarding %}
+                    <div class="site-status-card {% if item.est_installe %}active{% else %}pending{% endif %}">
+                        <div class="site-status-header">
+                            <div>
+                                <h3>{{ item.site.nom_site }}</h3>
+                                <p>{{ item.site.domaine }}</p>
+                            </div>
+
+                            <span class="status-badge {% if item.est_installe %}active{% else %}pending{% endif %}">
+                                {{ item.statut }}
+                            </span>
+                        </div>
+
+                        <div class="site-status-stats">
+                            <span>{{ item.nb_sessions }} sessions</span>
+                            <span>{{ item.nb_leads }} leads</span>
+                        </div>
+
+                        {% if item.est_actif %}
+                            <p class="status-help success">
+                                Le script fonctionne et des données visiteurs ont été reçues.
+                            </p>
+
+                        {% elif item.est_installe %}
+                            <p class="status-help success">
+                                Le script a bien été détecté sur ce domaine.
+                                Aucune session analytique n'a encore été reçue,
+                                notamment si aucun visiteur n'a accepté l'analyse.
+                            </p>
+
+                            {% if item.derniere_detection %}
+                                <p class="status-help">
+                                    Dernière détection :
+                                    {{ item.derniere_detection|date:"d/m/Y à H:i" }}
+                                </p>
+                            {% endif %}
+
+                        {% else %}
+                            <p class="status-help warning">
+                                Le script n'a pas encore été détecté sur ce domaine.
+                            </p>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <p>Aucun site enregistré pour le moment.</p>
+                {% endfor %}
+            </div>
+            </div>
+        </details>
+
     <div class="dashboard-section">
         <h2>Scripts d’installation</h2>
         <p class="section-description">
@@ -389,7 +448,7 @@ Ces pixels peuvent transmettre aux plateformes concernées des événements tels
     </div>
 </section>
 
-{% include "predictor/includes/footer.html" %}
+
 
     <script
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"

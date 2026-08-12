@@ -22,8 +22,9 @@
     <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=118">
     <link rel="stylesheet" href="{% static 'predictor/dashboard_overrides.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'predictor/dashboard_bootstrap.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'predictor/dashboard_overview.css' %}?v=1">
 </head>
-<body class="dashboard-page dashboard-bootstrap-page pn-has-sidebar">
+<body class="dashboard-page dashboard-bootstrap-page pn-has-sidebar pn-overview-v2">
 
 {% include "predictor/includes/dashboard_sidebar_persistent.html" %}
 
@@ -152,41 +153,356 @@
             </div>
         </div>
 
-        <div class="stats-grid dashboard-kpi-grid">
+        <!-- =====================================================
+             TABLEAU DE BORD STATISTIQUE — SITE SÉLECTIONNÉ
+             ===================================================== -->
+        <section class="pn-overview-statistics">
 
-            <div class="stat-card pn-kpi-card">
-                <div class="pn-kpi-heading">
-                    <span class="pn-kpi-icon"><i class="bi bi-window-stack"></i></span>
-                    <span>Sites connectés</span>
+            <div class="pn-overview-statistics-heading">
+                <div>
+                    <span class="pn-overview-kicker">Vue d’ensemble</span>
+                    <h2>Indicateurs clés</h2>
+                    <p>
+                        Synthèse des données du site
+                        {% if selected_site %}
+                            <strong>{{ selected_site.nom_site }}</strong>
+                        {% endif %}
+                    </p>
                 </div>
-                <h2>{{ total_sites }}</h2>
             </div>
 
-            <div class="stat-card pn-kpi-card">
-                <div class="pn-kpi-heading">
-                    <span class="pn-kpi-icon"><i class="bi bi-people"></i></span>
-                    <span>Sessions visiteurs</span>
+
+            <!-- 4 KPI PRINCIPAUX -->
+            <div class="row g-3 pn-overview-main-kpis">
+
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <a
+                        class="pn-overview-kpi-card"
+                        href="{% url 'dashboard_visiteurs' %}?site={{ selected_site_id }}"
+                    >
+                        <div class="pn-overview-kpi-top">
+                            <span>Sessions visiteurs</span>
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <strong>{{ total_sessions }}</strong>
+                        <small>Audience du site</small>
+                    </a>
                 </div>
-                <h2>{{ total_sessions }}</h2>
+
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <a
+                        class="pn-overview-kpi-card"
+                        href="{% url 'module_prediction_avancee' %}?site={{ selected_site_id }}"
+                    >
+                        <div class="pn-overview-kpi-top">
+                            <span>Intentions fortes</span>
+                            <i class="bi bi-bullseye"></i>
+                        </div>
+                        <strong>{{ intentions_fortes }}</strong>
+                        <small>Signaux commerciaux forts</small>
+                    </a>
+                </div>
+
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <a
+                        class="pn-overview-kpi-card"
+                        href="{% url 'dashboard_leads' %}?site={{ selected_site_id }}"
+                    >
+                        <div class="pn-overview-kpi-top">
+                            <span>Leads capturés</span>
+                            <i class="bi bi-person-check"></i>
+                        </div>
+                        <strong>{{ total_leads }}</strong>
+                        <small>Contacts identifiés</small>
+                    </a>
+                </div>
+
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <a
+                        class="pn-overview-kpi-card"
+                        href="{% url 'dashboard_opportunites' %}?site={{ selected_site_id }}"
+                    >
+                        <div class="pn-overview-kpi-top">
+                            <span>Opportunités</span>
+                            <i class="bi bi-briefcase"></i>
+                        </div>
+                        <strong>{{ total_opportunites }}</strong>
+                        <small>Opportunités commerciales</small>
+                    </a>
+                </div>
+
             </div>
 
-            <div class="stat-card pn-kpi-card">
-                <div class="pn-kpi-heading">
-                    <span class="pn-kpi-icon"><i class="bi bi-bullseye"></i></span>
-                    <span>Intentions fortes</span>
+
+            <!-- GRANDE LIGNE : BUSINESS + ENGAGEMENT -->
+            <div class="row g-3 pn-overview-dashboard-row">
+
+                <div class="col-12 col-xl-7">
+                    <article class="pn-overview-panel pn-overview-panel-large">
+
+                        <div class="pn-overview-panel-heading">
+                            <div>
+                                <span>Commercial</span>
+                                <h3>Performance commerciale</h3>
+                            </div>
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+
+                        <div class="pn-overview-metric-grid pn-overview-metric-grid-4">
+
+                            <div class="pn-overview-metric">
+                                <span>Chiffre d’affaires réalisé</span>
+                                <strong>
+                                    {% if chiffre_affaires_realise != None %}
+                                        {{ chiffre_affaires_realise|floatformat:2 }}
+                                    {% elif total_ventes == 0 %}
+                                        0
+                                    {% else %}
+                                        Multi-devise
+                                    {% endif %}
+                                </strong>
+                                <small>Ventes confirmées</small>
+                            </div>
+
+                            <div class="pn-overview-metric">
+                                <span>Ventes confirmées</span>
+                                <strong>{{ total_ventes }}</strong>
+                                <small>Transactions réalisées</small>
+                            </div>
+
+                            <div class="pn-overview-metric">
+                                <span>CA attribué</span>
+                                <strong>
+                                    {% if chiffre_affaires_attribue != None %}
+                                        {{ chiffre_affaires_attribue|floatformat:2 }}
+                                    {% elif total_ventes_attribuees == 0 %}
+                                        0
+                                    {% else %}
+                                        Multi-devise
+                                    {% endif %}
+                                </strong>
+                                <small>Ventes avec attribution campagne</small>
+                            </div>
+
+                            <div class="pn-overview-metric">
+                                <span>Ventes attribuées</span>
+                                <strong>{{ total_ventes_attribuees }}</strong>
+                                <small>Campagne identifiée</small>
+                            </div>
+
+                        </div>
+
+                        <a
+                            class="pn-overview-panel-link"
+                            href="{% url 'dashboard_opportunites' %}?site={{ selected_site_id }}"
+                        >
+                            Voir le détail commercial
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+
+                    </article>
                 </div>
-                <h2>{{ intentions_fortes }}</h2>
+
+
+                <div class="col-12 col-xl-5">
+                    <article class="pn-overview-panel">
+
+                        <div class="pn-overview-panel-heading">
+                            <div>
+                                <span>Audience</span>
+                                <h3>Engagement visiteurs</h3>
+                            </div>
+                            <i class="bi bi-activity"></i>
+                        </div>
+
+                        <div class="pn-overview-metric-grid pn-overview-metric-grid-2">
+
+                            <div class="pn-overview-metric">
+                                <span>Pages vues</span>
+                                <strong>{{ pages_vues_total }}</strong>
+                            </div>
+
+                            <div class="pn-overview-metric">
+                                <span>Clics</span>
+                                <strong>{{ clics_total }}</strong>
+                            </div>
+
+                            <div class="pn-overview-metric">
+                                <span>Temps moyen</span>
+                                <strong>{{ temps_moyen_secondes }} s</strong>
+                            </div>
+
+                            <div class="pn-overview-metric">
+                                <span>Taux de rebond</span>
+                                <strong>{{ taux_rebond }} %</strong>
+                            </div>
+
+                        </div>
+
+                        <a
+                            class="pn-overview-panel-link"
+                            href="{% url 'dashboard_visiteurs' %}?site={{ selected_site_id }}"
+                        >
+                            Voir l’analyse visiteurs
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+
+                    </article>
+                </div>
+
             </div>
 
-            <div class="stat-card pn-kpi-card">
-                <div class="pn-kpi-heading">
-                    <span class="pn-kpi-icon"><i class="bi bi-person-check"></i></span>
-                    <span>Leads capturés</span>
+
+            <!-- TROIS BLOCS STATISTIQUES -->
+            <div class="row g-3 pn-overview-dashboard-row">
+
+                <div class="col-12 col-lg-6">
+                    <article class="pn-overview-panel">
+
+                        <div class="pn-overview-panel-heading">
+                            <div>
+                                <span>Audience</span>
+                                <h3>Appareils</h3>
+                            </div>
+                            <i class="bi bi-display"></i>
+                        </div>
+
+                        <div class="pn-overview-list-metrics">
+                            <div>
+                                <span>Desktop</span>
+                                <strong>{{ sessions_desktop }}</strong>
+                            </div>
+                            <div>
+                                <span>Mobile</span>
+                                <strong>{{ sessions_mobile }}</strong>
+                            </div>
+                            <div>
+                                <span>Tablette</span>
+                                <strong>{{ sessions_tablette }}</strong>
+                            </div>
+                        </div>
+
+                    </article>
                 </div>
-                <h2>{{ total_leads }}</h2>
+
+
+
+
+
+                <div class="col-12 col-lg-6">
+                    <article class="pn-overview-panel">
+
+                        <div class="pn-overview-panel-heading">
+                            <div>
+                                <span>Automatisation</span>
+                                <h3>Emails automatisés</h3>
+                            </div>
+                            <i class="bi bi-envelope-check"></i>
+                        </div>
+
+                        <div class="pn-overview-list-metrics">
+                            <div>
+                                <span>Emails traités</span>
+                                <strong>{{ total_emails_automatises }}</strong>
+                            </div>
+                            <div>
+                                <span>Envoyés</span>
+                                <strong>{{ emails_automatises_envoyes }}</strong>
+                            </div>
+                            <div>
+                                <span>Erreurs</span>
+                                <strong>{{ emails_automatises_erreurs }}</strong>
+                            </div>
+                            <div>
+                                <span>Relances actives</span>
+                                <strong>{{ relances_programmees }}</strong>
+                            </div>
+                        </div>
+
+                    </article>
+                </div>
+
             </div>
 
-        </div>
+
+            <!-- ACQUISITION -->
+            <div class="row g-3 pn-overview-dashboard-row">
+
+                <div class="col-12 col-xl-6">
+                    <article class="pn-overview-panel">
+
+                        <div class="pn-overview-panel-heading">
+                            <div>
+                                <span>Acquisition</span>
+                                <h3>Principales sources de trafic</h3>
+                            </div>
+                            <i class="bi bi-diagram-3"></i>
+                        </div>
+
+                        <div class="pn-overview-ranking">
+                            {% for source in sources_visite %}
+                                <div>
+                                    <span>
+                                        {{ source.source_visite|default:"Direct / non renseigné" }}
+                                    </span>
+                                    <strong>{{ source.total }}</strong>
+                                </div>
+                            {% empty %}
+                                <p>Aucune source détectée.</p>
+                            {% endfor %}
+                        </div>
+
+                        <a
+                            class="pn-overview-panel-link"
+                            href="{% url 'dashboard_sources_trafic' %}?site={{ selected_site_id }}"
+                        >
+                            Voir toutes les sources
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+
+                    </article>
+                </div>
+
+
+                <div class="col-12 col-xl-6">
+                    <article class="pn-overview-panel">
+
+                        <div class="pn-overview-panel-heading">
+                            <div>
+                                <span>Campagnes</span>
+                                <h3>Sources UTM</h3>
+                            </div>
+                            <i class="bi bi-megaphone"></i>
+                        </div>
+
+                        <div class="pn-overview-ranking">
+                            {% for source in utm_sources %}
+                                <div>
+                                    <span>
+                                        {{ source.utm_source|default:"Sans UTM" }}
+                                    </span>
+                                    <strong>{{ source.total }}</strong>
+                                </div>
+                            {% empty %}
+                                <p>Aucune campagne UTM détectée.</p>
+                            {% endfor %}
+                        </div>
+
+                        <a
+                            class="pn-overview-panel-link"
+                            href="{% url 'dashboard_sources_trafic' %}?site={{ selected_site_id }}"
+                        >
+                            Voir l’acquisition
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+
+                    </article>
+                </div>
+
+            </div>
+
+        </section>
+
 
         {% if a_module_ecommerce or a_module_prediction_avancee or a_module_segmentation or a_module_visualisations or a_module_historique or a_module_multicanal or a_module_connecteurs or a_module_publicite or a_module_securite_entreprise %}
         <div class="dashboard-section pn-modules-section" id="modules-intelligents">
@@ -268,684 +584,135 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- MOTEUR DE PRÉDICTION — APRÈS MODULES ACTIFS -->
+        <div class="row g-3 pn-overview-dashboard-row pn-prediction-bottom-row">
+<div class="col-12">
+                    <article class="pn-overview-panel">
+
+                        <div class="pn-overview-panel-heading">
+                            <div>
+                                <span>Intelligence</span>
+                                <h3>Moteur de prédiction</h3>
+                            </div>
+                            <i class="bi bi-stars"></i>
+                        </div>
+
+                        <p class="pn-prediction-explainer">
+                            Le moteur analyse le comportement des visiteurs pour estimer leur
+                            probabilité de devenir client. PredictNeed IA commence avec un
+                            scoring comportemental à règles, puis peut utiliser le Machine
+                            Learning lorsque suffisamment de résultats réels sont disponibles.
+                        </p>
+
+                        <div class="pn-overview-list-metrics">
+
+                            <div>
+                                <span>Moteur actif</span>
+                                <strong>
+                                    {% if modele_ml_dashboard %}
+                                        Machine learning
+                                    {% else %}
+                                        Scoring à règles
+                                    {% endif %}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Prédictions</span>
+                                <strong>{{ total_predictions }}</strong>
+                            </div>
+
+                            <div>
+                                <span>Visiteurs avec résultat connu</span>
+                                <strong>{{ ml_sessions_resolues }}</strong>
+                            </div>
+
+                            <div>
+                                <span>Conversions</span>
+                                <strong>{{ ml_conversions }}</strong>
+                            </div>
+
+                            <div>
+                                <span>Visiteurs non convertis</span>
+                                <strong>{{ ml_pertes }}</strong>
+                            </div>
+
+                            {% if modele_ml_dashboard %}
+                                <div>
+                                    <span>Version du modèle</span>
+                                    <strong>{{ modele_ml_dashboard.version }}</strong>
+                                </div>
+
+                                <div>
+                                    <span>Échantillons d’entraînement</span>
+                                    <strong>{{ modele_ml_dashboard.nombre_echantillons }}</strong>
+                                </div>
+                            {% else %}
+                                <div>
+                                    <span>Données requises pour le Machine Learning</span>
+                                    <strong>{{ minimum_ml }} sessions</strong>
+                                </div>
+
+                                <div>
+                                    <span>Minimum conversions / non-conversions</span>
+                                    <strong>{{ minimum_ml_par_classe }}</strong>
+                                </div>
+                            {% endif %}
+
+                        </div>
+
+                        <a
+                            class="pn-overview-panel-link"
+                            href="{% url 'module_prediction_avancee' %}?site={{ selected_site_id }}"
+                        >
+                            Voir la prédiction avancée
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+
+                    </article>
+                </div>
+        </div>
+
     {% endif %}
 
-        {% if a_module_prediction_avancee %}
-            <section class="dashboard-section" id="moteur-prediction">
-                <h2>Moteur de prédiction du site sélectionné</h2>
-                {% if modele_ml_dashboard %}
-                    <p><strong>Machine learning supervisé actif.</strong> Modèle {{ modele_ml_dashboard.version }}, entraîné sur {{ modele_ml_dashboard.nombre_echantillons }} sessions résolues.</p>
-                    <p>La probabilité produite reste une estimation commerciale à vérifier, jamais une certitude.</p>
-                {% else %}
-                    <p><strong>Scoring comportemental à règles actif.</strong> Aucun modèle ML n’est utilisé pour ce site tant que les données réelles et le contrôle qualité ne sont pas suffisants.</p>
-                    <p>Données résolues : {{ ml_sessions_resolues }} session{{ ml_sessions_resolues|pluralize }}, dont {{ ml_conversions }} conversion{{ ml_conversions|pluralize }} et {{ ml_pertes }} perte{{ ml_pertes|pluralize }}. Minimum : {{ minimum_ml }} sessions, avec au moins {{ minimum_ml_par_classe }} conversions et {{ minimum_ml_par_classe }} pertes.</p>
-                {% endif %}
-                <a href="{% url 'module_prediction_avancee' %}?site={{ selected_site_id }}" class="btn-secondary">Voir la prédiction avancée</a>
-            </section>
-        {% endif %}
-
-
-        <details class="dashboard-section dashboard-collapsible" id="messages-visiteurs">
-            <summary>
-                <span>Messages visiteurs</span>
-                <small>Messages envoyés depuis le widget</small>
-            </summary>
-
-            <div class="dashboard-collapsible-body">
-            <p class="section-description">
-                Les messages envoyés depuis le widget visiteur apparaissent ici pour permettre une réponse rapide.
-            </p>
-
-            <div class="visitor-messages-grid">
-                {% for lead in messages_visiteurs %}
-                    <article class="visitor-message-card">
-                        <div class="visitor-message-card-header">
-                            <div>
-                                <h3>{{ lead.nom|default:"Visiteur sans nom" }}</h3>
-                                <p>{{ lead.site.nom_site }} · {{ lead.date_creation|date:"d/m/Y H:i" }}</p>
-                            </div>
-                            <span class="lead-score">Score {{ lead.score }}</span>
-                        </div>
-
-                        <p class="visitor-message-text">{{ lead.message }}</p>
-
-                        <div class="lead-actions">
-                            {% if lead.email %}
-                                <a href="mailto:{{ lead.email }}">Répondre par email</a>
-                            {% endif %}
-
-                            {% if lead.telephone %}
-                                <a href="tel:{{ lead.telephone }}">Appeler</a>
-                            {% endif %}
-                        </div>
-                    </article>
-                {% empty %}
-                    <p>Aucun message visiteur reçu pour le moment.</p>
-                {% endfor %}
-            </div>
-            </div>
-        </details>
-
-        {% if a_module_ecommerce %}
-            <section class="dashboard-section" id="ecommerce">
-                <h2>Analyse e-commerce</h2>
-                <p class="dashboard-intro">Les indicateurs e-commerce sont calculés à partir des événements réellement enregistrés pour le site sélectionné. Aucun chiffre fictif n’est affiché dans cette vue d’ensemble.</p>
-                <a href="{% url 'module_ecommerce' %}?site={{ selected_site_id }}" class="btn-secondary">Consulter les statistiques e-commerce</a>
-            </section>
-        {% endif %}
-
-        <details class="dashboard-section dashboard-collapsible" id="statut-sites">
-            <summary>
-                <span>Statut du site sélectionné</span>
-                <small>{{ total_sites }} site{{ total_sites|pluralize }} connecté{{ total_sites|pluralize }}</small>
-            </summary>
-
-            <div class="dashboard-collapsible-body">
-            <div class="site-status-grid">
-                {% for item in sites_onboarding %}
-                    <div class="site-status-card {% if item.est_installe %}active{% else %}pending{% endif %}">
-                        <div class="site-status-header">
-                            <div>
-                                <h3>{{ item.site.nom_site }}</h3>
-                                <p>{{ item.site.domaine }}</p>
-                            </div>
-
-                            <span class="status-badge {% if item.est_installe %}active{% else %}pending{% endif %}">
-                                {{ item.statut }}
-                            </span>
-                        </div>
-
-                        <div class="site-status-stats">
-                            <span>{{ item.nb_sessions }} sessions</span>
-                            <span>{{ item.nb_leads }} leads</span>
-                        </div>
-
-                        {% if item.est_actif %}
-                            <p class="status-help success">
-                                Le script fonctionne et des données visiteurs ont été reçues.
-                            </p>
-
-                        {% elif item.est_installe %}
-                            <p class="status-help success">
-                                Le script a bien été détecté sur ce domaine.
-                                Aucune session analytique n'a encore été reçue,
-                                notamment si aucun visiteur n'a accepté l'analyse.
-                            </p>
-
-                            {% if item.derniere_detection %}
-                                <p class="status-help">
-                                    Dernière détection :
-                                    {{ item.derniere_detection|date:"d/m/Y à H:i" }}
-                                </p>
-                            {% endif %}
-
-                        {% else %}
-                            <p class="status-help warning">
-                                Le script n'a pas encore été détecté sur ce domaine.
-                            </p>
-                        {% endif %}
-                    </div>
-                {% empty %}
-                    <p>Aucun site enregistré pour le moment.</p>
-                {% endfor %}
-            </div>
-            </div>
-        </details>
-
-        <details class="dashboard-section dashboard-collapsible" id="nettoyage">
-            <summary>
-                <span>Nettoyage des données techniques</span>
-                <small>Action ponctuelle, à utiliser avec prudence</small>
-            </summary>
-
-            <div class="dashboard-collapsible-body">
-                <p class="section-description">
-                    Supprime les événements techniques enregistrés par le script PredictNeed IA : pages vues, clics et temps passé.
-                    Les leads, les sites et les clés API seront conservés.
-                </p>
-
-                <form
-                    method="post"
-                    action="{% url 'nettoyer_evenements' %}"
-                    onsubmit="return confirm('Confirmer le nettoyage des événements techniques ? Cette action est irréversible.');"
-                >
-                    {% csrf_token %}
-                    <input type="hidden" name="site" value="{{ selected_site_id }}">
-
-                    <button type="submit" class="danger-button">
-                        Nettoyer les événements techniques
-                    </button>
-                </form>
-            </div>
-        </details>
-
-
-        <details class="dashboard-section dashboard-collapsible" id="installation">
-            <summary>
-                <span>Installer PredictNeed IA sur votre site</span>
-                <small>Script du site sélectionné</small>
-            </summary>
-
-            <div class="dashboard-collapsible-body">
-                <p class="section-description">
-                    Copiez ce code et collez-le avant la balise <code>&lt;/body&gt;</code> de votre site.
-                    Le script PredictNeed IA affiche une gestion du consentement et n'envoie pas d'événement
-                    comportemental tant que le visiteur n'a pas accepté l'analyse PredictNeed IA.
-                </p>
-
-                {% for item in scripts_installation %}
-                    <div class="install-card">
-                        <h3>{{ item.site.nom_site }}</h3>
-                        <p><strong>Domaine :</strong> {{ item.site.domaine }}</p>
-
-                        <textarea readonly onclick="this.select()">{{ item.script }}</textarea>
-
-                        <p class="install-help">
-                            Cette clé API est propre à ce site. Elle permet à PredictNeed IA d’associer les visiteurs au bon espace professionnel.
-                            Le script contient les liens vers la politique de confidentialité et la politique cookies du service.
-                        </p>
-                    </div>
-                {% empty %}
-                    <p>Aucun site connecté pour le moment.</p>
-                {% endfor %}
-            </div>
-        </details>
-
-        <details class="dashboard-section dashboard-collapsible" id="automatisations">
-            <summary>
-                <span>Automatisations email</span>
-                <small>{{ total_emails_automatises }} emails traités · {{ relances_programmees }} étapes actives</small>
-            </summary>
-
-            <div class="dashboard-collapsible-body">
-                <p class="section-description">
-                    Lorsqu’un visiteur laisse son email dans le formulaire de contact,
-                    PredictNeed IA peut envoyer automatiquement un message de confirmation,
-                    puis plusieurs relances si le lead n'est pas encore marqué comme traité.
-                    Les variables disponibles sont : <code>{nom}</code>, <code>{email}</code>,
-                    <code>{telephone}</code>, <code>{message}</code>, <code>{site}</code>,
-                    <code>{domaine}</code>, <code>{entreprise}</code>, <code>{profil}</code>,
-                    <code>{intention}</code> et <code>{score}</code>.
-                </p>
-
-                <div class="automation-stats">
-                    <div class="stat-card">
-                        <h2>{{ total_emails_automatises }}</h2>
-                        <p>Emails traités</p>
-                    </div>
-                    <div class="stat-card">
-                        <h2>{{ emails_automatises_envoyes }}</h2>
-                        <p>Emails envoyés</p>
-                    </div>
-                    <div class="stat-card">
-                        <h2>{{ emails_automatises_erreurs }}</h2>
-                        <p>Erreurs d’envoi</p>
-                    </div>
-                    <div class="stat-card">
-                        <h2>{{ relances_programmees }}</h2>
-                        <p>Étapes actives</p>
-                    </div>
-                </div>
-
-                <div class="automation-grid">
-                    {% for automatisation in automatisations_email %}
-                        <form
-                            method="post"
-                            action="{% url 'modifier_automatisation_email' automatisation.id %}"
-                            class="automation-card"
-                        >
-                            {% csrf_token %}
-                            <input type="hidden" name="site" value="{{ selected_site_id }}">
-
-                        <div class="automation-card-header">
-                            <div>
-                                <p class="automation-eyebrow">
-                                    {{ automatisation.site.nom_site|default:"Tous les sites" }}
-                                </p>
-                                <h3>{{ automatisation.get_type_declencheur_display }}</h3>
-                            </div>
-
-                            <label class="automation-toggle">
-                                <input type="checkbox" name="actif" {% if automatisation.actif %}checked{% endif %}>
-                                <span>Actif</span>
-                            </label>
-                        </div>
-
-                        <div class="automation-form-grid">
-                            <div class="form-group">
-                                <label>Nom interne</label>
-                                <input type="text" name="nom" value="{{ automatisation.nom }}" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Sujet</label>
-                                <input type="text" name="sujet" value="{{ automatisation.sujet }}" required>
-                            </div>
-                        </div>
-
-                        <div class="automation-sequence">
-                            <h4>Séquence de relance</h4>
-                            <p>
-                                Étape 1 : envoi immédiat. Les étapes suivantes sont envoyées
-                                après le délai indiqué si le lead reste au statut “Nouveau”.
-                            </p>
-
-                            {% for etape in automatisation.etapes.all %}
-                                <div class="automation-step-card">
-                                    <div class="automation-step-header">
-                                        <div>
-                                            <span>Étape {{ etape.ordre }}</span>
-                                            <h5>{{ etape.nom }}</h5>
-                                        </div>
-
-                                        <label class="automation-toggle">
-                                            <input type="checkbox" name="etape_{{ etape.id }}_actif" {% if etape.actif %}checked{% endif %}>
-                                            <span>Active</span>
-                                        </label>
-                                    </div>
-
-                                    <div class="automation-form-grid">
-                                        <div class="form-group">
-                                            <label>Nom de l'étape</label>
-                                            <input type="text" name="etape_{{ etape.id }}_nom" value="{{ etape.nom }}" required>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label>Délai après capture du lead</label>
-                                            <input type="number" min="0" name="etape_{{ etape.id }}_delai_jours" value="{{ etape.delai_jours }}" required>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Sujet de l’email</label>
-                                        <input type="text" name="etape_{{ etape.id }}_sujet" value="{{ etape.sujet }}" required>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Contenu de l’email</label>
-                                        <textarea name="etape_{{ etape.id }}_contenu" required>{{ etape.contenu }}</textarea>
-                                    </div>
-
-                                    <label class="automation-toggle">
-                                        <input type="checkbox" name="etape_{{ etape.id }}_stopper_si_lead_traite" {% if etape.stopper_si_lead_traite %}checked{% endif %}>
-                                        <span>Ne pas envoyer si le lead est déjà contacté, converti ou perdu</span>
-                                    </label>
-                                </div>
-                            {% empty %}
-                                <p>Aucune étape configurée. Enregistrez l’automatisation pour générer la séquence par défaut.</p>
-                            {% endfor %}
-                        </div>
-
-                        <div class="automation-options">
-                            <label class="automation-toggle">
-                                <input type="checkbox" name="envoyer_copie_interne" {% if automatisation.envoyer_copie_interne %}checked{% endif %}>
-                                <span>Envoyer une copie interne</span>
-                            </label>
-
-                            <input
-                                type="email"
-                                name="email_copie"
-                                value="{{ automatisation.email_copie|default:'' }}"
-                                placeholder="email interne"
-                            >
-                        </div>
-
-                        <button type="submit" class="opportunity-save-button">
-                            Enregistrer l’automatisation
-                        </button>
-                        </form>
-                    {% empty %}
-                        <p>Aucune automatisation email disponible pour le moment.</p>
-                    {% endfor %}
-                </div>
-
-                <div class="automation-log">
-                    <h3>Derniers emails automatiques</h3>
-
-                    <div class="module-table-wrapper">
-                        <table class="module-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Destinataire</th>
-                                    <th>Site</th>
-                                    <th>Sujet</th>
-                                    <th>Statut</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for email_auto in derniers_emails_automatises %}
-                                    <tr>
-                                        <td>{{ email_auto.date_creation|date:"d/m/Y H:i" }}</td>
-                                        <td>{{ email_auto.destinataire|default:"Non renseigné" }}</td>
-                                        <td>{{ email_auto.site.nom_site }}</td>
-                                        <td>{{ email_auto.sujet }}</td>
-                                        <td>
-                                            <span class="email-status {{ email_auto.statut }}">
-                                                {{ email_auto.get_statut_display }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>
-                                        <td colspan="5">Aucun email automatique envoyé pour le moment.</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </details>
-
-        <details class="dashboard-section dashboard-collapsible" id="opportunites">
-            <summary>
-            {% if a_module_ecommerce %}
-                <span>Opportunités e-commerce</span>
-            {% else %}
-                <span>Opportunités commerciales</span>
-            {% endif %}
-                <small>{{ total_opportunites }} opportunité{{ total_opportunites|pluralize }} suivie{{ total_opportunites|pluralize }}</small>
-            </summary>
-
-            <div class="dashboard-collapsible-body">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h2>{{ total_ventes }}</h2>
-                    <p>Ventes réelles confirmées</p>
-                </div>
-                <div class="stat-card">
-                    <h2>
-                        {% for montant in chiffre_affaires_realise_par_devise %}
-                            {{ montant.total|floatformat:2 }} {{ montant.devise }}{% if not forloop.last %}<br>{% endif %}
-                        {% empty %}
-                            0,00
-                        {% endfor %}
-                    </h2>
-                    <p>Chiffre d'affaires réel</p>
-                </div>
-                <div class="stat-card">
-                    <h2>{{ total_ventes_attribuees }}</h2>
-                    <p>Ventes attribuées à une campagne</p>
-                </div>
-                <div class="stat-card">
-                    <h2>
-                        {% for montant in chiffre_affaires_attribue_par_devise %}
-                            {{ montant.total|floatformat:2 }} {{ montant.devise }}{% if not forloop.last %}<br>{% endif %}
-                        {% empty %}
-                            0,00
-                        {% endfor %}
-                    </h2>
-                    <p>CA attribué aux campagnes</p>
-                </div>
-            </div>
-
-            <div class="opportunities-list">
-                {% for opportunite in dernieres_opportunites %}
-                    <div class="opportunity-card" id="opportunite-{{ opportunite.id }}">
-                        <div class="opportunity-header">
-                            <h3>{{ opportunite.titre }}</h3>
-                            <span class="opportunity-stage {{ opportunite.etape }}">
-                                {{ opportunite.get_etape_display }}
-                            </span>
-                        </div>
-
-                        <p>
-                            <strong>Montant estimé :</strong>
-                            <span class="opportunity-amount">{{ opportunite.montant_estime }}</span> €
-                        </p>
-
-                        <p>
-                            <strong>Probabilité :</strong>
-                            <span class="opportunity-probability">{{ opportunite.probabilite }}</span> %
-                        </p>
-
-                        <p>
-                            <strong>Attribution :</strong>
-                            {{ opportunite.utm_source_attribution|default:opportunite.source_attribution|default:"Non attribuée" }}
-                            {% if opportunite.utm_campaign_attribution %}
-                                · {{ opportunite.utm_campaign_attribution }}
-                            {% endif %}
-                        </p>
-
-                        {% if opportunite.vente %}
-                            <p>
-                                <strong>Vente réelle :</strong>
-                                {{ opportunite.vente.montant|floatformat:2 }}
-                                {{ opportunite.vente.devise }}
-                                · {{ opportunite.vente.get_statut_display }}
-                            </p>
-                            {% if opportunite.vente.reference_vente %}
-                                <p>
-                                    <strong>Référence :</strong>
-                                    {{ opportunite.vente.reference_vente }}
-                                </p>
-                            {% endif %}
-                        {% elif opportunite.etape == "gagne" %}
-                            <p class="table-muted">
-                                Opportunité gagnée, mais aucun montant réel n'est encore enregistré.
-                            </p>
-                        {% endif %}
-
-                        {% if opportunite.lead %}
-                            <p>
-                                <strong>Lead lié :</strong>
-                                {{ opportunite.lead.email|default:opportunite.lead.telephone }}
-                            </p>
-                        {% endif %}
-
-                        <form
-                            method="post"
-                            action="{% url 'modifier_opportunite' opportunite.id %}"
-                            class="opportunity-edit-form"
-                        >
-                            {% csrf_token %}
-                            <input type="hidden" name="site" value="{{ selected_site_id }}">
-
-                            <div class="opportunity-form-grid">
-                                <div class="form-group">
-                                    <label>Montant estimé</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        name="montant_estime"
-                                        value="{{ opportunite.montant_estime }}"
-                                    >
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Probabilité (%)</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        name="probabilite"
-                                        value="{{ opportunite.probabilite }}"
-                                    >
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Étape</label>
-                                    <select name="etape">
-                                        <option value="qualification" {% if opportunite.etape == "qualification" %}selected{% endif %}>Qualification</option>
-                                        <option value="proposition" {% if opportunite.etape == "proposition" %}selected{% endif %}>Proposition envoyée</option>
-                                        <option value="negociation" {% if opportunite.etape == "negociation" %}selected{% endif %}>Négociation</option>
-                                        <option value="gagne" {% if opportunite.etape == "gagne" %}selected{% endif %}>Gagné</option>
-                                        <option value="perdu" {% if opportunite.etape == "perdu" %}selected{% endif %}>Perdu</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Montant réellement vendu</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        name="montant_realise"
-                                        value="{% if opportunite.vente and opportunite.vente.statut == 'confirmee' %}{{ opportunite.vente.montant }}{% endif %}"
-                                    >
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Devise</label>
-                                    <input
-                                        type="text"
-                                        maxlength="3"
-                                        name="devise"
-                                        value="{% if opportunite.vente %}{{ opportunite.vente.devise }}{% else %}EUR{% endif %}"
-                                        pattern="[A-Za-z]{3}"
-                                        title="Code devise ISO à 3 lettres, par exemple EUR ou USD"
-                                    >
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Date de vente</label>
-                                    <input
-                                        type="date"
-                                        name="date_vente"
-                                        value="{% if opportunite.vente and opportunite.vente.date_vente %}{{ opportunite.vente.date_vente|date:'Y-m-d' }}{% endif %}"
-                                    >
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Référence vente / commande</label>
-                                    <input
-                                        type="text"
-                                        maxlength="120"
-                                        name="reference_vente"
-                                        value="{% if opportunite.vente %}{{ opportunite.vente.reference_vente|default:'' }}{% endif %}"
-                                    >
-                                </div>
-                            </div>
-
-                            <p class="section-description">
-                                Le montant réel reste distinct du montant estimé. Seules les ventes confirmées alimentent le chiffre d'affaires.
-                            </p>
-
-                            <div class="form-group">
-                                <label>Notes commerciales</label>
-                                <textarea name="notes">{{ opportunite.notes }}</textarea>
-                            </div>
-
-                            <button type="submit" class="opportunity-save-button">
-                                Enregistrer l’opportunité
-                            </button>
-                        </form>
-                    </div>
-                {% empty %}
-                    <p class="no-opportunity-message">Aucune opportunité créée pour le moment.</p>
-                {% endfor %}
-            </div>
-            </div>
-        </details>
-
-        <details class="dashboard-section dashboard-collapsible" id="leads">
-            <summary>
-            {% if a_module_ecommerce %}
-                <span>Clients à relancer</span>
-            {% else %}
-                <span>Leads prioritaires à traiter</span>
-            {% endif %}
-                <small>{{ total_leads }} lead{{ total_leads|pluralize }} capturé{{ total_leads|pluralize }}</small>
-            </summary>
-
-            <div class="dashboard-collapsible-body">
-            {% for lead in leads_chauds %}
-                <div class="lead-card" id="lead-{{ lead.id }}">
-                    <div class="lead-card-header">
-                        <h3>
-                            {% if lead.nom %}
-                                {{ lead.nom }}
-                            {% else %}
-                                Nouveau lead
-                            {% endif %}
-                        </h3>
-
-                        <span class="lead-score">Score {{ lead.score }}</span>
-                    </div>
-
-                    <p>
-                        <strong>Email :</strong>
-                        {% if lead.email %}
-                            {{ lead.email }}
-                        {% else %}
-                            Non renseigné
-                        {% endif %}
-                    </p>
-
-                    <p>
-                        <strong>Téléphone :</strong>
-                        {% if lead.telephone %}
-                            {{ lead.telephone }}
-                        {% else %}
-                            Non renseigné
-                        {% endif %}
-                    </p>
-
-                    <p><strong>Profil :</strong> {{ lead.profil }}</p>
-                    <p><strong>Intention :</strong> {{ lead.intention }}</p>
-                    <p>
-                        <strong>Suivi :</strong>
-                        <span class="lead-status {{ lead.statut_suivi }}">
-                            {{ lead.get_statut_suivi_display }}
-                        </span>
-                    </p>
-
-                    <div class="lead-status-actions" data-lead-id="{{ lead.id }}">
-                        <button
-                            type="button"
-                            class="lead-status-button"
-                            data-url="{% url 'changer_statut_lead' lead.id 'contacte' %}">
-                            Marquer contacté
-                        </button>
-
-                        <button
-                            type="button"
-                            class="lead-status-button"
-                            data-url="{% url 'changer_statut_lead' lead.id 'converti' %}">
-                            Converti
-                        </button>
-
-                        <button
-                            type="button"
-                            class="lead-status-button"
-                            data-url="{% url 'changer_statut_lead' lead.id 'perdu' %}">
-                            Perdu
-                        </button>
-                    </div>
-
-                    <form
-                        method="post"
-                        action="{% url 'creer_opportunite_depuis_lead' lead.id %}"
-                        class="opportunity-create-form"
-                    >
-                        {% csrf_token %}
-                        <input type="hidden" name="site" value="{{ selected_site_id }}">
-                        <button type="submit" class="opportunity-button">
-                            Créer une opportunité
-                        </button>
-                    </form>
-
-                    {% if lead.message %}
-                        <p><strong>Message :</strong> {{ lead.message }}</p>
-                    {% endif %}
-
-                    <div class="lead-actions">
-                        {% if lead.email %}
-                            <a href="mailto:{{ lead.email }}">Envoyer un email</a>
-                        {% endif %}
-
-                        {% if lead.telephone %}
-                            <a href="tel:{{ lead.telephone }}">Appeler</a>
-                        {% endif %}
-                    </div>
-                </div>
-            {% empty %}
-                <p>Aucun lead capturé pour le moment.</p>
-            {% endfor %}
-            </div>
-        </details>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                 <a href="{% url 'accueil' %}" class="btn-secondary dashboard-return-site dashboard-return-site-bottom">Retour au site</a>
     </main>
@@ -1168,7 +935,7 @@
         });
     </script>
 
-{% include "predictor/includes/footer.html" %}
+
 
     <script src="{% static 'predictor/dashboard_sidebar.js' %}?v=1"></script>
 </body>

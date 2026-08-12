@@ -1,0 +1,317 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Opportunités - PredictNeed IA</title>
+
+    {% include "predictor/includes/seo_head.html" %}
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        crossorigin="anonymous"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    >
+
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=118">
+    <link rel="stylesheet" href="{% static 'predictor/dashboard_overrides.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'predictor/dashboard_bootstrap.css' %}?v=3">
+</head>
+
+<body class="dashboard-bootstrap-page pn-has-sidebar">
+
+{% include "predictor/includes/dashboard_sidebar_persistent.html" %}
+
+<main class="dashboard module-page pn-dashboard-main">
+
+    <div class="pn-analysis-header">
+        <div>
+            <p class="dashboard-eyebrow">Commercial</p>
+            <h1>Opportunités</h1>
+
+            {% if selected_site %}
+                <p class="dashboard-intro">
+                    Données et actions du site :
+                    <strong>{{ selected_site.nom_site }}</strong>
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+    
+{% if sites_disponibles %}
+<form class="dashboard-site-selector" method="get">
+    <label for="dashboard-site">Site actuellement analysé</label>
+
+    <select
+        id="dashboard-site"
+        name="site"
+        onchange="this.form.submit()"
+    >
+        {% for site_option in sites_disponibles %}
+            <option
+                value="{{ site_option.id }}"
+                {% if selected_site and selected_site.id == site_option.id %}
+                    selected
+                {% endif %}
+            >
+                {{ site_option.nom_site }} — {{ site_option.domaine }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <noscript>
+        <button type="submit" class="btn btn-dark">
+            Afficher
+        </button>
+    </noscript>
+</form>
+{% endif %}
+
+
+    {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div
+                    class="alert
+                    {% if message.tags == 'error' %}
+                        alert-danger
+                    {% elif message.tags == 'success' %}
+                        alert-success
+                    {% elif message.tags == 'warning' %}
+                        alert-warning
+                    {% else %}
+                        alert-info
+                    {% endif %}"
+                >
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <details class="pn-dedicated-section dashboard-section dashboard-collapsible" id="opportunites" open>
+            <summary>
+            {% if a_module_ecommerce %}
+                <span>Opportunités e-commerce</span>
+            {% else %}
+                <span>Opportunités commerciales</span>
+            {% endif %}
+                <small>{{ total_opportunites }} opportunité{{ total_opportunites|pluralize }} suivie{{ total_opportunites|pluralize }}</small>
+            </summary>
+
+            <div class="dashboard-collapsible-body">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h2>{{ total_ventes }}</h2>
+                    <p>Ventes réelles confirmées</p>
+                </div>
+                <div class="stat-card">
+                    <h2>
+                        {% for montant in chiffre_affaires_realise_par_devise %}
+                            {{ montant.total|floatformat:2 }} {{ montant.devise }}{% if not forloop.last %}<br>{% endif %}
+                        {% empty %}
+                            0,00
+                        {% endfor %}
+                    </h2>
+                    <p>Chiffre d'affaires réel</p>
+                </div>
+                <div class="stat-card">
+                    <h2>{{ total_ventes_attribuees }}</h2>
+                    <p>Ventes attribuées à une campagne</p>
+                </div>
+                <div class="stat-card">
+                    <h2>
+                        {% for montant in chiffre_affaires_attribue_par_devise %}
+                            {{ montant.total|floatformat:2 }} {{ montant.devise }}{% if not forloop.last %}<br>{% endif %}
+                        {% empty %}
+                            0,00
+                        {% endfor %}
+                    </h2>
+                    <p>CA attribué aux campagnes</p>
+                </div>
+            </div>
+
+            <div class="opportunities-list">
+                {% for opportunite in dernieres_opportunites %}
+                    <div class="opportunity-card" id="opportunite-{{ opportunite.id }}">
+                        <div class="opportunity-header">
+                            <h3>{{ opportunite.titre }}</h3>
+                            <span class="opportunity-stage {{ opportunite.etape }}">
+                                {{ opportunite.get_etape_display }}
+                            </span>
+                        </div>
+
+                        <p>
+                            <strong>Montant estimé :</strong>
+                            <span class="opportunity-amount">{{ opportunite.montant_estime }}</span> €
+                        </p>
+
+                        <p>
+                            <strong>Probabilité :</strong>
+                            <span class="opportunity-probability">{{ opportunite.probabilite }}</span> %
+                        </p>
+
+                        <p>
+                            <strong>Attribution :</strong>
+                            {{ opportunite.utm_source_attribution|default:opportunite.source_attribution|default:"Non attribuée" }}
+                            {% if opportunite.utm_campaign_attribution %}
+                                · {{ opportunite.utm_campaign_attribution }}
+                            {% endif %}
+                        </p>
+
+                        {% if opportunite.vente %}
+                            <p>
+                                <strong>Vente réelle :</strong>
+                                {{ opportunite.vente.montant|floatformat:2 }}
+                                {{ opportunite.vente.devise }}
+                                · {{ opportunite.vente.get_statut_display }}
+                            </p>
+                            {% if opportunite.vente.reference_vente %}
+                                <p>
+                                    <strong>Référence :</strong>
+                                    {{ opportunite.vente.reference_vente }}
+                                </p>
+                            {% endif %}
+                        {% elif opportunite.etape == "gagne" %}
+                            <p class="table-muted">
+                                Opportunité gagnée, mais aucun montant réel n'est encore enregistré.
+                            </p>
+                        {% endif %}
+
+                        {% if opportunite.lead %}
+                            <p>
+                                <strong>Lead lié :</strong>
+                                {{ opportunite.lead.email|default:opportunite.lead.telephone }}
+                            </p>
+                        {% endif %}
+
+                        <form
+                            method="post"
+                            action="{% url 'modifier_opportunite' opportunite.id %}"
+                            class="opportunity-edit-form"
+                        >
+                            {% csrf_token %}
+                            <input type="hidden" name="site" value="{{ selected_site_id }}">
+
+                            <div class="opportunity-form-grid">
+                                <div class="form-group">
+                                    <label>Montant estimé</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        name="montant_estime"
+                                        value="{{ opportunite.montant_estime }}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Probabilité (%)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        name="probabilite"
+                                        value="{{ opportunite.probabilite }}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Étape</label>
+                                    <select name="etape">
+                                        <option value="qualification" {% if opportunite.etape == "qualification" %}selected{% endif %}>Qualification</option>
+                                        <option value="proposition" {% if opportunite.etape == "proposition" %}selected{% endif %}>Proposition envoyée</option>
+                                        <option value="negociation" {% if opportunite.etape == "negociation" %}selected{% endif %}>Négociation</option>
+                                        <option value="gagne" {% if opportunite.etape == "gagne" %}selected{% endif %}>Gagné</option>
+                                        <option value="perdu" {% if opportunite.etape == "perdu" %}selected{% endif %}>Perdu</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Montant réellement vendu</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        name="montant_realise"
+                                        value="{% if opportunite.vente and opportunite.vente.statut == 'confirmee' %}{{ opportunite.vente.montant }}{% endif %}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Devise</label>
+                                    <input
+                                        type="text"
+                                        maxlength="3"
+                                        name="devise"
+                                        value="{% if opportunite.vente %}{{ opportunite.vente.devise }}{% else %}EUR{% endif %}"
+                                        pattern="[A-Za-z]{3}"
+                                        title="Code devise ISO à 3 lettres, par exemple EUR ou USD"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Date de vente</label>
+                                    <input
+                                        type="date"
+                                        name="date_vente"
+                                        value="{% if opportunite.vente and opportunite.vente.date_vente %}{{ opportunite.vente.date_vente|date:'Y-m-d' }}{% endif %}"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Référence vente / commande</label>
+                                    <input
+                                        type="text"
+                                        maxlength="120"
+                                        name="reference_vente"
+                                        value="{% if opportunite.vente %}{{ opportunite.vente.reference_vente|default:'' }}{% endif %}"
+                                    >
+                                </div>
+                            </div>
+
+                            <p class="section-description">
+                                Le montant réel reste distinct du montant estimé. Seules les ventes confirmées alimentent le chiffre d'affaires.
+                            </p>
+
+                            <div class="form-group">
+                                <label>Notes commerciales</label>
+                                <textarea name="notes">{{ opportunite.notes }}</textarea>
+                            </div>
+
+                            <button type="submit" class="opportunity-save-button">
+                                Enregistrer l’opportunité
+                            </button>
+                        </form>
+                    </div>
+                {% empty %}
+                    <p class="no-opportunity-message">Aucune opportunité créée pour le moment.</p>
+                {% endfor %}
+            </div>
+            </div>
+        </details>
+
+</main>
+
+
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+    crossorigin="anonymous"
+></script>
+
+{% include "predictor/includes/dashboard_commercial_interactions.html" %}
+
+<script src="{% static 'predictor/dashboard_sidebar.js' %}?v=1"></script>
+
+</body>
+</html>

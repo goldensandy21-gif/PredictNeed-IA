@@ -1,0 +1,222 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Leads - PredictNeed IA</title>
+
+    {% include "predictor/includes/seo_head.html" %}
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        crossorigin="anonymous"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    >
+
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=118">
+    <link rel="stylesheet" href="{% static 'predictor/dashboard_overrides.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'predictor/dashboard_bootstrap.css' %}?v=3">
+</head>
+
+<body class="dashboard-bootstrap-page pn-has-sidebar">
+
+{% include "predictor/includes/dashboard_sidebar_persistent.html" %}
+
+<main class="dashboard module-page pn-dashboard-main">
+
+    <div class="pn-analysis-header">
+        <div>
+            <p class="dashboard-eyebrow">Commercial</p>
+            <h1>Leads</h1>
+
+            {% if selected_site %}
+                <p class="dashboard-intro">
+                    Données et actions du site :
+                    <strong>{{ selected_site.nom_site }}</strong>
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+    
+{% if sites_disponibles %}
+<form class="dashboard-site-selector" method="get">
+    <label for="dashboard-site">Site actuellement analysé</label>
+
+    <select
+        id="dashboard-site"
+        name="site"
+        onchange="this.form.submit()"
+    >
+        {% for site_option in sites_disponibles %}
+            <option
+                value="{{ site_option.id }}"
+                {% if selected_site and selected_site.id == site_option.id %}
+                    selected
+                {% endif %}
+            >
+                {{ site_option.nom_site }} — {{ site_option.domaine }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <noscript>
+        <button type="submit" class="btn btn-dark">
+            Afficher
+        </button>
+    </noscript>
+</form>
+{% endif %}
+
+
+    {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div
+                    class="alert
+                    {% if message.tags == 'error' %}
+                        alert-danger
+                    {% elif message.tags == 'success' %}
+                        alert-success
+                    {% elif message.tags == 'warning' %}
+                        alert-warning
+                    {% else %}
+                        alert-info
+                    {% endif %}"
+                >
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <details class="pn-dedicated-section dashboard-section dashboard-collapsible" id="leads" open>
+            <summary>
+            {% if a_module_ecommerce %}
+                <span>Clients à relancer</span>
+            {% else %}
+                <span>Leads prioritaires à traiter</span>
+            {% endif %}
+                <small>{{ total_leads }} lead{{ total_leads|pluralize }} capturé{{ total_leads|pluralize }}</small>
+            </summary>
+
+            <div class="dashboard-collapsible-body">
+            {% for lead in leads_chauds %}
+                <div class="lead-card" id="lead-{{ lead.id }}">
+                    <div class="lead-card-header">
+                        <h3>
+                            {% if lead.nom %}
+                                {{ lead.nom }}
+                            {% else %}
+                                Nouveau lead
+                            {% endif %}
+                        </h3>
+
+                        <span class="lead-score">Score {{ lead.score }}</span>
+                    </div>
+
+                    <p>
+                        <strong>Email :</strong>
+                        {% if lead.email %}
+                            {{ lead.email }}
+                        {% else %}
+                            Non renseigné
+                        {% endif %}
+                    </p>
+
+                    <p>
+                        <strong>Téléphone :</strong>
+                        {% if lead.telephone %}
+                            {{ lead.telephone }}
+                        {% else %}
+                            Non renseigné
+                        {% endif %}
+                    </p>
+
+                    <p><strong>Profil :</strong> {{ lead.profil }}</p>
+                    <p><strong>Intention :</strong> {{ lead.intention }}</p>
+                    <p>
+                        <strong>Suivi :</strong>
+                        <span class="lead-status {{ lead.statut_suivi }}">
+                            {{ lead.get_statut_suivi_display }}
+                        </span>
+                    </p>
+
+                    <div class="lead-status-actions" data-lead-id="{{ lead.id }}">
+                        <button
+                            type="button"
+                            class="lead-status-button"
+                            data-url="{% url 'changer_statut_lead' lead.id 'contacte' %}">
+                            Marquer contacté
+                        </button>
+
+                        <button
+                            type="button"
+                            class="lead-status-button"
+                            data-url="{% url 'changer_statut_lead' lead.id 'converti' %}">
+                            Converti
+                        </button>
+
+                        <button
+                            type="button"
+                            class="lead-status-button"
+                            data-url="{% url 'changer_statut_lead' lead.id 'perdu' %}">
+                            Perdu
+                        </button>
+                    </div>
+
+                    <form
+                        method="post"
+                        action="{% url 'creer_opportunite_depuis_lead' lead.id %}"
+                        class="opportunity-create-form"
+                    >
+                        {% csrf_token %}
+                        <input type="hidden" name="site" value="{{ selected_site_id }}">
+                        <button type="submit" class="opportunity-button">
+                            Créer une opportunité
+                        </button>
+                    </form>
+
+                    {% if lead.message %}
+                        <p><strong>Message :</strong> {{ lead.message }}</p>
+                    {% endif %}
+
+                    <div class="lead-actions">
+                        {% if lead.email %}
+                            <a href="mailto:{{ lead.email }}">Envoyer un email</a>
+                        {% endif %}
+
+                        {% if lead.telephone %}
+                            <a href="tel:{{ lead.telephone }}">Appeler</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p>Aucun lead capturé pour le moment.</p>
+            {% endfor %}
+            </div>
+        </details>
+
+</main>
+
+
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+    crossorigin="anonymous"
+></script>
+
+{% include "predictor/includes/dashboard_commercial_interactions.html" %}
+
+<script src="{% static 'predictor/dashboard_sidebar.js' %}?v=1"></script>
+
+</body>
+</html>

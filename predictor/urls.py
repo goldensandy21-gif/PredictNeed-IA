@@ -63,6 +63,10 @@ urlpatterns = [
     path('dashboard/sources-trafic/', views.dashboard, name='dashboard_sources_trafic'),
     path('dashboard/pages-parcours/', views.dashboard, name='dashboard_pages_parcours'),
     path('dashboard/profils/', views.dashboard, name='dashboard_profils'),
+    path('dashboard/messages/', views.dashboard, name='dashboard_messages'),
+    path('dashboard/leads/', views.dashboard, name='dashboard_leads'),
+    path('dashboard/opportunites/', views.dashboard, name='dashboard_opportunites'),
+    path('dashboard/automatisations/', views.dashboard, name='dashboard_automatisations'),
     path('dashboard/parametres/', views.dashboard_parametres, name='dashboard_parametres'),
     path('dashboard/nettoyer-evenements/', views.nettoyer_evenements, name='nettoyer_evenements'),
 
