@@ -138,7 +138,7 @@ def _urlencode_restli(params):
         for key, value in (params or {}).items()
         if value not in (None, "")
     }
-    return urlencode(cleaned, safe="(),:")
+    return urlencode(cleaned, safe="(),:%")
 
 
 def _decode_http_error(exc):
@@ -408,7 +408,7 @@ def lister_performances_campagnes_linkedin(
             "pivot": "CAMPAIGN",
             "timeGranularity": "DAILY",
             "dateRange": _date_range_param(date_debut, date_fin),
-            "accounts": f"List({compte_urn(account_id)})",
+            "accounts": f"List(urn%3Ali%3AsponsoredAccount%3A{account_id})",
             "fields": (
                 "externalWebsiteConversions,dateRange,impressions,"
                 "landingPageClicks,costInLocalCurrency,pivotValues"
