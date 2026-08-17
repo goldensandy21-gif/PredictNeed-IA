@@ -16,7 +16,30 @@ from .models import (
     CompteConnecteExterne,
     CampagneExterne,
     JournalSynchronisationConnecteur,
+    ProspectPilotAttribution,
+    ProspectPilotOutboundEvent,
 )
+
+
+@admin.register(ProspectPilotAttribution)
+class ProspectPilotAttributionAdmin(admin.ModelAdmin):
+    list_display = (
+        "token", "client_professionnel", "utm_source", "utm_campaign",
+        "first_seen_at", "last_seen_at", "active",
+    )
+    list_filter = ("active", "utm_source", "utm_campaign")
+    search_fields = ("token", "session_key", "client_professionnel__nom_entreprise")
+    readonly_fields = ("token", "first_seen_at", "last_seen_at")
+
+
+@admin.register(ProspectPilotOutboundEvent)
+class ProspectPilotOutboundEventAdmin(admin.ModelAdmin):
+    # Le payload peut contenir des montants/metadata commerciales mais jamais
+    # de secret : la clé HMAC n'est jamais stockée ni affichée ici.
+    list_display = ("event_type", "status", "attempt_count", "created_at", "sent_at", "last_attempt_at")
+    list_filter = ("status", "event_type")
+    search_fields = ("event_id", "last_error")
+    readonly_fields = ("event_id", "event_type", "payload", "created_at", "sent_at")
 
 
 @admin.register(ClientProfessionnel)

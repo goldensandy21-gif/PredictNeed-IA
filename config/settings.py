@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'predictor.middleware.ProspectPilotAttributionMiddleware',
 ]
 
 if importlib.util.find_spec("whitenoise"):
@@ -228,6 +229,12 @@ DEFAULT_FROM_EMAIL = os.environ.get(
     "PredictNeed IA <no-reply@predictneed.local>"
 )
 PREDICTNEED_CONTACT_EMAIL = os.environ.get("PREDICTNEED_CONTACT_EMAIL", "")
+
+# Attribution des conversions vers ProspectPilot (moteur d'acquisition B2B).
+PROSPECTPILOT_API_URL = os.environ.get("PROSPECTPILOT_API_URL", "")
+PROSPECTPILOT_SHARED_SECRET = os.environ.get("PROSPECTPILOT_SHARED_SECRET", "")
+PROSPECTPILOT_EVENTS_ENABLED = os.environ.get("PROSPECTPILOT_EVENTS_ENABLED", "True") == "True"
+PROSPECTPILOT_EVENT_TIMEOUT = float(os.environ.get("PROSPECTPILOT_EVENT_TIMEOUT", "5"))
 
 PREDICTNEED_EXTERNAL_CONNECTORS = {
     "google_ads": {

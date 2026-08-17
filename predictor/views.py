@@ -9,9 +9,13 @@ from .billing import (
     create_subscription_checkout_session,
     format_subscription_price,
     retrieve_checkout_session,
+    retrieve_subscription,
     stripe_is_configured,
     verify_stripe_signature,
 )
+from .services.prospectpilot_attribution import get_attribution_for_client, get_current_attribution
+from .services.prospectpilot_events import normalize_to_monthly, send_prospectpilot_event
+import logging
 from .external_connectors import (
     ConnecteurConfigurationError,
     ConnecteurOAuthError,
@@ -41,6 +45,8 @@ from decimal import Decimal, InvalidOperation
 from datetime import timedelta
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+
+logger = logging.getLogger(__name__)
 
 
 PUBLIC_MODULES = [
@@ -548,7 +554,7 @@ def _prepare_pending_client(
     return client
 
 
-def _start_subscription_checkout(request, client):
+def _start_subscription_checkout(request, client, ppt_token=""):
     success_url = f"{_absolute_url(request, 'paiement_succes')}?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = _absolute_url(request, "paiement_annule")
 
@@ -556,6 +562,7 @@ def _start_subscription_checkout(request, client):
         client=client,
         success_url=success_url,
         cancel_url=cancel_url,
+        ppt_token=ppt_token,
     )
 
     client.stripe_checkout_session_id = checkout_session.get("id")
@@ -731,6 +738,92 @@ def paiement_annule(request):
     )
 
 
+def _peek_client_for_checkout(checkout_session):
+    metadata = checkout_session.get("metadata") or {}
+    client_id = metadata.get("client_id") or checkout_session.get("client_reference_id")
+    if not client_id:
+        return None
+    return ClientProfessionnel.objects.filter(pk=client_id).first()
+
+
+def _peek_client_for_subscription(subscription):
+    customer_id = subscription.get("customer")
+    subscription_id = subscription.get("id")
+    metadata = subscription.get("metadata") or {}
+    client_id = metadata.get("client_id")
+
+    clients = ClientProfessionnel.objects.all()
+    if client_id:
+        client = clients.filter(pk=client_id).first()
+        if client:
+            return client
+    if subscription_id:
+        client = clients.filter(stripe_subscription_id=subscription_id).first()
+        if client:
+            return client
+    if customer_id:
+        return clients.filter(stripe_customer_id=customer_id).first()
+    return None
+
+
+def _subscription_pricing(subscription_id):
+    """Best effort : récupère le prix RÉEL de l'abonnement Stripe. Ne lève
+    jamais — un échec ici ne doit jamais empêcher l'activation locale."""
+    if not subscription_id:
+        return None, None, None
+    try:
+        subscription = retrieve_subscription(subscription_id)
+    except (StripeConfigurationError, StripeAPIError):
+        logger.warning("Impossible de récupérer le prix réel de l'abonnement %s.", subscription_id)
+        return None, None, None
+
+    items = (subscription.get("items") or {}).get("data") or []
+    if not items:
+        return None, None, None
+    price = items[0].get("price") or {}
+    unit_amount = price.get("unit_amount")
+    if unit_amount is None:
+        return None, None, None
+    currency = (price.get("currency") or "").upper()
+    interval = (price.get("recurring") or {}).get("interval")
+    subscription_value = round(unit_amount / 100, 2)
+    return subscription_value, normalize_to_monthly(subscription_value, interval), currency
+
+
+def _notify_subscription_activated(client, subscription_id):
+    """Émis UNIQUEMENT depuis le webhook Stripe (source de vérité serveur) —
+    jamais depuis paiement_succes ni un simple paramètre GET."""
+    try:
+        attribution = get_attribution_for_client(client)
+        subscription_value, mrr, currency = _subscription_pricing(subscription_id)
+        dedup_key = subscription_id or f"client-{client.id}"
+        send_prospectpilot_event(
+            "subscription_activated",
+            attribution=attribution,
+            idempotency_key=f"subscription:{dedup_key}:activated",
+            subscription_value=subscription_value,
+            mrr=mrr,
+            currency=currency or settings.PREDICTNEED_SUBSCRIPTION_CURRENCY.upper(),
+            external_reference=subscription_id or "",
+        )
+    except Exception:
+        logger.exception("Notification subscription_activated impossible — abonnement PredictNeed non affecté.")
+
+
+def _notify_subscription_cancelled(client, subscription_id):
+    try:
+        attribution = get_attribution_for_client(client)
+        dedup_key = subscription_id or f"client-{client.id}"
+        send_prospectpilot_event(
+            "subscription_cancelled",
+            attribution=attribution,
+            idempotency_key=f"subscription:{dedup_key}:cancelled",
+            external_reference=subscription_id or "",
+        )
+    except Exception:
+        logger.exception("Notification subscription_cancelled impossible — abonnement PredictNeed non affecté.")
+
+
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
@@ -757,9 +850,29 @@ def stripe_webhook(request):
     event_object = (event.get("data") or {}).get("object") or {}
 
     if event_type == "checkout.session.completed":
-        _activate_client_from_checkout_session(event_object)
+        previous_client = _peek_client_for_checkout(event_object)
+        previous_status = previous_client.statut_abonnement if previous_client else None
+
+        client = _activate_client_from_checkout_session(event_object)
+
+        # subscription_activated n'est déclenché QUE depuis ce webhook, sur une
+        # vraie transition serveur vers "actif" — jamais depuis une redirection.
+        if client and previous_status != "actif" and client.statut_abonnement == "actif":
+            _notify_subscription_activated(client, event_object.get("subscription"))
+
     elif event_type in {"customer.subscription.updated", "customer.subscription.deleted"}:
+        previous_client = _peek_client_for_subscription(event_object)
+        previous_status = previous_client.statut_abonnement if previous_client else None
+
         _update_subscription_from_stripe(event_object)
+
+        if previous_client is not None:
+            previous_client.refresh_from_db()
+            subscription_id = event_object.get("id")
+            if previous_status != "actif" and previous_client.statut_abonnement == "actif":
+                _notify_subscription_activated(previous_client, subscription_id)
+            elif previous_status != "annule" and previous_client.statut_abonnement == "annule":
+                _notify_subscription_cancelled(previous_client, subscription_id)
 
     return HttpResponse(status=200)
 
@@ -1406,6 +1519,8 @@ def simulateur(request):
         session_id=session_id
     )
 
+    attribution = get_current_attribution(request)
+
     if request.method == "POST":
         page_visitee = request.POST.get("page_visitee")
         temps = request.POST.get("temps")
@@ -1420,7 +1535,7 @@ def simulateur(request):
             valeur=f"Temps : {temps} | Clics : {clics}"
         )
 
-        PredictionBesoin.objects.create(
+        prediction = PredictionBesoin.objects.create(
             session=session_visiteur,
             profil=resultat["profil"],
             besoin_probable=resultat["prediction"],
@@ -1428,6 +1543,39 @@ def simulateur(request):
             score=resultat["score"],
             recommandation=resultat["recommandation"]
         )
+
+        # Le simulateur ne distingue pas d'étape "démarré" séparée de la
+        # soumission : une soumission réussie est le seul signal fiable
+        # disponible ici, donc simulator_completed est émis directement (pas
+        # de simulator_started artificiel sur cette action).
+        if attribution:
+            try:
+                send_prospectpilot_event(
+                    "simulator_completed",
+                    attribution=attribution,
+                    idempotency_key=f"{attribution.token}:simulator_completed:{prediction.pk}",
+                    metadata={
+                        "profil": resultat["profil"],
+                        "intention": resultat["intention"],
+                        "page_visitee": page_visitee or "",
+                    },
+                )
+            except Exception:
+                logger.exception("Notification simulator_completed impossible — résultat du simulateur non affecté.")
+    elif attribution and not attribution.simulator_started_sent:
+        # GET = affichage du formulaire. C'est la meilleure distinction
+        # disponible pour "started" avec l'architecture actuelle (un seul
+        # POST qui calcule directement le résultat final).
+        try:
+            send_prospectpilot_event(
+                "simulator_started",
+                attribution=attribution,
+                idempotency_key=f"{attribution.token}:simulator_started",
+            )
+            attribution.simulator_started_sent = True
+            attribution.save(update_fields=["simulator_started_sent"])
+        except Exception:
+            logger.exception("Notification simulator_started impossible — page non affectée.")
 
     return render(
         request,
@@ -1525,13 +1673,51 @@ def inscription(request):
                     domaine=domaine,
                 )
 
+                attribution = get_current_attribution(request)
+                if attribution and attribution.client_professionnel_id != client.id:
+                    attribution.client_professionnel = client
+                    attribution.save(update_fields=["client_professionnel"])
+
+                if attribution and not attribution.signup_completed_sent:
+                    try:
+                        send_prospectpilot_event(
+                            "signup_completed",
+                            attribution=attribution,
+                            idempotency_key=f"{attribution.token}:signup_completed",
+                        )
+                        attribution.signup_completed_sent = True
+                        attribution.save(update_fields=["signup_completed_sent"])
+                    except Exception:
+                        logger.exception("Notification signup_completed impossible — inscription non affectée.")
+
                 try:
-                    checkout_session = _start_subscription_checkout(request, client)
+                    checkout_session = _start_subscription_checkout(
+                        request, client, ppt_token=attribution.token if attribution else "",
+                    )
                 except StripeConfigurationError:
                     erreur = "Le paiement sécurisé n'est pas encore configuré. L'inscription payante est momentanément indisponible."
                 except StripeAPIError:
                     erreur = "Le paiement sécurisé est momentanément indisponible. Merci de réessayer dans quelques instants."
                 else:
+                    if attribution and not attribution.checkout_started_sent:
+                        try:
+                            checkout_metadata = {}
+                            if not settings.STRIPE_PRICE_ID:
+                                checkout_metadata = {
+                                    "price_cents": settings.PREDICTNEED_SUBSCRIPTION_PRICE_CENTS,
+                                    "currency": settings.PREDICTNEED_SUBSCRIPTION_CURRENCY.upper(),
+                                    "interval": settings.PREDICTNEED_SUBSCRIPTION_INTERVAL,
+                                }
+                            send_prospectpilot_event(
+                                "checkout_started",
+                                attribution=attribution,
+                                idempotency_key=f"{attribution.token}:checkout_started:{checkout_session.get('id', '')}",
+                                metadata=checkout_metadata,
+                            )
+                            attribution.checkout_started_sent = True
+                            attribution.save(update_fields=["checkout_started_sent"])
+                        except Exception:
+                            logger.exception("Notification checkout_started impossible — paiement non affecté.")
                     return redirect(checkout_session["url"])
 
     return render(

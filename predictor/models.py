@@ -496,3 +496,88 @@ class JournalSynchronisationConnecteur(models.Model):
 
     def __str__(self):
         return f"{self.compte} - {self.get_statut_display()}"
+
+
+# ---------------------------------------------------------------------------
+# Attribution ProspectPilot — ferme la boucle acquisition -> conversion.
+#
+# `token` est un identifiant opaque généré par ProspectPilot (paramètre `ppt`
+# des liens de campagne) : on ne cherche jamais à en déduire un prospect_id,
+# campaign_id ou email_id ProspectPilot. PredictNeed se contente de le
+# conserver et de le renvoyer tel quel dans les événements sortants.
+# ---------------------------------------------------------------------------
+
+class ProspectPilotAttribution(models.Model):
+    token = models.CharField(max_length=128, unique=True, db_index=True)
+    session_key = models.CharField(max_length=64, blank=True, db_index=True)
+    client_professionnel = models.ForeignKey(
+        ClientProfessionnel,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="prospectpilot_attributions",
+    )
+
+    landing_url = models.CharField(max_length=2000, blank=True)
+    utm_source = models.CharField(max_length=150, blank=True)
+    utm_medium = models.CharField(max_length=150, blank=True)
+    utm_campaign = models.CharField(max_length=150, blank=True)
+    utm_content = models.CharField(max_length=150, blank=True)
+
+    first_seen_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    active = models.BooleanField(default=True)
+
+    # Garde-fous anti-doublon en plus de la clé d'idempotence côté événement.
+    product_visited_sent = models.BooleanField(default=False)
+    simulator_started_sent = models.BooleanField(default=False)
+    signup_completed_sent = models.BooleanField(default=False)
+    checkout_started_sent = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-last_seen_at"]
+
+    def __str__(self):
+        return f"Attribution ProspectPilot {self.token[:16]}…"
+
+
+class ProspectPilotOutboundEvent(models.Model):
+    """File d'attente locale des événements à transmettre à ProspectPilot.
+
+    Ce dépôt n'utilise pas Celery/Redis : la fiabilité vient d'ici (écriture
+    immédiate en base avant tout appel réseau) plutôt que d'une file de
+    tâches. Une commande de gestion (`retry_prospectpilot_events`, à lancer
+    par le même mécanisme cron que `envoyer_relances_automatiques`) relance
+    les événements en échec transitoire.
+    """
+    STATUT_CHOICES = [
+        ("pending", "En attente"),
+        ("sending", "Envoi en cours"),
+        ("sent", "Envoyé"),
+        ("failed", "Échec (nouvel essai prévu)"),
+        ("dead_letter", "Abandonné"),
+    ]
+
+    event_id = models.CharField(max_length=180, unique=True, db_index=True)
+    event_type = models.CharField(max_length=40, db_index=True)
+    attribution = models.ForeignKey(
+        ProspectPilotAttribution,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="outbound_events",
+    )
+    payload = models.JSONField(default=dict)
+    status = models.CharField(max_length=20, choices=STATUT_CHOICES, default="pending", db_index=True)
+    attempt_count = models.PositiveSmallIntegerField(default=0)
+    last_attempt_at = models.DateTimeField(null=True, blank=True)
+    next_retry_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.event_type} ({self.get_status_display()})"

@@ -65,7 +65,7 @@ def _stripe_request(method, endpoint, payload=None):
         raise StripeAPIError("Le service de paiement est momentanément indisponible.") from exc
 
 
-def create_subscription_checkout_session(*, client, success_url, cancel_url):
+def create_subscription_checkout_session(*, client, success_url, cancel_url, ppt_token=""):
     payload = {
         "mode": "subscription",
         "success_url": success_url,
@@ -80,6 +80,12 @@ def create_subscription_checkout_session(*, client, success_url, cancel_url):
         "subscription_data[metadata][user_id]": str(client.utilisateur_id),
         "line_items[0][quantity]": "1",
     }
+
+    # Le token ProspectPilot (opaque) voyage dans les metadata Stripe pour rester
+    # accessible depuis le webhook, une fois la session Django d'origine disparue.
+    if ppt_token:
+        payload["metadata[ppt]"] = ppt_token
+        payload["subscription_data[metadata][ppt]"] = ppt_token
 
     if settings.STRIPE_AUTOMATIC_TAX:
         payload["automatic_tax[enabled]"] = "true"
@@ -103,6 +109,13 @@ def create_subscription_checkout_session(*, client, success_url, cancel_url):
 
 def retrieve_checkout_session(session_id):
     return _stripe_request("GET", f"/checkout/sessions/{session_id}")
+
+
+def retrieve_subscription(subscription_id):
+    """Utilisé uniquement pour connaître le prix RÉEL facturé (montant + intervalle)
+    avant de le transmettre à ProspectPilot — on ne suppose jamais que l'abonnement
+    est toujours au tarif par défaut configuré localement."""
+    return _stripe_request("GET", f"/subscriptions/{subscription_id}")
 
 
 def verify_stripe_signature(payload, signature_header, webhook_secret, tolerance=300):
