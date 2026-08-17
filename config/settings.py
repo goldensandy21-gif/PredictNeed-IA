@@ -235,6 +235,9 @@ PROSPECTPILOT_API_URL = os.environ.get("PROSPECTPILOT_API_URL", "")
 PROSPECTPILOT_SHARED_SECRET = os.environ.get("PROSPECTPILOT_SHARED_SECRET", "")
 PROSPECTPILOT_EVENTS_ENABLED = os.environ.get("PROSPECTPILOT_EVENTS_ENABLED", "True") == "True"
 PROSPECTPILOT_EVENT_TIMEOUT = float(os.environ.get("PROSPECTPILOT_EVENT_TIMEOUT", "5"))
+# Un événement "sending" plus vieux que ce délai est considéré orphelin
+# (crash du runner après réclamation) et repris par retry_prospectpilot_events.
+PROSPECTPILOT_STALE_SENDING_SECONDS = int(os.environ.get("PROSPECTPILOT_STALE_SENDING_SECONDS", "600"))
 
 PREDICTNEED_EXTERNAL_CONNECTORS = {
     "google_ads": {

@@ -544,17 +544,32 @@ class ProspectPilotAttribution(models.Model):
 class ProspectPilotOutboundEvent(models.Model):
     """File d'attente locale des événements à transmettre à ProspectPilot.
 
-    Ce dépôt n'utilise pas Celery/Redis : la fiabilité vient d'ici (écriture
-    immédiate en base avant tout appel réseau) plutôt que d'une file de
-    tâches. Une commande de gestion (`retry_prospectpilot_events`, à lancer
-    par le même mécanisme cron que `envoyer_relances_automatiques`) relance
-    les événements en échec transitoire.
+    Écrite de façon synchrone et rapide par `send_prospectpilot_event()`
+    (aucun appel réseau à ce moment). Ce dépôt n'utilise pas Celery/Redis :
+    l'envoi réel est effectué exclusivement par la commande de gestion
+    `retry_prospectpilot_events` (même mécanisme cron que
+    `envoyer_relances_automatiques`).
+
+    - pending : jamais tenté, en attente du prochain passage du runner.
+    - sending : réclamé par un runner, envoi en cours. Un `sending` dont
+      `last_attempt_at` dépasse PROSPECTPILOT_STALE_SENDING_SECONDS (crash du
+      runner après réclamation) est considéré orphelin et repris.
+    - sent : accepté par ProspectPilot (200).
+    - failed : échec transitoire (réseau, timeout, 429, 5xx) — nouvel essai
+      prévu à next_retry_at, jusqu'à un nombre maximum de tentatives.
+    - pending_config : PROSPECTPILOT_API_URL/SHARED_SECRET absents ou
+      PROSPECTPILOT_EVENTS_ENABLED=False. Ne compte jamais comme une
+      tentative et ne devient jamais dead_letter pour cette seule raison.
+    - dead_letter : payload définitivement invalide (400), authentification
+      réellement rejetée par un serveur configuré (401/403), ou nombre
+      maximum de tentatives atteint pour une erreur transitoire.
     """
     STATUT_CHOICES = [
         ("pending", "En attente"),
         ("sending", "Envoi en cours"),
         ("sent", "Envoyé"),
         ("failed", "Échec (nouvel essai prévu)"),
+        ("pending_config", "En attente de configuration"),
         ("dead_letter", "Abandonné"),
     ]
 
