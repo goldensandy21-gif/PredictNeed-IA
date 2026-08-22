@@ -1,6 +1,12 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Count, Prefetch, Q
-from .analyse import analyser_besoin, analyser_session_automatique
+from .analyse import (
+    analyser_besoin,
+    analyser_session_automatique,
+    analyser_simulation_avancee,
+    SECTEUR_PAR_DEFAUT,
+    SECTEURS_SIMULATEUR,
+)
 from .models import ClientProfessionnel, SiteClient, SessionVisiteur, EvenementUtilisateur, PredictionBesoin, LeadCapture,  OpportuniteCRM, AutomatisationEmail, EtapeAutomatisationEmail, EmailAutomatise, CompteConnecteExterne, CampagneExterne
 from .automations import ensure_default_automation_steps, envoyer_confirmation_lead, get_or_create_lead_confirmation_automation
 from .billing import (
@@ -1509,6 +1515,9 @@ def track_event(request):
 
 def simulateur(request):
     resultat = None
+    secteur_selectionne = request.POST.get("secteur") or SECTEUR_PAR_DEFAUT
+    if secteur_selectionne not in SECTEURS_SIMULATEUR:
+        secteur_selectionne = SECTEUR_PAR_DEFAUT
 
     if not request.session.session_key:
         request.session.create()
@@ -1522,24 +1531,36 @@ def simulateur(request):
     attribution = get_current_attribution(request)
 
     if request.method == "POST":
-        page_visitee = request.POST.get("page_visitee")
-        temps = request.POST.get("temps")
-        clics = request.POST.get("clics")
+        signaux = {
+            "pages": request.POST.getlist("pages"),
+            "source": request.POST.get("source"),
+            "premiere_visite": request.POST.get("premiere_visite"),
+            "nombre_visites": request.POST.get("nombre_visites"),
+            "retour_page": request.POST.get("retour_page"),
+            "duree": request.POST.get("duree"),
+            "interactions": request.POST.get("interactions"),
+            "cta_consulte": request.POST.get("cta_consulte"),
+            "abandon": request.POST.get("abandon"),
+        }
 
-        resultat = analyser_besoin(page_visitee, temps, clics)
+        resultat = analyser_simulation_avancee(secteur_selectionne, signaux)
 
         EvenementUtilisateur.objects.create(
             session=session_visiteur,
             type_evenement="formulaire",
-            page=page_visitee,
-            valeur=f"Temps : {temps} | Clics : {clics}"
+            page=f"simulateur:{secteur_selectionne}",
+            valeur=(
+                f"Pages : {', '.join(signaux['pages']) or 'aucune'} | "
+                f"Source : {signaux['source']} | Durée : {signaux['duree']} | "
+                f"Interactions : {signaux['interactions']}"
+            ),
         )
 
         prediction = PredictionBesoin.objects.create(
             session=session_visiteur,
             profil=resultat["profil"],
-            besoin_probable=resultat["prediction"],
-            intention=resultat["intention"],
+            besoin_probable=resultat["besoin_probable"],
+            intention=resultat["niveau"],
             score=resultat["score"],
             recommandation=resultat["recommandation"]
         )
@@ -1556,8 +1577,8 @@ def simulateur(request):
                     idempotency_key=f"{attribution.token}:simulator_completed:{prediction.pk}",
                     metadata={
                         "profil": resultat["profil"],
-                        "intention": resultat["intention"],
-                        "page_visitee": page_visitee or "",
+                        "niveau": resultat["niveau"],
+                        "secteur": secteur_selectionne,
                     },
                 )
             except Exception:
@@ -1577,12 +1598,23 @@ def simulateur(request):
         except Exception:
             logger.exception("Notification simulator_started impossible — page non affectée.")
 
+    secteurs_json = json.dumps({
+        key: {
+            "label": config["label"],
+            "pages": config["pages"],
+        }
+        for key, config in SECTEURS_SIMULATEUR.items()
+    })
+
     return render(
         request,
         "predictor/simulateur.html",
         _seo_context(
             "Simulateur - PredictNeed IA",
             "Testez le simulateur PredictNeed IA pour comprendre comment les comportements visiteurs peuvent révéler une intention ou un besoin probable.",
+            secteurs=SECTEURS_SIMULATEUR,
+            secteurs_json=secteurs_json,
+            secteur_selectionne=secteur_selectionne,
             **(resultat or {}),
         ),
     )

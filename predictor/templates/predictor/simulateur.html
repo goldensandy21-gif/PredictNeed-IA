@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>Simulateur - PredictNeed IA</title>
     {% include "predictor/includes/seo_head.html" %}
-    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=86">
+    <link rel="stylesheet" href="{% static 'predictor/style.css' %}?v=87">
 </head>
 <body>
 
@@ -15,111 +15,300 @@
 <section class="simulateur-page">
     <h1>Simulateur PredictNeed IA</h1>
     <p>
-        Testez différents comportements visiteurs et observez la prédiction générée
-        par l’intelligence de l’application. Le simulateur sert à comprendre la logique
-        de lecture avant de connecter PredictNeed IA à un vrai site.
+        Choisissez un secteur, simulez un parcours visiteur réaliste et découvrez en moins
+        d'une minute comment PredictNeed IA transforme des signaux comportementaux en
+        intention probable, en besoin explicable et en action commerciale recommandée.
     </p>
 
     <div class="simulateur-intro-grid">
         <div class="simulateur-info-card">
             <span>Ce que vous testez</span>
-            <h2>Un comportement visiteur simplifié</h2>
+            <h2>Un parcours visiteur réaliste</h2>
             <p>
-                Chaque simulation combine trois signaux simples : la page consultée,
-                le temps passé et le nombre de clics. Ensemble, ils donnent une première
-                indication sur l'intention du visiteur.
+                Secteur, source d'acquisition, pages consultées, durée, interactions,
+                retour sur une page, formulaire vu, abandon avant conversion : autant de
+                signaux qu'un vrai visiteur laisse sur votre site.
             </p>
         </div>
 
         <div class="simulateur-info-card">
             <span>Ce que vous obtenez</span>
-            <h2>Un profil et une action conseillée</h2>
+            <h2>Un score explicable et une action à mener</h2>
             <p>
-                Le résultat indique un profil probable, un besoin, une intention,
-                un score et une recommandation commerciale pour savoir quoi faire ensuite.
+                Une intention probable sur 100, un profil comportemental, un besoin
+                probable, les signaux qui l'expliquent et une action commerciale
+                recommandée — immédiatement compréhensibles.
             </p>
+        </div>
+    </div>
+
+    <div class="simulateur-scenarios">
+        <span class="simulateur-scenarios-label">Scénarios rapides</span>
+        <div class="simulateur-scenarios-list">
+            <button type="button" class="scenario-chip" data-scenario="curieux">Visiteur curieux</button>
+            <button type="button" class="scenario-chip" data-scenario="comparateur">Comparateur actif</button>
+            <button type="button" class="scenario-chip" data-scenario="hesitant">Visiteur hésitant</button>
+            <button type="button" class="scenario-chip" data-scenario="chaud">Prospect chaud</button>
+            <button type="button" class="scenario-chip" data-scenario="recurrent">Visiteur récurrent</button>
+            <button type="button" class="scenario-chip" data-scenario="campagne">Issu d'une campagne</button>
         </div>
     </div>
 
     <div class="simulateur-layout">
         <div class="simulateur-card">
-            <form method="POST">
+            <form method="POST" id="simulateur-form">
                 {% csrf_token %}
 
-                <label>Page visitée</label>
-                <select name="page_visitee">
-                    <option value="prix">Page prix</option>
-                    <option value="produit">Page produit</option>
-                    <option value="contact">Page contact</option>
-                    <option value="blog">Page blog</option>
+                <label for="secteur-select">Secteur d'activité</label>
+                <select name="secteur" id="secteur-select">
+                    {% for cle, config in secteurs.items %}
+                        <option value="{{ cle }}" {% if cle == secteur_selectionne %}selected{% endif %}>{{ config.label }}</option>
+                    {% endfor %}
                 </select>
 
-                <label>Temps passé sur le site</label>
-                <select name="temps">
-                    <option value="court">Court</option>
-                    <option value="moyen">Moyen</option>
-                    <option value="long">Long</option>
+                <label>Pages consultées durant la visite</label>
+                <div id="pages-groups">
+                    {% for cle, config in secteurs.items %}
+                        <div class="simulateur-pages-group" data-secteur="{{ cle }}" {% if cle != secteur_selectionne %}hidden{% endif %}>
+                            {% for page in config.pages %}
+                                <label class="simulateur-checkbox">
+                                    <input type="checkbox" name="pages" value="{{ page.value }}" {% if cle != secteur_selectionne %}disabled{% endif %}>
+                                    {{ page.label }}
+                                </label>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <label>Source d'acquisition</label>
+                <select name="source" id="source-select">
+                    <option value="organique">Recherche organique</option>
+                    <option value="payant">Publicité payante</option>
+                    <option value="social">Réseaux sociaux</option>
+                    <option value="email">Email / newsletter</option>
+                    <option value="direct">Accès direct</option>
+                    <option value="referent">Site référent</option>
                 </select>
 
-                <label>Nombre de clics</label>
-                <select name="clics">
+                <label>Type de visite</label>
+                <select name="premiere_visite" id="premiere-visite-select">
+                    <option value="oui">Première visite</option>
+                    <option value="non">Visite récurrente</option>
+                </select>
+
+                <label>Nombre de visites</label>
+                <select name="nombre_visites" id="nombre-visites-select">
+                    <option value="1">1 visite</option>
+                    <option value="2-3">2 à 3 visites</option>
+                    <option value="4+">4 visites ou plus</option>
+                </select>
+
+                <label>Durée de la visite</label>
+                <select name="duree" id="duree-select">
+                    <option value="courte">Courte</option>
+                    <option value="moyenne">Moyenne</option>
+                    <option value="longue">Longue</option>
+                </select>
+
+                <label>Niveau d'interactions (clics)</label>
+                <select name="interactions" id="interactions-select">
                     <option value="faible">Faible</option>
                     <option value="moyen">Moyen</option>
                     <option value="eleve">Élevé</option>
                 </select>
+
+                <label class="simulateur-checkbox simulateur-checkbox-standalone">
+                    <input type="checkbox" name="retour_page" id="retour-page-checkbox" value="oui">
+                    Retour sur une page déjà consultée
+                </label>
+
+                <label class="simulateur-checkbox simulateur-checkbox-standalone">
+                    <input type="checkbox" name="cta_consulte" id="cta-consulte-checkbox" value="oui">
+                    Formulaire ou bouton d'action (CTA) consulté
+                </label>
+
+                <label class="simulateur-checkbox simulateur-checkbox-standalone">
+                    <input type="checkbox" name="abandon" id="abandon-checkbox" value="oui">
+                    Abandon avant la conversion finale
+                </label>
 
                 <button type="submit">Lancer la simulation</button>
             </form>
         </div>
 
         <div class="simulateur-explainer">
-            <h2>Comment interpréter les choix ?</h2>
+            <h2>Comment interpréter les signaux ?</h2>
 
             <div class="simulateur-step">
-                <strong>Page prix ou contact</strong>
+                <strong>Page tarifs ou proche de la conversion</strong>
                 <p>Ces pages indiquent souvent une comparaison, une hésitation ou une intention d'achat plus avancée.</p>
             </div>
 
             <div class="simulateur-step">
-                <strong>Temps long</strong>
-                <p>Un temps élevé peut montrer que le visiteur lit, compare ou cherche à se rassurer avant d'agir.</p>
+                <strong>Retour sur une page + abandon</strong>
+                <p>Ce duo de signaux révèle typiquement un visiteur intéressé mais encore freiné par un doute à lever.</p>
             </div>
 
             <div class="simulateur-step">
-                <strong>Clics élevés</strong>
-                <p>Plusieurs interactions suggèrent un intérêt actif et peuvent justifier une action commerciale plus directe.</p>
+                <strong>Visites répétées et durée élevée</strong>
+                <p>Un visiteur qui revient et qui reste longtemps montre un engagement croissant envers votre offre.</p>
             </div>
         </div>
     </div>
 
-    {% if prediction %}
+    {% if profil %}
         <div class="resultat simulateur-resultat">
-            <h2>Résultat de la simulation</h2>
+            <h2>Résultat de la simulation — {{ secteur_label }}</h2>
 
-            <div class="simulateur-result-grid">
-                <p><strong>Profil :</strong> {{ profil }}</p>
-                <p><strong>Besoin probable :</strong> {{ prediction }}</p>
-                <p><strong>Intention :</strong> {{ intention }}</p>
-                <p><strong>Score :</strong> {{ score }}</p>
+            <div class="simulateur-score-panel">
+                <div class="simulateur-gauge">
+                    <div class="simulateur-gauge-bar">
+                        <div class="simulateur-gauge-fill niveau-{{ niveau_slug }}" style="width: {{ score }}%;"></div>
+                    </div>
+                    <div class="simulateur-gauge-value">
+                        <strong>{{ score }}/100</strong>
+                        <span class="badge-niveau niveau-{{ niveau_slug }}">Intention {{ niveau|lower }}</span>
+                    </div>
+                </div>
+
+                <div class="simulateur-result-grid">
+                    <p><strong>Profil comportemental probable :</strong> {{ profil }}</p>
+                    <p><strong>Besoin probable :</strong> {{ besoin_probable }}</p>
+                    <p><strong>Priorité commerciale :</strong> <span class="badge-niveau niveau-{{ priorite_slug }}">{{ priorite_commerciale }}</span></p>
+                </div>
             </div>
 
             <div class="simulateur-recommendation">
-                <strong>Recommandation</strong>
+                <strong>Action recommandée (Next Best Action)</strong>
                 <p>{{ recommandation }}</p>
+            </div>
+
+            <div class="simulateur-explain-block">
+                <h3>Pourquoi ce score ?</h3>
+                <ul class="simulateur-signaux-liste">
+                    {% for signal in signaux_explicatifs %}
+                        <li>{{ signal }}</li>
+                    {% endfor %}
+                </ul>
+
+                <div class="simulateur-decomposition">
+                    {% for item in decomposition %}
+                        <div class="decomposition-ligne">
+                            <span>{{ item.label }}</span>
+                            <span class="decomposition-points {% if item.points < 0 %}negatif{% endif %}">{% if item.points > 0 %}+{% endif %}{{ item.points }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="simulateur-comparaison">
+                <div class="comparaison-bloc comparaison-classique">
+                    <span>Analytics classique</span>
+                    <ul>
+                        <li>Nombre de visites : {{ analytics_classique.nombre_visites }}</li>
+                        <li>Pages vues : {{ analytics_classique.pages_vues }}</li>
+                        <li>Durée : {{ analytics_classique.duree }}</li>
+                        <li>Source : {{ analytics_classique.source }}</li>
+                    </ul>
+                </div>
+                <div class="comparaison-bloc comparaison-predictneed">
+                    <span>PredictNeed IA</span>
+                    <ul>
+                        <li>Intention probable : {{ score }}/100 ({{ niveau|lower }})</li>
+                        <li>Besoin probable : {{ besoin_probable }}</li>
+                        <li>Priorité commerciale : {{ priorite_commerciale }}</li>
+                        <li>Action recommandée : {{ recommandation }}</li>
+                    </ul>
+                </div>
             </div>
         </div>
     {% endif %}
 
     <div class="simulateur-note">
-        <h2>À quoi sert cette démonstration ?</h2>
+        <h2>Transparence</h2>
         <p>
-            Cette page montre la logique de prédiction sur un cas simple. Sur un site connecté,
-            PredictNeed IA peut ensuite utiliser davantage de signaux : sources de trafic,
-            pages consultées, clics, durée de session, campagnes et historique des événements.
+            Cette simulation illustre la logique de décision de PredictNeed IA à partir de
+            signaux comportementaux sélectionnés. Sur un site connecté, l'analyse utilise
+            les comportements réellement observés sur vos parcours.
         </p>
     </div>
 
-<script 
+    <div class="simulateur-conversion">
+        <p>Imaginez cette analyse appliquée automatiquement aux vrais visiteurs de votre site.</p>
+        <div class="simulateur-conversion-actions">
+            <a class="btn-cta-principal" href="{% url 'inscription' %}">Créer mon espace PredictNeed IA</a>
+            <a class="btn-cta-secondaire" href="{% url 'fonctionnalites' %}">Découvrir toutes les fonctionnalités</a>
+        </div>
+    </div>
+
+<script>
+    (function () {
+        var secteurs = {{ secteurs_json|safe }};
+        var secteurSelect = document.getElementById("secteur-select");
+        var pagesGroups = document.querySelectorAll(".simulateur-pages-group");
+
+        function afficherPagesDuSecteur(secteurKey) {
+            pagesGroups.forEach(function (groupe) {
+                var estActif = groupe.getAttribute("data-secteur") === secteurKey;
+                groupe.hidden = !estActif;
+                groupe.querySelectorAll("input[type=checkbox]").forEach(function (input) {
+                    input.disabled = !estActif;
+                    if (!estActif) {
+                        input.checked = false;
+                    }
+                });
+            });
+        }
+
+        secteurSelect.addEventListener("change", function () {
+            afficherPagesDuSecteur(this.value);
+        });
+
+        // Scénarios calibrés pour démontrer naturellement les 3 niveaux
+        // d'intention (score exact sur 100, cf. predictor/analyse.py) :
+        // curieux=0 et campagne=10 (Faible), comparateur=45, hésitant=40 et
+        // récurrent=40 (Moyenne), chaud=100 (Élevée).
+        var scenarios = {
+            curieux: {secteur: "saas", pages: ["fonctionnalites"], source: "organique", premiere_visite: "oui", nombre_visites: "1", retour_page: false, duree: "courte", interactions: "faible", cta_consulte: false, abandon: false},
+            comparateur: {secteur: "saas", pages: ["fonctionnalites", "tarifs", "cas_clients"], source: "organique", premiere_visite: "oui", nombre_visites: "2-3", retour_page: true, duree: "moyenne", interactions: "moyen", cta_consulte: false, abandon: false},
+            hesitant: {secteur: "saas", pages: ["tarifs"], source: "organique", premiere_visite: "non", nombre_visites: "2-3", retour_page: true, duree: "moyenne", interactions: "faible", cta_consulte: true, abandon: true},
+            chaud: {secteur: "saas", pages: ["fonctionnalites", "cas_clients", "tarifs", "essai"], source: "organique", premiere_visite: "non", nombre_visites: "4+", retour_page: true, duree: "longue", interactions: "eleve", cta_consulte: true, abandon: false},
+            recurrent: {secteur: "saas", pages: ["fonctionnalites", "cas_clients"], source: "organique", premiere_visite: "non", nombre_visites: "2-3", retour_page: true, duree: "moyenne", interactions: "moyen", cta_consulte: false, abandon: false},
+            campagne: {secteur: "saas", pages: ["fonctionnalites"], source: "payant", premiere_visite: "oui", nombre_visites: "1", retour_page: false, duree: "moyenne", interactions: "moyen", cta_consulte: false, abandon: false}
+        };
+
+        function appliquerScenario(nom) {
+            var preset = scenarios[nom];
+            if (!preset) {
+                return;
+            }
+
+            secteurSelect.value = preset.secteur;
+            afficherPagesDuSecteur(preset.secteur);
+
+            document.querySelectorAll('.simulateur-pages-group[data-secteur="' + preset.secteur + '"] input[type=checkbox]').forEach(function (input) {
+                input.checked = preset.pages.indexOf(input.value) !== -1;
+            });
+
+            document.getElementById("source-select").value = preset.source;
+            document.getElementById("premiere-visite-select").value = preset.premiere_visite;
+            document.getElementById("nombre-visites-select").value = preset.nombre_visites;
+            document.getElementById("duree-select").value = preset.duree;
+            document.getElementById("interactions-select").value = preset.interactions;
+            document.getElementById("retour-page-checkbox").checked = !!preset.retour_page;
+            document.getElementById("cta-consulte-checkbox").checked = !!preset.cta_consulte;
+            document.getElementById("abandon-checkbox").checked = !!preset.abandon;
+        }
+
+        document.querySelectorAll(".scenario-chip").forEach(function (bouton) {
+            bouton.addEventListener("click", function () {
+                appliquerScenario(this.getAttribute("data-scenario"));
+            });
+        });
+    })();
+</script>
+
+<script
     src="{% static 'predictor/tracker.js' %}?v=92"
     data-api-key="a8bb877b-4c52-498d-9e5d-f75bdd210cd7"
     data-api-url="/api/track/"

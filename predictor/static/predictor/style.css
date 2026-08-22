@@ -4470,6 +4470,303 @@ body.home-page .pro-hero-content h1 {
 }
 
 /* =====================================================
+   SIMULATEUR — démonstration commerciale (secteurs, scénarios,
+   score explicable, comparaison Analytics vs PredictNeed)
+===================================================== */
+
+.simulateur-scenarios {
+    margin: 0.5rem 0 2rem;
+}
+
+.simulateur-scenarios-label {
+    display: block;
+    margin-bottom: 0.7rem;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.simulateur-scenarios-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+}
+
+.scenario-chip {
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: rgba(56, 189, 248, 0.08);
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.scenario-chip:hover,
+.scenario-chip:focus-visible {
+    background: rgba(56, 189, 248, 0.22);
+    border-color: #38bdf8;
+}
+
+.simulateur-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #e2e8f0;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.simulateur-checkbox input {
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: #38bdf8;
+}
+
+.simulateur-checkbox-standalone {
+    margin-top: 0.2rem;
+    padding: 0.6rem 0.2rem;
+}
+
+.simulateur-pages-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.6rem 1rem;
+    padding: 0.9rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* --- Score / jauge --- */
+
+.simulateur-score-panel {
+    display: grid;
+    gap: 1.4rem;
+}
+
+.simulateur-gauge {
+    display: grid;
+    gap: 0.7rem;
+}
+
+.simulateur-gauge-bar {
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.simulateur-gauge-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.25s ease;
+}
+
+.simulateur-gauge-value {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.simulateur-gauge-value strong {
+    font-size: 1.5rem;
+    color: #ffffff;
+}
+
+.badge-niveau {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.badge-niveau.niveau-faible,
+.simulateur-gauge-fill.niveau-faible {
+    background: rgba(148, 163, 184, 0.25);
+    color: #cbd5e1;
+}
+
+.simulateur-gauge-fill.niveau-faible {
+    background: #94a3b8;
+}
+
+.badge-niveau.niveau-moyenne {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+.simulateur-gauge-fill.niveau-moyenne {
+    background: #fbbf24;
+}
+
+.badge-niveau.niveau-elevee {
+    background: rgba(248, 113, 113, 0.2);
+    color: #f87171;
+}
+
+.simulateur-gauge-fill.niveau-elevee {
+    background: #f87171;
+}
+
+/* --- Explication du score --- */
+
+.simulateur-explain-block {
+    margin-top: 1.6rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.simulateur-explain-block h3 {
+    margin: 0 0 0.9rem;
+    color: #67e8f9;
+    font-size: 1.1rem;
+}
+
+.simulateur-signaux-liste {
+    margin: 0 0 1.2rem;
+    padding-left: 1.2rem;
+    color: #e2e8f0;
+    line-height: 1.7;
+}
+
+.simulateur-decomposition {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.decomposition-ligne {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    font-size: 0.9rem;
+}
+
+.decomposition-points {
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+.decomposition-points.negatif {
+    color: #f87171;
+}
+
+/* --- Comparaison Analytics classique vs PredictNeed IA --- */
+
+.simulateur-comparaison {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.4rem;
+    margin-top: 1.8rem;
+}
+
+.comparaison-bloc {
+    padding: 1.4rem;
+    border-radius: 18px;
+}
+
+.comparaison-bloc span {
+    display: block;
+    margin-bottom: 0.8rem;
+    font-weight: 800;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.comparaison-bloc ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.5rem;
+    color: #cbd5e1;
+    line-height: 1.6;
+}
+
+.comparaison-classique {
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.comparaison-classique span {
+    color: #94a3b8;
+}
+
+.comparaison-predictneed {
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.comparaison-predictneed span {
+    color: #38bdf8;
+}
+
+/* --- Conversion --- */
+
+.simulateur-conversion {
+    margin-top: 2.4rem;
+    padding: 2rem;
+    border-radius: 22px;
+    text-align: center;
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.simulateur-conversion p {
+    margin: 0 0 1.3rem;
+    color: #ffffff;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.simulateur-conversion-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.btn-cta-principal,
+.btn-cta-secondaire {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.9rem 1.8rem;
+    border-radius: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.btn-cta-principal {
+    background: #38bdf8;
+    color: #0f172a;
+}
+
+.btn-cta-secondaire {
+    background: transparent;
+    color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 640px) {
+    .simulateur-gauge-value {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+/* =====================================================
    BOUTON NAVBAR "CRÉER UN COMPTE"
 ===================================================== */
 

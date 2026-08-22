@@ -451,11 +451,23 @@ class SimulatorEventTests(TestCase):
     @patch("predictor.services.prospectpilot_events.urlopen")
     def test_post_enqueues_simulator_completed_with_metadata_no_http(self, mock_urlopen):
         self.client.get("/simulateur/?ppt=simtoken2222222222")
-        self.client.post("/simulateur/", {"page_visitee": "prix", "temps": "long", "clics": "eleve"})
+        self.client.post("/simulateur/", {
+            "secteur": "saas",
+            "pages": ["fonctionnalites", "cas_clients", "tarifs", "essai"],
+            "source": "organique",
+            "premiere_visite": "non",
+            "nombre_visites": "4+",
+            "duree": "longue",
+            "interactions": "eleve",
+            "retour_page": "oui",
+            "cta_consulte": "oui",
+        })
         mock_urlopen.assert_not_called()
         completed = ProspectPilotOutboundEvent.objects.get(event_type="simulator_completed")
         self.assertEqual(completed.status, "pending")
-        self.assertEqual(completed.payload["metadata"]["profil"], "Prêt à acheter")
+        self.assertEqual(completed.payload["metadata"]["profil"], "Prospect chaud")
+        self.assertEqual(completed.payload["metadata"]["niveau"], "Élevée")
+        self.assertEqual(completed.payload["metadata"]["secteur"], "saas")
         self.assertNotIn("temps", completed.payload["metadata"])
 
 
