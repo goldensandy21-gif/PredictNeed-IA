@@ -4,6 +4,8 @@ from .analyse import (
     analyser_besoin,
     analyser_session_automatique,
     analyser_simulation_avancee,
+    normaliser_signaux,
+    SCENARIOS_GENERIQUES,
     SECTEUR_PAR_DEFAUT,
     SECTEURS_SIMULATEUR,
 )
@@ -1531,7 +1533,7 @@ def simulateur(request):
     attribution = get_current_attribution(request)
 
     if request.method == "POST":
-        signaux = {
+        signaux_bruts = {
             "pages": request.POST.getlist("pages"),
             "source": request.POST.get("source"),
             "premiere_visite": request.POST.get("premiere_visite"),
@@ -1543,16 +1545,23 @@ def simulateur(request):
             "abandon": request.POST.get("abandon"),
         }
 
-        resultat = analyser_simulation_avancee(secteur_selectionne, signaux)
+        # analyser_simulation_avancee() ne fait jamais confiance aux signaux
+        # bruts : elle les normalise en interne (pages filtrées sur celles du
+        # secteur, valeurs invalides ramenées à un défaut, contradictions
+        # premiere_visite/nombre_visites corrigées) et renvoie le résultat
+        # dans "signaux_normalises", réutilisé ci-dessous pour le journal
+        # d'événement et pour réafficher le formulaire sans contradiction.
+        resultat = analyser_simulation_avancee(secteur_selectionne, signaux_bruts)
+        valeurs = resultat["signaux_normalises"]
 
         EvenementUtilisateur.objects.create(
             session=session_visiteur,
             type_evenement="formulaire",
             page=f"simulateur:{secteur_selectionne}",
             valeur=(
-                f"Pages : {', '.join(signaux['pages']) or 'aucune'} | "
-                f"Source : {signaux['source']} | Durée : {signaux['duree']} | "
-                f"Interactions : {signaux['interactions']}"
+                f"Pages : {', '.join(valeurs['pages']) or 'aucune'} | "
+                f"Source : {valeurs['source']} | Durée : {valeurs['duree']} | "
+                f"Interactions : {valeurs['interactions']}"
             ),
         )
 
@@ -1583,28 +1592,34 @@ def simulateur(request):
                 )
             except Exception:
                 logger.exception("Notification simulator_completed impossible — résultat du simulateur non affecté.")
-    elif attribution and not attribution.simulator_started_sent:
-        # GET = affichage du formulaire. C'est la meilleure distinction
-        # disponible pour "started" avec l'architecture actuelle (un seul
-        # POST qui calcule directement le résultat final).
-        try:
-            send_prospectpilot_event(
-                "simulator_started",
-                attribution=attribution,
-                idempotency_key=f"{attribution.token}:simulator_started",
-            )
-            attribution.simulator_started_sent = True
-            attribution.save(update_fields=["simulator_started_sent"])
-        except Exception:
-            logger.exception("Notification simulator_started impossible — page non affectée.")
+    else:
+        # GET = affichage du formulaire, sans aucun signal encore soumis.
+        valeurs = normaliser_signaux(secteur_selectionne, {})
+        if attribution and not attribution.simulator_started_sent:
+            # C'est la meilleure distinction disponible pour "started" avec
+            # l'architecture actuelle (un seul POST qui calcule directement
+            # le résultat final).
+            try:
+                send_prospectpilot_event(
+                    "simulator_started",
+                    attribution=attribution,
+                    idempotency_key=f"{attribution.token}:simulator_started",
+                )
+                attribution.simulator_started_sent = True
+                attribution.save(update_fields=["simulator_started_sent"])
+            except Exception:
+                logger.exception("Notification simulator_started impossible — page non affectée.")
 
     secteurs_json = json.dumps({
         key: {
             "label": config["label"],
             "pages": config["pages"],
+            "page_tarifs": config["page_tarifs"],
+            "page_conversion": config["page_conversion"],
         }
         for key, config in SECTEURS_SIMULATEUR.items()
     })
+    scenarios_json = json.dumps(SCENARIOS_GENERIQUES)
 
     return render(
         request,
@@ -1614,7 +1629,9 @@ def simulateur(request):
             "Testez le simulateur PredictNeed IA pour comprendre comment les comportements visiteurs peuvent révéler une intention ou un besoin probable.",
             secteurs=SECTEURS_SIMULATEUR,
             secteurs_json=secteurs_json,
+            scenarios_json=scenarios_json,
             secteur_selectionne=secteur_selectionne,
+            valeurs=valeurs,
             **(resultat or {}),
         ),
     )

@@ -72,7 +72,7 @@
                         <div class="simulateur-pages-group" data-secteur="{{ cle }}" {% if cle != secteur_selectionne %}hidden{% endif %}>
                             {% for page in config.pages %}
                                 <label class="simulateur-checkbox">
-                                    <input type="checkbox" name="pages" value="{{ page.value }}" {% if cle != secteur_selectionne %}disabled{% endif %}>
+                                    <input type="checkbox" name="pages" value="{{ page.value }}" {% if cle != secteur_selectionne %}disabled{% endif %} {% if page.value in valeurs.pages %}checked{% endif %}>
                                     {{ page.label }}
                                 </label>
                             {% endfor %}
@@ -82,53 +82,53 @@
 
                 <label>Source d'acquisition</label>
                 <select name="source" id="source-select">
-                    <option value="organique">Recherche organique</option>
-                    <option value="payant">Publicité payante</option>
-                    <option value="social">Réseaux sociaux</option>
-                    <option value="email">Email / newsletter</option>
-                    <option value="direct">Accès direct</option>
-                    <option value="referent">Site référent</option>
+                    <option value="organique" {% if valeurs.source == "organique" %}selected{% endif %}>Recherche organique</option>
+                    <option value="payant" {% if valeurs.source == "payant" %}selected{% endif %}>Publicité payante</option>
+                    <option value="social" {% if valeurs.source == "social" %}selected{% endif %}>Réseaux sociaux</option>
+                    <option value="email" {% if valeurs.source == "email" %}selected{% endif %}>Email / newsletter</option>
+                    <option value="direct" {% if valeurs.source == "direct" %}selected{% endif %}>Accès direct</option>
+                    <option value="referent" {% if valeurs.source == "referent" %}selected{% endif %}>Site référent</option>
                 </select>
 
                 <label>Type de visite</label>
                 <select name="premiere_visite" id="premiere-visite-select">
-                    <option value="oui">Première visite</option>
-                    <option value="non">Visite récurrente</option>
+                    <option value="oui" {% if valeurs.premiere_visite == "oui" %}selected{% endif %}>Première visite</option>
+                    <option value="non" {% if valeurs.premiere_visite == "non" %}selected{% endif %}>Visite récurrente</option>
                 </select>
 
                 <label>Nombre de visites</label>
                 <select name="nombre_visites" id="nombre-visites-select">
-                    <option value="1">1 visite</option>
-                    <option value="2-3">2 à 3 visites</option>
-                    <option value="4+">4 visites ou plus</option>
+                    <option value="1" {% if valeurs.nombre_visites == "1" %}selected{% endif %}>1 visite</option>
+                    <option value="2-3" {% if valeurs.nombre_visites == "2-3" %}selected{% endif %}>2 à 3 visites</option>
+                    <option value="4+" {% if valeurs.nombre_visites == "4+" %}selected{% endif %}>4 visites ou plus</option>
                 </select>
 
                 <label>Durée de la visite</label>
                 <select name="duree" id="duree-select">
-                    <option value="courte">Courte</option>
-                    <option value="moyenne">Moyenne</option>
-                    <option value="longue">Longue</option>
+                    <option value="courte" {% if valeurs.duree == "courte" %}selected{% endif %}>Courte</option>
+                    <option value="moyenne" {% if valeurs.duree == "moyenne" %}selected{% endif %}>Moyenne</option>
+                    <option value="longue" {% if valeurs.duree == "longue" %}selected{% endif %}>Longue</option>
                 </select>
 
                 <label>Niveau d'interactions (clics)</label>
                 <select name="interactions" id="interactions-select">
-                    <option value="faible">Faible</option>
-                    <option value="moyen">Moyen</option>
-                    <option value="eleve">Élevé</option>
+                    <option value="faible" {% if valeurs.interactions == "faible" %}selected{% endif %}>Faible</option>
+                    <option value="moyen" {% if valeurs.interactions == "moyen" %}selected{% endif %}>Moyen</option>
+                    <option value="eleve" {% if valeurs.interactions == "eleve" %}selected{% endif %}>Élevé</option>
                 </select>
 
                 <label class="simulateur-checkbox simulateur-checkbox-standalone">
-                    <input type="checkbox" name="retour_page" id="retour-page-checkbox" value="oui">
+                    <input type="checkbox" name="retour_page" id="retour-page-checkbox" value="oui" {% if valeurs.retour_page == "oui" %}checked{% endif %}>
                     Retour sur une page déjà consultée
                 </label>
 
                 <label class="simulateur-checkbox simulateur-checkbox-standalone">
-                    <input type="checkbox" name="cta_consulte" id="cta-consulte-checkbox" value="oui">
+                    <input type="checkbox" name="cta_consulte" id="cta-consulte-checkbox" value="oui" {% if valeurs.cta_consulte == "oui" %}checked{% endif %}>
                     Formulaire ou bouton d'action (CTA) consulté
                 </label>
 
                 <label class="simulateur-checkbox simulateur-checkbox-standalone">
-                    <input type="checkbox" name="abandon" id="abandon-checkbox" value="oui">
+                    <input type="checkbox" name="abandon" id="abandon-checkbox" value="oui" {% if valeurs.abandon == "oui" %}checked{% endif %}>
                     Abandon avant la conversion finale
                 </label>
 
@@ -140,8 +140,8 @@
             <h2>Comment interpréter les signaux ?</h2>
 
             <div class="simulateur-step">
-                <strong>Page tarifs ou proche de la conversion</strong>
-                <p>Ces pages indiquent souvent une comparaison, une hésitation ou une intention d'achat plus avancée.</p>
+                <strong>Page de comparaison / décision ou proche de la conversion</strong>
+                <p>Selon le secteur (tarifs, produit, financement...), ces pages indiquent souvent une comparaison, une hésitation ou une intention d'achat plus avancée.</p>
             </div>
 
             <div class="simulateur-step">
@@ -264,30 +264,47 @@
             afficherPagesDuSecteur(this.value);
         });
 
-        // Scénarios calibrés pour démontrer naturellement les 3 niveaux
-        // d'intention (score exact sur 100, cf. predictor/analyse.py) :
-        // curieux=0 et campagne=10 (Faible), comparateur=45, hésitant=40 et
-        // récurrent=40 (Moyenne), chaud=100 (Élevée).
-        var scenarios = {
-            curieux: {secteur: "saas", pages: ["fonctionnalites"], source: "organique", premiere_visite: "oui", nombre_visites: "1", retour_page: false, duree: "courte", interactions: "faible", cta_consulte: false, abandon: false},
-            comparateur: {secteur: "saas", pages: ["fonctionnalites", "tarifs", "cas_clients"], source: "organique", premiere_visite: "oui", nombre_visites: "2-3", retour_page: true, duree: "moyenne", interactions: "moyen", cta_consulte: false, abandon: false},
-            hesitant: {secteur: "saas", pages: ["tarifs"], source: "organique", premiere_visite: "non", nombre_visites: "2-3", retour_page: true, duree: "moyenne", interactions: "faible", cta_consulte: true, abandon: true},
-            chaud: {secteur: "saas", pages: ["fonctionnalites", "cas_clients", "tarifs", "essai"], source: "organique", premiere_visite: "non", nombre_visites: "4+", retour_page: true, duree: "longue", interactions: "eleve", cta_consulte: true, abandon: false},
-            recurrent: {secteur: "saas", pages: ["fonctionnalites", "cas_clients"], source: "organique", premiere_visite: "non", nombre_visites: "2-3", retour_page: true, duree: "moyenne", interactions: "moyen", cta_consulte: false, abandon: false},
-            campagne: {secteur: "saas", pages: ["fonctionnalites"], source: "payant", premiere_visite: "oui", nombre_visites: "1", retour_page: false, duree: "moyenne", interactions: "moyen", cta_consulte: false, abandon: false}
-        };
+        // Scénarios génériques (indépendants du secteur) : "tarifs" et
+        // "conversion" désignent les pages spéciales du secteur ACTUELLEMENT
+        // sélectionné, "autre" consomme la prochaine page ordinaire. Même
+        // source de vérité que predictor/analyse.py::SCENARIOS_GENERIQUES,
+        // pour que le clic sur un scénario ne force jamais un secteur donné.
+        var scenariosGeneriques = {{ scenarios_json|safe }};
+
+        function resoudrePagesScenario(secteurConfig, roles) {
+            var valeurs = secteurConfig.pages.map(function (page) { return page.value; });
+            var autres = valeurs.filter(function (valeur) {
+                return valeur !== secteurConfig.page_tarifs && valeur !== secteurConfig.page_conversion;
+            });
+            var resultat = [];
+            var indexAutre = 0;
+            roles.forEach(function (role) {
+                if (role === "tarifs") {
+                    resultat.push(secteurConfig.page_tarifs);
+                } else if (role === "conversion") {
+                    resultat.push(secteurConfig.page_conversion);
+                } else if (role === "autre" && indexAutre < autres.length) {
+                    resultat.push(autres[indexAutre]);
+                    indexAutre += 1;
+                }
+            });
+            return resultat;
+        }
 
         function appliquerScenario(nom) {
-            var preset = scenarios[nom];
+            var preset = scenariosGeneriques[nom];
             if (!preset) {
                 return;
             }
 
-            secteurSelect.value = preset.secteur;
-            afficherPagesDuSecteur(preset.secteur);
+            // Le secteur choisi par le visiteur n'est jamais modifié par un
+            // scénario rapide : seules les pages sont résolues pour lui.
+            var secteurActuel = secteurSelect.value;
+            var secteurConfig = secteurs[secteurActuel];
+            var pagesResolues = resoudrePagesScenario(secteurConfig, preset.pages_roles);
 
-            document.querySelectorAll('.simulateur-pages-group[data-secteur="' + preset.secteur + '"] input[type=checkbox]').forEach(function (input) {
-                input.checked = preset.pages.indexOf(input.value) !== -1;
+            document.querySelectorAll('.simulateur-pages-group[data-secteur="' + secteurActuel + '"] input[type=checkbox]').forEach(function (input) {
+                input.checked = pagesResolues.indexOf(input.value) !== -1;
             });
 
             document.getElementById("source-select").value = preset.source;

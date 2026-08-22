@@ -213,23 +213,25 @@ PROFIL_DETAILS = {
         "besoin": "être rassuré avant de {action}",
         "priorite": "Moyenne",
         "recommandation": (
-            "Relancer avec un message rassurant, une preuve sociale ou une "
-            "réponse aux objections courantes pour lever le dernier frein."
+            "Si le visiteur est identifié, le relancer avec un message "
+            "rassurant ou une preuve sociale ; sinon, répondre aux objections "
+            "courantes directement sur la page pour lever le dernier frein."
         ),
     },
     "Prospect chaud": {
         "besoin": "passer à l'action pour {action}",
         "priorite": "Élevée",
         "recommandation": (
-            "Contacter ce prospect rapidement : proposer un rendez-vous ou "
-            "faciliter immédiatement l'étape pour {action}."
+            "Si le visiteur est identifié, prioriser une relance rapide ; "
+            "sinon, faciliter immédiatement l'étape pour {action}."
         ),
     },
     "Visiteur récurrent": {
         "besoin": "continuer à explorer avant de se décider",
         "priorite": "Moyenne",
         "recommandation": (
-            "Proposer un contenu de suivi ou une relance personnalisée pour "
+            "Si le visiteur est identifié, lui proposer une relance "
+            "personnalisée ; sinon, mettre en avant un contenu de suivi pour "
             "maintenir l'intérêt sans brusquer la décision."
         ),
     },
@@ -248,6 +250,146 @@ def _secteur_config(secteur_key):
     return SECTEURS_SIMULATEUR.get(secteur_key, SECTEURS_SIMULATEUR[SECTEUR_PAR_DEFAUT])
 
 
+def _label_page(secteur, valeur_page):
+    for page in secteur["pages"]:
+        if page["value"] == valeur_page:
+            return page["label"]
+    return valeur_page
+
+
+def normaliser_signaux(secteur_key, signaux):
+    """Ne jamais faire confiance uniquement au JavaScript : filtre, déduplique
+    et corrige les incohérences des signaux reçus (typiquement via POST)
+    avant tout calcul ou tout réaffichage dans le formulaire.
+    """
+    secteur = _secteur_config(secteur_key)
+    pages_autorisees = [page["value"] for page in secteur["pages"]]
+
+    pages = []
+    for page in signaux.get("pages") or []:
+        if page in pages_autorisees and page not in pages:
+            pages.append(page)
+
+    def _choix_valide(valeur, choix_valides, defaut):
+        return valeur if valeur in choix_valides else defaut
+
+    source = _choix_valide(signaux.get("source"), SOURCE_LABELS, "organique")
+    duree = _choix_valide(signaux.get("duree"), DUREE_LABELS, "courte")
+    interactions = _choix_valide(signaux.get("interactions"), INTERACTIONS_LABELS, "faible")
+    nombre_visites = _choix_valide(signaux.get("nombre_visites"), NOMBRE_VISITES_LABELS, "1")
+
+    premiere_visite = "non" if signaux.get("premiere_visite") == "non" else "oui"
+
+    # Cohérence obligatoire entre type de visite et nombre de visites : une
+    # première visite ne peut être que la 1ère, et une visite récurrente ne
+    # peut pas être comptabilisée comme une visite unique.
+    if premiere_visite == "oui":
+        nombre_visites = "1"
+    elif nombre_visites == "1":
+        nombre_visites = "2-3"
+
+    def _case(valeur):
+        return "oui" if valeur == "oui" else ""
+
+    return {
+        "pages": pages,
+        "source": source,
+        "premiere_visite": premiere_visite,
+        "nombre_visites": nombre_visites,
+        "duree": duree,
+        "interactions": interactions,
+        "retour_page": _case(signaux.get("retour_page")),
+        "cta_consulte": _case(signaux.get("cta_consulte")),
+        "abandon": _case(signaux.get("abandon")),
+    }
+
+
+# Scénarios rapides exprimés de façon générique (indépendante du secteur) :
+# "tarifs" et "conversion" désignent les pages spéciales du secteur choisi,
+# "autre" consomme la prochaine page ordinaire disponible. Résolus ensuite
+# pour le secteur réellement sélectionné par resoudre_scenario_generique(),
+# aussi bien côté template (JSON pour le JS) que côté tests Python.
+SCENARIOS_GENERIQUES = {
+    "curieux": {
+        "pages_roles": ["autre"],
+        "source": "organique", "premiere_visite": "oui", "nombre_visites": "1",
+        "retour_page": False, "duree": "courte", "interactions": "faible",
+        "cta_consulte": False, "abandon": False,
+    },
+    "comparateur": {
+        "pages_roles": ["autre", "tarifs", "autre"],
+        "source": "organique", "premiere_visite": "non", "nombre_visites": "2-3",
+        "retour_page": True, "duree": "moyenne", "interactions": "moyen",
+        "cta_consulte": False, "abandon": False,
+    },
+    "hesitant": {
+        "pages_roles": ["tarifs"],
+        "source": "organique", "premiere_visite": "non", "nombre_visites": "2-3",
+        "retour_page": True, "duree": "moyenne", "interactions": "faible",
+        "cta_consulte": True, "abandon": True,
+    },
+    "chaud": {
+        "pages_roles": ["autre", "autre", "tarifs", "conversion"],
+        "source": "organique", "premiere_visite": "non", "nombre_visites": "4+",
+        "retour_page": True, "duree": "longue", "interactions": "eleve",
+        "cta_consulte": True, "abandon": False,
+    },
+    "recurrent": {
+        "pages_roles": ["autre", "autre"],
+        "source": "organique", "premiere_visite": "non", "nombre_visites": "2-3",
+        "retour_page": True, "duree": "moyenne", "interactions": "moyen",
+        "cta_consulte": False, "abandon": False,
+    },
+    "campagne": {
+        "pages_roles": ["autre"],
+        "source": "payant", "premiere_visite": "oui", "nombre_visites": "1",
+        "retour_page": False, "duree": "moyenne", "interactions": "moyen",
+        "cta_consulte": False, "abandon": False,
+    },
+}
+
+
+def resoudre_pages_scenario(secteur_key, pages_roles):
+    """Traduit une liste de rôles génériques ("tarifs", "conversion", "autre")
+    en pages concrètes du secteur sélectionné."""
+    secteur = _secteur_config(secteur_key)
+    valeurs_secteur = [page["value"] for page in secteur["pages"]]
+    autres = [
+        valeur for valeur in valeurs_secteur
+        if valeur not in (secteur["page_tarifs"], secteur["page_conversion"])
+    ]
+
+    resultat = []
+    index_autre = 0
+    for role in pages_roles:
+        if role == "tarifs":
+            resultat.append(secteur["page_tarifs"])
+        elif role == "conversion":
+            resultat.append(secteur["page_conversion"])
+        elif role == "autre" and index_autre < len(autres):
+            resultat.append(autres[index_autre])
+            index_autre += 1
+    return resultat
+
+
+def resoudre_scenario_generique(nom_scenario, secteur_key):
+    """Résout un scénario rapide générique en signaux concrets pour le
+    secteur donné (ne force jamais un secteur particulier)."""
+    preset = SCENARIOS_GENERIQUES[nom_scenario]
+    signaux = {
+        "pages": resoudre_pages_scenario(secteur_key, preset["pages_roles"]),
+        "source": preset["source"],
+        "premiere_visite": preset["premiere_visite"],
+        "nombre_visites": preset["nombre_visites"],
+        "duree": preset["duree"],
+        "interactions": preset["interactions"],
+        "retour_page": "oui" if preset["retour_page"] else None,
+        "cta_consulte": "oui" if preset["cta_consulte"] else None,
+        "abandon": "oui" if preset["abandon"] else None,
+    }
+    return signaux
+
+
 def analyser_simulation_avancee(secteur_key, signaux):
     """Simulation pédagogique de la logique de décision de PredictNeed IA.
 
@@ -257,16 +399,17 @@ def analyser_simulation_avancee(secteur_key, signaux):
     "intention probable" explicable, pas une prédiction certaine.
     """
     secteur = _secteur_config(secteur_key)
+    normalises = normaliser_signaux(secteur_key, signaux)
 
-    pages = [page for page in (signaux.get("pages") or []) if page]
-    source = signaux.get("source") or "organique"
-    premiere_visite = signaux.get("premiere_visite") == "oui"
-    nombre_visites = signaux.get("nombre_visites") or "1"
-    retour_page = signaux.get("retour_page") == "oui"
-    duree = signaux.get("duree") or "courte"
-    interactions = signaux.get("interactions") or "faible"
-    cta_consulte = signaux.get("cta_consulte") == "oui"
-    abandon = signaux.get("abandon") == "oui"
+    pages = normalises["pages"]
+    source = normalises["source"]
+    premiere_visite = normalises["premiere_visite"] == "oui"
+    nombre_visites = normalises["nombre_visites"]
+    retour_page = normalises["retour_page"] == "oui"
+    duree = normalises["duree"]
+    interactions = normalises["interactions"]
+    cta_consulte = normalises["cta_consulte"] == "oui"
+    abandon = normalises["abandon"] == "oui"
 
     a_page_tarifs = secteur["page_tarifs"] in pages
     a_page_conversion = secteur["page_conversion"] in pages
@@ -300,9 +443,11 @@ def analyser_simulation_avancee(secteur_key, signaux):
     # issu de campagne") et reste visible telle quelle dans le comparatif
     # Analytics classique.
     if a_page_tarifs:
-        ajouter("Consultation de la page tarifs", 15)
+        libelle_tarifs = _label_page(secteur, secteur["page_tarifs"])
+        ajouter(f"Consultation d'une page de comparaison / décision (« {libelle_tarifs} »)", 15)
     if a_page_conversion:
-        ajouter("Page proche de la conversion consultée", 20)
+        libelle_conversion = _label_page(secteur, secteur["page_conversion"])
+        ajouter(f"Page proche de la conversion consultée (« {libelle_conversion} »)", 20)
     if plusieurs_pages:
         ajouter("Plusieurs pages du parcours consultées", 5)
     if retour_page:
@@ -375,6 +520,7 @@ def analyser_simulation_avancee(secteur_key, signaux):
         "signaux_explicatifs": signaux_explicatifs,
         "decomposition": decomposition,
         "analytics_classique": analytics_classique,
+        "signaux_normalises": normalises,
         "pages_consultees": [
             page_def["label"]
             for page_def in secteur["pages"]
