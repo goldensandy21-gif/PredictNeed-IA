@@ -13,12 +13,17 @@
 {% include "predictor/includes/navbar.html" %}
 
 <section class="simulateur-page">
-    <h1>Simulateur PredictNeed IA</h1>
-    <p>
-        Choisissez un secteur, simulez un parcours visiteur réaliste et découvrez en moins
-        d'une minute comment PredictNeed IA transforme des signaux comportementaux en
-        intention probable, en besoin explicable et en action commerciale recommandée.
-    </p>
+    <div class="simulateur-header">
+        <h1>Simulateur PredictNeed IA</h1>
+        <p>
+            Choisissez un secteur, simulez un parcours visiteur réaliste et découvrez en moins
+            d'une minute comment PredictNeed IA transforme des signaux comportementaux en
+            intention probable, en besoin explicable et en action commerciale recommandée.
+        </p>
+        <div class="simulateur-cta">
+            <a href="{% url 'inscription' %}" class="hero-button">Essayer gratuitement 60 jours</a>
+        </div>
+    </div>
 
     <div class="simulateur-intro-grid">
         <div class="simulateur-info-card">
@@ -38,6 +43,15 @@
                 Une intention probable sur 100, un profil comportemental, un besoin
                 probable, les signaux qui l'expliquent et une action commerciale
                 recommandée — immédiatement compréhensibles.
+            </p>
+        </div>
+
+        <div class="simulateur-info-card featured">
+            <span>Avantage commercial</span>
+            <h2>Relancez les prospects au bon moment</h2>
+            <p>
+                Identifiez les visiteurs prêts à acheter avant qu'ils ne quittent votre site
+                et proposez-leur exactement ce qu'ils recherchent.
             </p>
         </div>
     </div>
