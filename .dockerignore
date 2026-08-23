@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+
+# Base de données locale
+db.sqlite3
+*.sqlite3
+*.sqlite3.backup*
+
+# Fichiers statiques générés
+staticfiles/
+
+# Environnements
+.env
+.env.*
+!.env.example
+
+# Fichiers temporaires
+*.patch
+*.bak*
+*.backup*
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dossiers de backup
+.phase*/
+.predeploy*/
+.public-seo-backup*/
+.trial-v2-backup*/
+artifacts/
+deployments/
+head
+
+# Documentation non nécessaire au build
+README.md
+*.md
+
+# Fichiers de config locaux
+sauvegarde_*.patch
+nettoyage_propre.sh
