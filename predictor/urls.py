@@ -5,6 +5,7 @@ urlpatterns = [
     path('', views.accueil, name='accueil'),
     path('robots.txt', views.robots_txt, name='robots_txt'),
     path('sitemap.xml', views.sitemap_xml, name='sitemap_xml'),
+    path('healthz/', views.health_check, name='health_check'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard/nettoyer-evenements/', views.nettoyer_evenements, name='nettoyer_evenements'),
 

@@ -2897,6 +2897,18 @@ def module_publicite(request):
         "campagnes_externes": campagnes_externes,
     })
 
+def health_check(request):
+    """Endpoint de santé pour les sondes Fly.io."""
+    from django.db import connection
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except Exception:
+        return JsonResponse({"status": "error"}, status=503)
+    return JsonResponse({"status": "ok"})
+
+
 @login_required
 def module_securite(request):
     scope = get_module_scope(request, module_field="module_securite_entreprise_actif")
