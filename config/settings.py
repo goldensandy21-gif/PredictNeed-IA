@@ -24,8 +24,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "8W2hqzQjCw6oeZM_KM9Y1-A8nuyco7738XPKhaa4o_9vdcYjYaJj6PeUqSj7CpH07Ao"
+    "SECRET_KEY",
+    os.environ.get(
+        "DJANGO_SECRET_KEY",
+        "8W2hqzQjCw6oeZM_KM9Y1-A8nuyco7738XPKhaa4o_9vdcYjYaJj6PeUqSj7CpH07Ao"
+    )
 )
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
