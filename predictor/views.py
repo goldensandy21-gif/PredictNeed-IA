@@ -1393,11 +1393,12 @@ def track_event(request):
             status=400
         )
 
-    api_key = data.get("api_key")
-    session_id = data.get("session_id")
-    type_evenement = data.get("type_evenement", "page_vue")
-    page = data.get("page", "")
-    valeur = data.get("valeur", "")
+    # Validation et nettoyage des entrées
+    api_key = str(data.get("api_key", "")).strip()[:255]
+    session_id = str(data.get("session_id", "")).strip()[:100]
+    type_evenement = str(data.get("type_evenement", "page_vue")).strip()[:50]
+    page = str(data.get("page", ""))[:255]
+    valeur = str(data.get("valeur", ""))[:255]
     consentement_tracking = data.get("consentement_tracking")
 
     if not api_key:
@@ -1409,6 +1410,12 @@ def track_event(request):
     if not session_id:
         return JsonResponse(
             {"success": False, "error": "Session visiteur manquante"},
+            status=400
+        )
+
+    if type_evenement not in [choice[0] for choice in EvenementUtilisateur._meta.get_field("type_evenement").choices]:
+        return JsonResponse(
+            {"success": False, "error": "Type d'événement non valide"},
             status=400
         )
 
@@ -1796,13 +1803,14 @@ def capture_lead(request):
             status=400
         )
 
-    api_key = data.get("api_key")
-    session_id = data.get("session_id")
-    nom = data.get("nom", "")
-    email = data.get("email", "")
-    telephone = data.get("telephone", "")
-    message = data.get("message", "")
-    page = data.get("page", "")
+    # Validation et nettoyage des entrées
+    api_key = str(data.get("api_key", "")).strip()[:255]
+    session_id = str(data.get("session_id", "")).strip()[:100]
+    nom = str(data.get("nom", ""))[:150].strip()
+    email = str(data.get("email", ""))[:254].strip().lower()
+    telephone = str(data.get("telephone", ""))[:30].strip()
+    message = str(data.get("message", ""))[:1000].strip()
+    page = str(data.get("page", ""))[:255]
 
     consentement = data.get("consentement")
 
@@ -1815,6 +1823,13 @@ def capture_lead(request):
     if not session_id:
         return JsonResponse(
             {"success": False, "error": "Session visiteur manquante"},
+            status=400
+        )
+
+    # Validation email si fourni
+    if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+        return JsonResponse(
+            {"success": False, "error": "Format d'email invalide"},
             status=400
         )
 
