@@ -1,0 +1,69 @@
+# fly.toml app configuration file generated for predictneed-ia on 2026-08-23T21:48:33+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'predictneed-ia'
+primary_region = 'fra'
+console_command = '/code/manage.py shell'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[deploy]
+  strategy = 'canary'
+  release_command = 'python manage.py migrate --noinput'
+
+[env]
+  DEFAULT_FROM_EMAIL = 'PredictNeed IA <webprojectsby.ariane@newfelstudio.fr>'
+  DJANGO_ALLOWED_HOSTS = 'predictneed-ia.com,www.predictneed-ia.com,predictneed-ia.fly.dev,go.newfelstudio.fr'
+  DJANGO_CSRF_TRUSTED_ORIGINS = 'https://predictneed-ia.com,https://www.predictneed-ia.com,https://predictneed-ia.fly.dev,https://go.newfelstudio.fr'
+  DJANGO_DEBUG = 'False'
+  DJANGO_EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+  EMAIL_HOST = 'ssl0.ovh.net'
+  EMAIL_HOST_USER = 'webprojectsby.ariane@newfelstudio.fr'
+  EMAIL_PORT = '465'
+  EMAIL_USE_SSL = 'True'
+  EMAIL_USE_TLS = 'False'
+  PORT = '8000'
+  PREDICTNEED_ANALYTICS_RETENTION_DAYS = '395'
+  PREDICTNEED_CONTACT_EMAIL = 'webprojectsby.ariane@newfelstudio.fr'
+  PREDICTNEED_LEAD_RETENTION_DAYS = '1095'
+  PREDICTNEED_ML_MIN_BALANCED_ACCURACY = '0.55'
+  PREDICTNEED_ML_MIN_PER_CLASS = '10'
+  PREDICTNEED_ML_MIN_SAMPLES = '40'
+  PREDICTNEED_PRIVACY_VERSION = '2026-08-06'
+  PREDICTNEED_SITE_URL = 'https://predictneed-ia.com'
+  PREDICTNEED_SUBSCRIPTION_TRIAL_DAYS = '60'
+
+[processes]
+  app = 'gunicorn --bind :8000 --workers 2 config.wsgi:application'
+  automation_worker = 'python manage.py run_automation_worker --interval 60 --limit 100 --mailbox-limit 100'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '15s'
+    method = 'GET'
+    path = '/healthz/'
+
+    [http_service.checks.headers]
+      Host = 'predictneed-ia.com'
+      X-Forwarded-Proto = 'https'
+
+[[vm]]
+  memory = '1gb'
+  cpus = 1
+  memory_mb = 1024
+
+[[statics]]
+  guest_path = '/code/staticfiles'
+  url_prefix = '/static/'
